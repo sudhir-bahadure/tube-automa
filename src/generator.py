@@ -102,7 +102,7 @@ def create_video(text, output_path="final_video.mp4", pexels_key=None):
     chunk_duration = duration / len(chunks)
     
     for i, chunk in enumerate(chunks):
-        txt = (TextClip(chunk, fontsize=70, color='white', font='Arial-Bold', 
+        txt = (TextClip(chunk, fontsize=70, color='white', font='Liberation-Sans-Bold', 
                        method='caption', size=(900, None), stroke_color='black', stroke_width=2)
                .set_position('center')
                .set_duration(chunk_duration)
