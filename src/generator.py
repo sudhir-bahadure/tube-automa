@@ -13,7 +13,7 @@ from moviepy.config import change_settings
 async def generate_audio(text, output_file="audio.mp3"):
     # Microsoft Edge Neural Voices (High Quality, Free)
     # en-US-ChristopherNeural is a deep, documentary style voice
-    voice = "en-US-ChristopherNeural" 
+    voice = "en-US-AriaNeural" # Female, Natural, Professional 
     communicate = edge_tts.Communicate(text, voice)
     await communicate.save(output_file)
 

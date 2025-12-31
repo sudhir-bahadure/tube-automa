@@ -16,15 +16,41 @@ def get_fact():
         "A cloud weighs around a million tonnes. A typical cumulus cloud has a volume of about one cubic kilometer."
     ]
     
-    # Try fetching from an API (e.g., UselessFacts or Ninjas)
-    try:
-        response = requests.get("https://uselessfacts.jsph.pl/random.json?language=en", timeout=5)
-        if response.status_code == 200:
-            return response.json()['text']
-    except:
-        pass
+    # Fetch 3 unique facts to make the video longer (~40s)
+    facts_collection = []
+    
+    # Attempt to fetch 5 times to get 3 unique facts
+    for _ in range(5):
+        if len(facts_collection) >= 3:
+            break
+        try:
+            response = requests.get("https://uselessfacts.jsph.pl/random.json?language=en", timeout=5)
+            if response.status_code == 200:
+                text = response.json()['text']
+                if text not in facts_collection:
+                    facts_collection.append(text)
+        except:
+            pass
+            
+    # Fallback if API fails
+    if len(facts_collection) < 3:
+        needed = 3 - len(facts_collection)
+        facts_collection.extend(random.sample(facts, needed))
         
-    return random.choice(facts)
+    # Combine with transitions
+    transitions = [
+        " And did you know...",
+        " Here is another mind-blowing fact.",
+        " Also...",
+        " Listen to this.",
+        " You won't believe this next one."
+    ]
+    
+    final_script = facts_collection[0]
+    for i in range(1, len(facts_collection)):
+        final_script += f"{random.choice(transitions)} {facts_collection[i]}"
+        
+    return final_script
 
 def get_hashtags(category="facts"):
     # Viral hashtags for Shorts/Reels
