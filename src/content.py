@@ -305,25 +305,6 @@ def get_fact():
     return final_script
 
 def get_meme_metadata():
-    # Fetch multiple safe jokes for a compilation
-    memes_list = []
-    attempts = 0
-    target_count = 7 
-    
-    while len(memes_list) < target_count and attempts < 15:
-        attempts += 1
-        try:
-            r = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=5)
-            if r.status_code == 200:
-                data = r.json()
-                setup = data['setup']
-                punchline = data['punchline']
-                
-                # Avoid duplicates
-                if not any(m['setup'] == setup for m in memes_list):
-                    memes_list.append({
-                        "setup": setup,
-                        "punchline": punchline
     print("\n[*] Fetching trending memes from Reddit...")
     
     # Try to get trending jokes from Reddit
@@ -351,6 +332,7 @@ def get_meme_metadata():
             {"setup": "What do you call fake spaghetti?", "punchline": "An impasta!"},
             {"setup": "Why don't eggs tell jokes?", "punchline": "They'd crack each other up!"}
         ]
+    
     # Combine scripts for description/tts if needed, but generator will handle individual clips
     full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
     
@@ -366,6 +348,7 @@ def get_meme_metadata():
         "tags": hashtags,
         "youtube_category": "23" # Comedy
     }
+
 
 def get_hashtags(category="facts"):
     # Viral hashtags for Shorts/Reels
