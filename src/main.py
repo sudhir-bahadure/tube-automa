@@ -1,4 +1,5 @@
 import argparse
+import os
 from content import get_video_metadata, get_meme_metadata
 from generator import create_video
 from telegram_bot import upload_to_telegram
