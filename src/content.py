@@ -21,6 +21,93 @@ NICHE_KEYWORDS = {
     "Nature & Deep Sea": ["ocean", "sea", "nature", "wildlife", "volcano", "earth", "animal", "marine", "rainforest"]
 }
 
+# Tracking for used jokes to prevent repetition
+USED_JOKES_FILE = "used_jokes.json"
+
+def load_used_jokes():
+    """Load used jokes to prevent repetition"""
+    import json
+    import os
+    from datetime import datetime, timedelta
+    
+    if os.path.exists(USED_JOKES_FILE):
+        try:
+            with open(USED_JOKES_FILE, 'r') as f:
+                data = json.load(f)
+                # Clean old entries (>30 days for jokes)
+                cutoff = (datetime.now() - timedelta(days=30)).isoformat()
+                cleaned = {k: v for k, v in data.items() if v > cutoff}
+                if len(cleaned) < len(data):
+                    with open(USED_JOKES_FILE, 'w') as fw:
+                        json.dump(cleaned, fw, indent=2)
+                return cleaned
+        except:
+            return {}
+    return {}
+
+def save_used_joke(joke_text):
+    """Track a used joke"""
+    import json
+    import os
+    from datetime import datetime
+    
+    used_jokes = load_used_jokes()
+    # Use first 50 chars as key
+    joke_key = joke_text[:50].lower().strip()
+    used_jokes[joke_key] = datetime.now().isoformat()
+    try:
+        with open(USED_JOKES_FILE, 'w') as f:
+            json.dump(used_jokes, f, indent=2)
+    except Exception as e:
+        print(f"  [WARN] Could not save joke tracking: {e}")
+
+def is_joke_used(joke_text):
+    """Check if joke was already used"""
+    used_jokes = load_used_jokes()
+    joke_key = joke_text[:50].lower().strip()
+    return joke_key in used_jokes
+
+def get_trending_memes_reddit():
+    """Fetch trending jokes from Reddit (Free, No API Key)"""
+    jokes = []
+    subreddits = ['Jokes', 'dadjokes', 'cleanjokes']
+    
+    for subreddit in subreddits:
+        try:
+            url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
+            headers = {'User-Agent': 'TubeAutoma/1.0'}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                posts = response.json()['data']['children']
+                for post in posts:
+                    data = post['data']
+                    title = data.get('title', '')
+                    selftext = data.get('selftext', '')
+                    
+                    # Skip if already used
+                    if is_joke_used(title):
+                        continue
+                    
+                    # Format as setup/punchline
+                    if selftext and selftext != '[removed]' and selftext != '[deleted]':
+                        jokes.append({
+                            'setup': title,
+                            'punchline': selftext
+                        })
+                    elif '?' in title:  # Question format
+                        parts = title.split('?', 1)
+                        if len(parts) == 2:
+                            jokes.append({
+                                'setup': parts[0] + '?',
+                                'punchline': parts[1].strip()
+                            })
+        except Exception as e:
+            print(f"  [WARN] Reddit r/{subreddit} error: {e}")
+            continue
+    
+    return jokes
+
 def get_google_trends():
     """Fetch trending topics from Google Trends (Free, No API Key)"""
     if not PYTRENDS_AVAILABLE:
@@ -200,18 +287,33 @@ def get_meme_metadata():
                     memes_list.append({
                         "setup": setup,
                         "punchline": punchline
-                    })
-        except:
-            pass
-            
-    # Fallback if API fails completely
-    if not memes_list:
+    print("\n[*] Fetching trending memes from Reddit...")
+    
+    # Try to get trending jokes from Reddit
+    trending_jokes = get_trending_memes_reddit()
+    
+    if trending_jokes and len(trending_jokes) >= 5:
+        # Use trending jokes
+        print(f"  [OK] Found {len(trending_jokes)} trending jokes from Reddit")
+        # Select 5 random jokes from trending
+        import random
+        selected_jokes = random.sample(trending_jokes, min(5, len(trending_jokes)))
+        
+        # Track used jokes
+        for joke in selected_jokes:
+            save_used_joke(joke['setup'])
+        
+        memes_list = selected_jokes
+    else:
+        # Fallback to curated jokes
+        print(f"  [WARN] Using curated jokes (trending not available)")
         memes_list = [
-            {"setup": "Why did the programmer quit his job?", "punchline": "Because he didn't get arrays."},
-            {"setup": "How do you comfort a JavaScript bug?", "punchline": "You console it."},
-            {"setup": "Why do Python programmers have low vision?", "punchline": "Because they don't C sharp."}
+            {"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"},
+            {"setup": "What do you call a bear with no teeth?", "punchline": "A gummy bear!"},
+            {"setup": "Why did the scarecrow win an award?", "punchline": "He was outstanding in his field!"},
+            {"setup": "What do you call fake spaghetti?", "punchline": "An impasta!"},
+            {"setup": "Why don't eggs tell jokes?", "punchline": "They'd crack each other up!"}
         ]
-
     # Combine scripts for description/tts if needed, but generator will handle individual clips
     full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
     
