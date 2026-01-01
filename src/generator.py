@@ -54,7 +54,13 @@ def download_background_video(query="abstract", api_key=None):
                         with open("bg_raw.mp4", "wb") as f:
                             for chunk in res.iter_content(chunk_size=8192):
                                 f.write(chunk)
-                        return "bg_raw.mp4"
+                        
+                        # Verify file size (at least 100KB)
+                        if os.path.getsize("bg_raw.mp4") > 102400:
+                            return "bg_raw.mp4"
+                        else:
+                            print("Downloaded video is too small, likely corrupted.")
+                            if os.path.exists("bg_raw.mp4"): os.remove("bg_raw.mp4")
     except Exception as e:
         print(f"Error downloading Pexels video: {e}")
         
@@ -94,12 +100,16 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             if bg_file:
                 try:
                     clip = VideoFileClip(bg_file)
+                    # Explicitly check if we can read the first frame
+                    _ = clip.get_frame(0) 
+                    
                     if clip.duration < duration:
                         clip = clip.loop(duration=duration)
                     else:
                         clip = clip.subclip(0, duration)
                 except Exception as e:
                     print(f"Corrupted video skip: {e}")
+                    if clip: clip.close()
                     clip = None
             
             if not clip:
@@ -183,13 +193,21 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         bg_file = download_background_video(query, pexels_key)
         
         if bg_file:
-            clip = VideoFileClip(bg_file)
-            if clip.duration < duration:
-                clip = clip.loop(duration=duration)
-            else:
-                clip = clip.subclip(0, duration)
-        else:
-            clip = ColorClip(size=(1080, 1920), color=(20, 20, 20), duration=duration)
+            try:
+                clip = VideoFileClip(bg_file)
+                # Explicitly check if we can read the first frame
+                _ = clip.get_frame(0)
+                
+                if clip.duration < duration:
+                    clip = clip.loop(duration=duration)
+                else:
+                    clip = clip.subclip(0, duration)
+            except Exception as e:
+                print(f"Corrupted fact background skip: {e}")
+                if clip: clip.close()
+                clip = None
+        
+        if not clip:
         
         w, h = clip.size
         target_ratio = 9/16
