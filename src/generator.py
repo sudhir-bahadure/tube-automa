@@ -208,6 +208,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 clip = None
         
         if not clip:
+            clip = ColorClip(size=(1080, 1920), color=(20, 20, 20), duration=duration)
         
         w, h = clip.size
         target_ratio = 9/16
