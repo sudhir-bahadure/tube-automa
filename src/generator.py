@@ -74,9 +74,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         # --- NEW COMPILATION LOGIC FOR MEMES ---
         memes = metadata['memes']
         meme_clips = []
-                temp_bg_files = []
-                temp_audio_files = []
         temp_bg_files = []
+        temp_audio_files = []
         
         print(f"Generating meme compilation with {len(memes)} jokes...")
         
