@@ -80,10 +80,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             audio_path = f"temp_audio_{i}.mp3"
             script = f"{setup} ... ... {punchline} ... Hahaha!"
             asyncio.run(generate_audio(script, audio_path))
-            audio = AudioFileClip(audio_path)
+            audio_clip = AudioFileClip(audio_path)
             temp_audio_files.append(audio_path)
             
-            duration = audio.duration + 0.5
+            duration = audio_clip.duration + 0.5
+            # Fix: Pad audio to match video duration to avoid MoviePy OSError
+            from moviepy.audio.AudioClip import CompositeAudioClip
+            audio = CompositeAudioClip([audio_clip]).set_duration(duration)
             
             # 2. Get Background for this segment
             bg_file = download_background_video("funny reaction", pexels_key)
@@ -171,8 +174,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         print(f"Generating single video: {text[:30]}...")
         
         asyncio.run(generate_audio(text, "temp_audio.mp3"))
-        audio = AudioFileClip("temp_audio.mp3")
-        duration = audio.duration + 1.0
+        audio_raw = AudioFileClip("temp_audio.mp3")
+        duration = audio_raw.duration + 1.0
+        from moviepy.audio.AudioClip import CompositeAudioClip
+        audio = CompositeAudioClip([audio_raw]).set_duration(duration)
         
         query = "nature dark aesthetic abstract"
         bg_file = download_background_video(query, pexels_key)
