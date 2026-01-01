@@ -438,16 +438,31 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
     else:
         # --- FACT STYLE (OR SINGLE JOKE FALLBACK) ---
         text = metadata['text']
+        # Default mode: fact video (short vertical)
         print(f"Generating single video: {text[:30]}...")
         
+        # Generate audio
         asyncio.run(generate_audio(text, "temp_audio.mp3"))
         audio_raw = AudioFileClip("temp_audio.mp3")
-        duration = audio_raw.duration + 1.0
+        duration = audio_raw.duration + 0.5 # Adjusted duration
         from moviepy.audio.AudioClip import CompositeAudioClip
         audio = CompositeAudioClip([audio_raw]).set_duration(duration)
         
-        query = "nature dark aesthetic abstract"
-        bg_file = download_background_video(query, pexels_key)
+        # Get Background - Use varied keywords for diversity
+        bg_keywords = [
+            "science laboratory",
+            "space cosmos",
+            "nature wildlife",
+            "technology innovation",
+            "ocean underwater",
+            "microscope research"
+        ]
+        # Rotate through keywords based on time/random
+        import hashlib
+        keyword_index = int(hashlib.md5(text.encode()).hexdigest(), 16) % len(bg_keywords)
+        bg_keyword = bg_keywords[keyword_index]
+        
+        bg_file = download_background_video(bg_keyword, pexels_key, segment_index=keyword_index)
         
         if bg_file:
             try:

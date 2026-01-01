@@ -216,6 +216,42 @@ def get_trending_video_topic():
 # EXISTING FUNCTIONS
 # ============================================================================
 
+def get_trending_facts_reddit():
+    """Fetch trending facts from Reddit science/TIL (Free, No API Key)"""
+    facts = []
+    subreddits = ['todayilearned', 'science', 'Damnthatsinteresting']
+    
+    for subreddit in subreddits:
+        try:
+            url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=20"
+            headers = {'User-Agent': 'TubeAutoma/1.0'}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                posts = response.json()['data']['children']
+                for post in posts:
+                    data = post['data']
+                    title = data.get('title', '')
+                    
+                    # Skip if already used
+                    if is_joke_used(title):  # Reuse joke tracking for facts
+                        continue
+                    
+                    # Clean up TIL prefix
+                    if title.startswith('TIL '):
+                        title = title[4:]
+                    elif title.startswith('TIL: '):
+                        title = title[5:]
+                    
+                    # Only include if it's educational/interesting
+                    if len(title) > 30 and len(title) < 200:
+                        facts.append(title)
+        except Exception as e:
+            print(f"  [WARN] Reddit r/{subreddit} error: {e}")
+            continue
+    
+    return facts
+
 def get_fact():
     # Fallback facts if API fails
     facts = [
@@ -341,7 +377,24 @@ def get_hashtags(category="facts"):
     return " ".join(recommended)
 
 def get_video_metadata():
-    fact = get_fact()
+    print("\n[*] Fetching trending facts from Reddit...")
+    
+    # Try to get trending facts from Reddit
+    trending_facts = get_trending_facts_reddit()
+    
+    if trending_facts and len(trending_facts) > 0:
+        # Use trending fact
+        print(f"  [OK] Found {len(trending_facts)} trending facts from Reddit")
+        fact = random.choice(trending_facts)
+        
+        # Track used fact
+        save_used_joke(fact)  # Reuse joke tracking for facts
+        
+        print(f"  [SELECTED] {fact[:80]}...")
+    else:
+        # Fallback to curated facts
+        print(f"  [WARN] Using curated facts (trending not available)")
+        fact = get_fact()
     hashtags = get_hashtags()
     title = f"Did you know this? 🤯 {hashtags.split()[1]}" # Catchy title
     description = f"{fact}\n\nSubscribe for more daily facts! 🧠\n\n{hashtags}"
