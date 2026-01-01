@@ -3,7 +3,7 @@ import random
 import re
 import feedparser
 from datetime import datetime
-from .ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
+from ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
 try:
     from pytrends.request import TrendReq
     PYTRENDS_AVAILABLE = True
