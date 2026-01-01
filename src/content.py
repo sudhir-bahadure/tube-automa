@@ -56,7 +56,7 @@ def get_meme_metadata():
     # Fetch multiple safe jokes for a compilation
     memes_list = []
     attempts = 0
-    target_count = 5 
+    target_count = 7 
     
     while len(memes_list) < target_count and attempts < 15:
         attempts += 1
