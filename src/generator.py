@@ -25,7 +25,7 @@ async def generate_audio(text, output_file="audio.mp3"):
                 # If all else fails, we might need a backup or silent clip, but let's try to crash early if critical
                 raise e
 
-def download_background_video(query="abstract", api_key=None):
+def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4"):
     # Fallback to a solid color if no API key or download fails
     if not api_key:
         return None
@@ -51,16 +51,16 @@ def download_background_video(query="abstract", api_key=None):
                 print(f"Downloading background from Pexels: {link}")
                 with requests.get(link, stream=True, timeout=15) as res:
                     if res.status_code == 200:
-                        with open("bg_raw.mp4", "wb") as f:
+                        with open(output_file, "wb") as f:
                             for chunk in res.iter_content(chunk_size=8192):
                                 f.write(chunk)
                         
                         # Verify file size (at least 100KB)
-                        if os.path.getsize("bg_raw.mp4") > 102400:
-                            return "bg_raw.mp4"
+                        if os.path.exists(output_file) and os.path.getsize(output_file) > 102400:
+                            return output_file
                         else:
                             print("Downloaded video is too small, likely corrupted.")
-                            if os.path.exists("bg_raw.mp4"): os.remove("bg_raw.mp4")
+                            if os.path.exists(output_file): os.remove(output_file)
     except Exception as e:
         print(f"Error downloading Pexels video: {e}")
         
@@ -74,7 +74,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         # --- NEW COMPILATION LOGIC FOR MEMES ---
         memes = metadata['memes']
         meme_clips = []
-        temp_audio_files = []
+        temp_bg_files = []
         
         print(f"Generating meme compilation with {len(memes)} jokes...")
         
@@ -95,7 +95,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             audio = CompositeAudioClip([audio_clip]).set_duration(duration)
             
             # 2. Get Background for this segment
-            bg_file = download_background_video("funny reaction", pexels_key)
+            # Use unique filename to prevent locking/overwrite issues
+            bg_filename = f"temp_bg_{i}.mp4"
+            bg_file = download_background_video("funny reaction", pexels_key, bg_filename)
             clip = None
             if bg_file:
                 try:
@@ -107,6 +109,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         clip = clip.loop(duration=duration)
                     else:
                         clip = clip.subclip(0, duration)
+                    temp_bg_files.append(bg_file) # Track for cleanup
                 except Exception as e:
                     print(f"Corrupted video skip: {e}")
                     if clip: clip.close()
@@ -165,16 +168,17 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 # Combine Meme Segment
                 meme_segment = CompositeVideoClip([clip, banner, divider, setup_txt, punch_txt]).set_audio(audio)
             meme_clips.append(meme_segment.set_duration(duration))
-            
-            if bg_file and os.path.exists(bg_file): os.remove(bg_file)
 
         # Final Concatenation
         final_video = concatenate_videoclips(meme_clips, method="compose")
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
         
         # Cleanup
-        for f in temp_audio_files:
-            if os.path.exists(f): os.remove(f)
+        for f in temp_audio_files + temp_bg_files:
+            try:
+                if os.path.exists(f): os.remove(f)
+            except:
+                pass
             
         return output_path
 
