@@ -3,14 +3,68 @@ import random
 import requests
 import asyncio
 import edge_tts
+import json
+from datetime import datetime, timedelta
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip, ColorClip, ImageClip, concatenate_videoclips
 from moviepy.video.fx.all import crop, resize
 # Removed silent logging override as it causes issues in some moviepy versions
 
-async def generate_audio(text, output_file="audio.mp3"):
+# ============================================================================
+# VISUAL TRACKING SYSTEM - Prevents video repetition
+# ============================================================================
+
+TRACKING_FILE = "used_videos.json"
+
+def load_used_videos():
+    """Load tracking file and clean old entries (>90 days)"""
+    if os.path.exists(TRACKING_FILE):
+        try:
+            with open(TRACKING_FILE, 'r') as f:
+                data = json.load(f)
+                # Clean old entries
+                cutoff = (datetime.now() - timedelta(days=90)).isoformat()
+                cleaned = {k: v for k, v in data.items() if v > cutoff}
+                # Save cleaned data
+                if len(cleaned) < len(data):
+                    with open(TRACKING_FILE, 'w') as fw:
+                        json.dump(cleaned, fw, indent=2)
+                return cleaned
+        except:
+            return {}
+    return {}
+
+def save_used_video(video_url, keyword):
+    """Track a used video"""
+    used_videos = load_used_videos()
+    used_videos[video_url] = datetime.now().isoformat()
+    try:
+        with open(TRACKING_FILE, 'w') as f:
+            json.dump(used_videos, f, indent=2)
+        print(f"  [TRACKED] Video saved to prevent future repetition")
+    except Exception as e:
+        print(f"  [WARN] Could not save tracking: {e}")
+
+def is_video_used(video_url):
+    """Check if video was already used"""
+    used_videos = load_used_videos()
+    return video_url in used_videos
+
+def get_varied_keyword(base_keyword, segment_index):
+    """Add variations to keywords for more variety"""
+    variations = [
+        base_keyword,
+        f"{base_keyword} nature",
+        f"{base_keyword} beautiful",
+        f"{base_keyword} amazing",
+        f"{base_keyword} cinematic",
+        f"{base_keyword} aerial"
+    ]
+    return variations[segment_index % len(variations)]
+
+async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
     voice = "en-US-AriaNeural" # Female, Natural, Professional 
-    communicate = edge_tts.Communicate(text, voice)
+    communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
     max_retries = 3
     for attempt in range(max_retries):
@@ -25,20 +79,44 @@ async def generate_audio(text, output_file="audio.mp3"):
                 # If all else fails, we might need a backup or silent clip, but let's try to crash early if critical
                 raise e
 
-def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait"):
+def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
     # Fallback to a solid color if no API key or download fails
     if not api_key:
         return None
-        
+    
+    # Add variation to query to get different results
+    varied_query = get_varied_keyword(query, segment_index)
+    
     headers = {'Authorization': api_key}
-    url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation={orientation}"
+    url = f"https://api.pexels.com/videos/search?query={varied_query}&per_page=30&orientation={orientation}"
     
     try:
         r = requests.get(url, headers=headers, timeout=10)
         if r.status_code == 200:
             videos = r.json().get('videos', [])
+            
             if videos:
-                video_data = random.choice(videos)
+                # Filter out already used videos
+                unused_videos = []
+                for video in videos:
+                    video_files = video.get('video_files', [])
+                    if video_files:
+                        link = video_files[0].get('link', '')
+                        if link and not is_video_used(link):
+                            unused_videos.append(video)
+                
+                # If all videos are used, try with base query
+                if not unused_videos and query != varied_query:
+                    print(f"  [INFO] All videos used for '{varied_query}', trying base query...")
+                    return download_background_video(query, api_key, output_file, orientation, segment_index + 1)
+                
+                # If still no unused videos, expand search
+                if not unused_videos:
+                    print(f"  [INFO] All videos used, expanding search...")
+                    return download_background_video(f"{query} cinematic", api_key, output_file, orientation, segment_index + 2)
+                
+                # Select random unused video
+                video_data = random.choice(unused_videos)
                 video_files = video_data.get('video_files', [])
                 # Prefer HD/Full HD but keep it manageable
                 video_files = [v for v in video_files if v['width'] >= 720]
@@ -48,7 +126,7 @@ def download_background_video(query="abstract", api_key=None, output_file="bg_ra
                 best_file = min(video_files, key=lambda x: abs(x['width'] - 1080))
                 link = best_file['link']
                 
-                print(f"Downloading background from Pexels: {link}")
+                print(f"  [NEW] Downloading fresh background: {link[:60]}...")
                 with requests.get(link, stream=True, timeout=15) as res:
                     if res.status_code == 200:
                         with open(output_file, "wb") as f:
@@ -57,12 +135,13 @@ def download_background_video(query="abstract", api_key=None, output_file="bg_ra
                         
                         # Verify file size (at least 100KB)
                         if os.path.exists(output_file) and os.path.getsize(output_file) > 102400:
+                            save_used_video(link, query)  # Track this video
                             return output_file
                         else:
-                            print("Downloaded video is too small, likely corrupted.")
+                            print("  [WARN] Downloaded video too small, likely corrupted.")
                             if os.path.exists(output_file): os.remove(output_file)
     except Exception as e:
-        print(f"Error downloading Pexels video: {e}")
+        print(f"  [ERROR] Pexels download error: {e}")
         
     return None
 
@@ -98,7 +177,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # 2. Get Background for this segment
             # Use unique filename to prevent locking/overwrite issues
             bg_filename = f"temp_bg_{i}.mp4"
-            bg_file = download_background_video("funny reaction", pexels_key, bg_filename)
+            bg_file = download_background_video("funny reaction", pexels_key, bg_filename, segment_index=i)
             clip = None
             if bg_file:
                 try:
@@ -191,14 +270,35 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         temp_audio_files = []
         
         print(f"Generating long-form video: {metadata.get('topic')}...")
+        print(f"Total segments: {len(segments)} (Target: 8+ minutes)")
         
         for i, seg in enumerate(segments):
             text = seg['text']
             keyword = seg['keyword']
             
-            # 1. Generate Audio for this segment
+            # Determine speech rate based on segment type
+            # Hook and intro: normal speed
+            # Key points: slightly slower for emphasis
+            # Transitions: slightly faster
+            if i == 0:  # Opening hook
+                rate = "+0%"
+                pitch = "+2Hz"  # Slightly higher for excitement
+            elif i < 3:  # Intro and context
+                rate = "-5%"  # Slower for clarity
+                pitch = "+0Hz"
+            elif "discovery" in text.lower() or "incredible" in text.lower():
+                rate = "-10%"  # Slow down for emphasis
+                pitch = "+0Hz"
+            elif i >= len(segments) - 2:  # Summary and CTA
+                rate = "+5%"  # Slightly faster
+                pitch = "+0Hz"
+            else:
+                rate = "+0%"  # Normal
+                pitch = "+0Hz"
+            
+            # 1. Generate Audio for this segment with variation
             audio_path = f"temp_long_audio_{i}.mp3"
-            asyncio.run(generate_audio(text, audio_path))
+            asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch))
             audio_clip = AudioFileClip(audio_path)
             temp_audio_files.append(audio_path)
             
@@ -208,7 +308,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             # 2. Get Background (Landscape for long videos)
             bg_filename = f"temp_long_bg_{i}.mp4"
-            bg_file = download_background_video(keyword, pexels_key, bg_filename, orientation="landscape")
+            bg_file = download_background_video(keyword, pexels_key, bg_filename, orientation="landscape", segment_index=i)
             clip = None
             if bg_file:
                 try:
@@ -225,8 +325,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     clip = None
             
             if not clip:
-                colors = [(20,20,20), (30,30,50), (50,30,30)]
-                clip = ColorClip(size=(1920, 1080), color=random.choice(colors), duration=duration)
+                # Varied background colors for visual interest
+                colors = [(20,20,20), (30,30,50), (50,30,30), (30,50,30), (40,40,60)]
+                clip = ColorClip(size=(1920, 1080), color=colors[i % len(colors)], duration=duration)
             
             # Standard 16:9 Resize
             curr_w, curr_h = clip.size
@@ -239,29 +340,81 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 clip = crop(clip, y1=(curr_h/2 - new_h/2), width=curr_w, height=new_h)
             clip = clip.resize(newsize=(1920, 1080))
             
-            # 3. Text Overlay (Subtitles style)
+            # 3. Add Chapter Title Card (first 2 seconds of each segment)
+            chapter_overlays = []
+            if i == 0:
+                chapter_title = "🎬 OPENING"
+            elif i == 1:
+                chapter_title = "📖 INTRODUCTION"
+            elif i == len(segments) - 1:
+                chapter_title = "👍 SUBSCRIBE FOR MORE!"
+            elif i == len(segments) - 2:
+                chapter_title = "📝 SUMMARY"
+            else:
+                chapter_title = f"CHAPTER {i-1}"
+            
+            try:
+                # Chapter card (first 2 seconds)
+                chapter_card = (TextClip(chapter_title, fontsize=80, color='white', font='Liberation-Sans-Bold',
+                                        stroke_color='black', stroke_width=4, method='label')
+                               .set_position('center')
+                               .set_duration(min(2.0, duration))
+                               .set_start(0))
+                chapter_overlays.append(chapter_card)
+            except:
+                pass  # Skip if text rendering fails
+            
+            # 4. Enhanced Subtitle Overlays
             words = text.split()
-            chunks = [" ".join(words[j:j+6]) for j in range(0, len(words), 6)]
+            # Longer chunks for better readability (8 words instead of 6)
+            chunks = [" ".join(words[j:j+8]) for j in range(0, len(words), 8)]
             txt_clips = []
             chunk_duration = duration / len(chunks)
+            
             for j, chunk in enumerate(chunks):
                 try:
-                    txt = (TextClip(chunk, fontsize=50, color='white', font='Liberation-Sans-Bold',
-                                    method='caption', size=(1600, None), stroke_color='black', stroke_width=2)
-                           .set_position(('center', 850))
+                    # Skip subtitles during chapter card (first 2 seconds)
+                    start_time = max(2.0, j * chunk_duration)
+                    if start_time >= duration:
+                        continue
+                    
+                    # Enhanced subtitle styling with background for better readability
+                    # Create semi-transparent background
+                    txt_height = 120
+                    txt_bg = ColorClip(size=(1800, txt_height), color=(0, 0, 0), duration=chunk_duration)
+                    txt_bg = txt_bg.set_opacity(0.7).set_position(('center', 900)).set_start(start_time)
+                    txt_clips.append(txt_bg)
+                    
+                    # Text on top of background
+                    txt = (TextClip(chunk, fontsize=52, color='white', font='Liberation-Sans-Bold',
+                                    method='caption', size=(1700, None), align='center')
+                           .set_position(('center', 920))
                            .set_duration(chunk_duration)
-                           .set_start(j * chunk_duration))
+                           .set_start(start_time))
                     txt_clips.append(txt)
                 except:
                     continue
             
-            segment_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
+            # Combine all elements
+            segment_clip = CompositeVideoClip([clip] + chapter_overlays + txt_clips).set_audio(audio)
             segment_clips.append(segment_clip)
+            
+            # Progress indicator
+            print(f"  ✓ Segment {i+1}/{len(segments)} complete ({duration:.1f}s)")
 
         # Final Concatenation
         final_video = concatenate_videoclips(segment_clips, method="compose")
-        # Save with lower bitrate/fast preset to keep GitHub Actions happy
-        final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast")
+        total_duration = final_video.duration
+        print(f"\n🎥 Total video duration: {total_duration/60:.2f} minutes ({total_duration:.1f} seconds)")
+        
+        if total_duration < 480:  # Less than 8 minutes
+            print(f"⚠️  WARNING: Video is {480-total_duration:.0f} seconds SHORT of 8-minute target!")
+        else:
+            print(f"✅ SUCCESS: Video meets 8+ minute requirement!")
+        
+        # Save with optimized settings (better quality than ultrafast)
+        final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", 
+                                    preset="medium", bitrate="2500k")
         
         # Cleanup
         for f in temp_audio_files + temp_bg_files:

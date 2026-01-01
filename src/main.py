@@ -9,7 +9,7 @@ def main():
     parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
     args = parser.parse_args()
     
-    print(f"🎬 TubeAutoma Starting in [{args.category.upper()}] mode...")
+    print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
     
     # 1. Fetch Content
     if args.category == "meme":

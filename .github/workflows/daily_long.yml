@@ -2,8 +2,11 @@ name: Daily TubeAutoma Documentary
 
 on:
   schedule:
-    # Run at 11:00 PM IST (17:30 UTC) daily
-    - cron: '30 17 * * *'
+    # Run at 4:30 PM IST (11:00 UTC) daily - Optimal for faster monetization
+    # - Catches US morning commute
+    # - YouTube review team active
+    # - Less competition, better algorithm boost
+    - cron: '0 11 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
