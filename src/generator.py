@@ -95,7 +95,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         
         # 1. White Banner (Top 25%)
         banner_h = 400
-        banner = ColorClip(size=(1080, banner_h), color='white', duration=duration).set_position(('center', 'top'))
+        # Use explicit RGB tuple to ensure 3 channels (Fix for ValueError)
+        banner = ColorClip(size=(1080, banner_h), color=(255, 255, 255), duration=duration).set_position(('center', 'top'))
         
         # 2. Setup Text (Black, inside banner)
         setup_txt_clip = (TextClip(setup_text, fontsize=60, color='black', font='Liberation-Sans-Bold',
