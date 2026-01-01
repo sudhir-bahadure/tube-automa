@@ -3,7 +3,7 @@ name: Daily TubeAutoma Video
 on:
   schedule:
     # Run at 9:00 AM IST (03:30 UTC) daily
-    - cron: '0 1 * * *'
+    - cron: '30 3 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
