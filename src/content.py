@@ -53,33 +53,51 @@ def get_fact():
     return final_script
 
 def get_meme_metadata():
-    # Fetch a safe joke
-    setup = "Why did the programmer quit his job?"
-    punchline = "Because he didn't get arrays."
+    # Fetch multiple safe jokes for a compilation
+    memes_list = []
+    attempts = 0
+    target_count = 5 
     
-    try:
-        r = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            setup = data['setup']
-            punchline = data['punchline']
-    except:
-        pass
-        
-    # Script for audio
-    script = f"{setup} ... ... {punchline} ... Hahaha!"
+    while len(memes_list) < target_count and attempts < 15:
+        attempts += 1
+        try:
+            r = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                setup = data['setup']
+                punchline = data['punchline']
+                
+                # Avoid duplicates
+                if not any(m['setup'] == setup for m in memes_list):
+                    memes_list.append({
+                        "setup": setup,
+                        "punchline": punchline
+                    })
+        except:
+            pass
+            
+    # Fallback if API fails completely
+    if not memes_list:
+        memes_list = [
+            {"setup": "Why did the programmer quit his job?", "punchline": "Because he didn't get arrays."},
+            {"setup": "How do you comfort a JavaScript bug?", "punchline": "You console it."},
+            {"setup": "Why do Python programmers have low vision?", "punchline": "Because they don't C sharp."}
+        ]
+
+    # Combine scripts for description/tts if needed, but generator will handle individual clips
+    full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
     
     # Hashtags
-    hashtags = "#Memes #Funny #DailyJoke #Humor #Shorts"
+    hashtags = "#Memes #Funny #DailyMemes #Humor #Shorts #Jokes #Compilation"
     
     return {
-        "text": script,
-        "title": f"Daily Meme: {setup[:30]}... 😂",
-        "description": f"{setup}\n\n{punchline}\n\n{hashtags}",
-        "tags": hashtags,
         "mode": "meme",
-        "setup": setup,
-        "punchline": punchline
+        "memes": memes_list,  # List of {setup, punchline}
+        "text": full_script_text, # Legacy support
+        "title": f"Daily Meme Therapy! 😂 ({len(memes_list)} Jokes)",
+        "description": f"Enjoy these funny jokes!\n\n{hashtags}",
+        "tags": hashtags,
+        "youtube_category": "23" # Comedy
     }
 
 def get_hashtags(category="facts"):
@@ -102,7 +120,8 @@ def get_video_metadata():
         "text": fact,
         "title": title,
         "description": description,
-        "tags": hashtags
+        "tags": hashtags,
+        "youtube_category": "27" # Education
     }
 
 if __name__ == "__main__":
