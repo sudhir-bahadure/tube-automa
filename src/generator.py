@@ -25,13 +25,13 @@ async def generate_audio(text, output_file="audio.mp3"):
                 # If all else fails, we might need a backup or silent clip, but let's try to crash early if critical
                 raise e
 
-def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4"):
+def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait"):
     # Fallback to a solid color if no API key or download fails
     if not api_key:
         return None
         
     headers = {'Authorization': api_key}
-    url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
+    url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation={orientation}"
     
     try:
         r = requests.get(url, headers=headers, timeout=10)
@@ -173,6 +173,95 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         # Final Concatenation
         final_video = concatenate_videoclips(meme_clips, method="compose")
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
+        
+        # Cleanup
+        for f in temp_audio_files + temp_bg_files:
+            try:
+                if os.path.exists(f): os.remove(f)
+            except:
+                pass
+            
+        return output_path
+
+    elif mode == 'long' and 'segments' in metadata:
+        # --- NEW LONG-FORM DOCUMENTARY LOGIC ---
+        segments = metadata['segments']
+        segment_clips = []
+        temp_bg_files = []
+        temp_audio_files = []
+        
+        print(f"Generating long-form video: {metadata.get('topic')}...")
+        
+        for i, seg in enumerate(segments):
+            text = seg['text']
+            keyword = seg['keyword']
+            
+            # 1. Generate Audio for this segment
+            audio_path = f"temp_long_audio_{i}.mp3"
+            asyncio.run(generate_audio(text, audio_path))
+            audio_clip = AudioFileClip(audio_path)
+            temp_audio_files.append(audio_path)
+            
+            duration = audio_clip.duration + 0.5
+            from moviepy.audio.AudioClip import CompositeAudioClip
+            audio = CompositeAudioClip([audio_clip]).set_duration(duration)
+            
+            # 2. Get Background (Landscape for long videos)
+            bg_filename = f"temp_long_bg_{i}.mp4"
+            bg_file = download_background_video(keyword, pexels_key, bg_filename, orientation="landscape")
+            clip = None
+            if bg_file:
+                try:
+                    clip = VideoFileClip(bg_file)
+                    _ = clip.get_frame(0) 
+                    if clip.duration < duration:
+                        clip = clip.loop(duration=duration)
+                    else:
+                        clip = clip.subclip(0, duration)
+                    temp_bg_files.append(bg_file)
+                except Exception as e:
+                    print(f"Corrupted long bg skip: {e}")
+                    if clip: clip.close()
+                    clip = None
+            
+            if not clip:
+                colors = [(20,20,20), (30,30,50), (50,30,30)]
+                clip = ColorClip(size=(1920, 1080), color=random.choice(colors), duration=duration)
+            
+            # Standard 16:9 Resize
+            curr_w, curr_h = clip.size
+            target_ratio = 16/9
+            if curr_w/curr_h > target_ratio:
+                new_w = curr_h * target_ratio
+                clip = crop(clip, x1=(curr_w/2 - new_w/2), width=new_w, height=curr_h)
+            else:
+                new_h = curr_w / target_ratio
+                clip = crop(clip, y1=(curr_h/2 - new_h/2), width=curr_w, height=new_h)
+            clip = clip.resize(newsize=(1920, 1080))
+            
+            # 3. Text Overlay (Subtitles style)
+            words = text.split()
+            chunks = [" ".join(words[j:j+6]) for j in range(0, len(words), 6)]
+            txt_clips = []
+            chunk_duration = duration / len(chunks)
+            for j, chunk in enumerate(chunks):
+                try:
+                    txt = (TextClip(chunk, fontsize=50, color='white', font='Liberation-Sans-Bold',
+                                    method='caption', size=(1600, None), stroke_color='black', stroke_width=2)
+                           .set_position(('center', 850))
+                           .set_duration(chunk_duration)
+                           .set_start(j * chunk_duration))
+                    txt_clips.append(txt)
+                except:
+                    continue
+            
+            segment_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
+            segment_clips.append(segment_clip)
+
+        # Final Concatenation
+        final_video = concatenate_videoclips(segment_clips, method="compose")
+        # Save with lower bitrate/fast preset to keep GitHub Actions happy
+        final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast")
         
         # Cleanup
         for f in temp_audio_files + temp_bg_files:

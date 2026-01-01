@@ -124,5 +124,71 @@ def get_video_metadata():
         "youtube_category": "27" # Education
     }
 
+def get_long_video_metadata():
+    # Pools of high-engagement niches
+    niches = {
+        "Space & Universe": [
+            "The Mystery of Black Holes", "Life on Mars: What We Know", 
+            "The Most Beautiful Nebulas", "How the Universe Ends",
+            "The James Webb Telescope Discoveries"
+        ],
+        "Mysteries & History": [
+            "The Lost City of Atlantis", "Ancient Technologies We Still Can't Explain",
+            "The Secret of the Egyptian Pyramids", "Unsolved History: The Voynich Manuscript",
+            "The Rise and Fall of the Roman Empire"
+        ],
+        "Future Tech & AI": [
+            "The Future of Artificial Intelligence", "Quantum Computing: The Next Frontier",
+            "How Neuralink Will Change Humanity", "The Rise of Humanoid Robots",
+            "Self-Driving Cars: Are We There Yet?"
+        ],
+        "Nature & Deep Sea": [
+            "Strange Creatures of the Deep Sea", "The Most Dangerous Rainforests",
+            "Evolutionary Marvels of the Animal Kingdom", "The Power of Natural Disasters",
+            "Unexplored Places on Earth"
+        ]
+    }
+    
+    niche_name = random.choice(list(niches.keys()))
+    topic = random.choice(niches[niche_name])
+    
+    # Structure of the long script
+    # For a 10 min video, we need ~1300-1500 words. 
+    # Since we are generating this autonomously, we'll create several 'chapters'
+    chapters = [
+        f"Intro: Welcome to our deep dive into {topic}.",
+        f"Chapter 1: The mysterious beginnings of {topic}.",
+        f"Chapter 2: Why {topic} continues to baffle scientists and researchers today.",
+        f"Chapter 3: Recent breakthroughs and hidden details about {topic}.",
+        f"Chapter 4: The global impact and future possibilities of {topic}.",
+        f"Chapter 5: Closing thoughts and what we might discover next about {topic}."
+    ]
+    
+    # In a real production, we'd use a search API or LLM to expand these.
+    # For now, we'll provide descriptive placeholders that the generator will use 
+    # to fetch background videos and narrate.
+    
+    # We'll simulate a long-form multi-segment data structure
+    segments = []
+    for chapter in chapters:
+        segments.append({
+            "text": f"{chapter} This is a fascinating area of study that has captured human imagination for centuries. Each discovery brings more questions than answers.",
+            "keyword": topic.split(':')[0] if ':' in topic else topic.split()[-1]
+        })
+        
+    title = f"{topic}: The Complete Documentary 🎥"
+    hashtags = f"#Documentary #{niche_name.replace(' ', '')} #Educational #Viral #Trending #Discovery"
+    description = f"Welcome back! Today we are exploring {topic}.\n\n{hashtags}\n\nJoin us as we deep dive into the mysteries of {niche_name}."
+
+    return {
+        "mode": "long",
+        "topic": topic,
+        "segments": segments,
+        "title": title,
+        "description": description,
+        "tags": hashtags,
+        "youtube_category": "27" if "Space" in niche_name or "Tech" in niche_name else "28"
+    }
+
 if __name__ == "__main__":
     print(get_video_metadata())

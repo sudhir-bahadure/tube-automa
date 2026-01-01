@@ -1,12 +1,12 @@
 import argparse
 import os
-from content import get_video_metadata, get_meme_metadata
+from content import get_video_metadata, get_meme_metadata, get_long_video_metadata
 from generator import create_video
 from telegram_bot import upload_to_telegram
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--category", default="fact", help="Video Category: fact or meme")
+    parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
     args = parser.parse_args()
     
     print(f"🎬 TubeAutoma Starting in [{args.category.upper()}] mode...")
@@ -14,6 +14,8 @@ def main():
     # 1. Fetch Content
     if args.category == "meme":
         metadata = get_meme_metadata()
+    elif args.category == "long":
+        metadata = get_long_video_metadata()
     else:
         metadata = get_video_metadata()
         
@@ -23,7 +25,7 @@ def main():
     # Get Pexels Key from Environment (Secrets)
     pexels_key = os.environ.get("PEXELS_API_KEY") 
     
-    output_file = "viral_short.mp4"
+    output_file = f"viral_{args.category}.mp4"
     # Pass entire metadata object to generator now
     final_video_path = create_video(metadata, output_file, pexels_key)
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
