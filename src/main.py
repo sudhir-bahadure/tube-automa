@@ -1,25 +1,30 @@
-import os
-import time
-from content import get_video_metadata
+import argparse
+from content import get_video_metadata, get_meme_metadata
 from generator import create_video
 from telegram_bot import upload_to_telegram
 
 def main():
-    print("🎬 TubeAutoma Starting...")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--category", default="fact", help="Video Category: fact or meme")
+    args = parser.parse_args()
+    
+    print(f"🎬 TubeAutoma Starting in [{args.category.upper()}] mode...")
     
     # 1. Fetch Content
-    metadata = get_video_metadata()
+    if args.category == "meme":
+        metadata = get_meme_metadata()
+    else:
+        metadata = get_video_metadata()
+        
     print(f"Topic: {metadata['title']}")
     
     # 2. Generate Video
     # Get Pexels Key from Environment (Secrets)
-    pexels_key = os.environ.get("PEXELS_API_KEY") # Will be set in GitHub Actions
+    pexels_key = os.environ.get("PEXELS_API_KEY") 
     
     output_file = "viral_short.mp4"
-    final_video_path = create_video(metadata['text'], output_file, pexels_key)
-    
-    # 3. Delivery / Upload
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    # Pass entire metadata object to generator now
+    final_video_path = create_video(metadata, output_file, pexels_key)
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     
     video_path_final = final_video_path

@@ -48,8 +48,11 @@ def download_background_video(query="abstract", api_key=None, duration=15):
         
     return None
 
-def create_video(text, output_path="final_video.mp4", pexels_key=None):
-    print(f"Generating video for: {text[:30]}...")
+def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
+    text = metadata['text']
+    mode = metadata.get('mode', 'fact')
+    
+    print(f"Generating ({mode}) video: {text[:30]}...")
     
     # 1. Generate Audio
     asyncio.run(generate_audio(text, "temp_audio.mp3"))
@@ -57,64 +60,85 @@ def create_video(text, output_path="final_video.mp4", pexels_key=None):
     duration = audio.duration + 1.0 # Add 1 second padding
     
     # 2. Get Background
-    bg_file = download_background_video("nature dark aesthetic abstract", pexels_key, duration)
+    query = "nature dark aesthetic abstract" if mode == 'fact' else "funny confusing laughing reaction"
+    bg_file = download_background_video(query, pexels_key, duration)
     
     if bg_file:
         clip = VideoFileClip(bg_file)
-        # Loop if too short
         if clip.duration < duration:
             clip = clip.loop(duration=duration)
         else:
             clip = clip.subclip(0, duration)
     else:
-        # Fallback: Dark Grey Background
         clip = ColorClip(size=(1080, 1920), color=(20, 20, 20), duration=duration)
     
-    # Resize to Vertical (Reels/Shorts)
-    # Target 1080x1920
+    # Resize to Vertical
     w, h = clip.size
     target_ratio = 9/16
     current_ratio = w/h
     
     if current_ratio > target_ratio:
-        # Too wide, crop width
         new_w = h * target_ratio
         clip = crop(clip, x1=(w/2 - new_w/2), width=new_w, height=h)
     else:
-        # Too tall (rare), crop height
         new_h = w / target_ratio
         clip = crop(clip, y1=(h/2 - new_h/2), width=w, height=new_h)
         
     clip = clip.resize(newsize=(1080, 1920))
     
-    # 3. Add Captions
-    # Split text into chunks for readability
-    words = text.split()
-    chunks = []
-    chunk_size = 5
-    for i in range(0, len(words), chunk_size):
-        chunks.append(" ".join(words[i:i+chunk_size]))
+    # 3. Add Visuals (Styles)
+    final_clip = None
+    
+    if mode == 'meme':
+        # --- MEME STYLE (White Top Banner) ---
+        setup_text = metadata.get('setup', '')
         
-    # Simple centered text (MoviePy TextClip requires ImageMagick)
-    # We will use a caption method that works
-    
-    txt_clips = []
-    chunk_duration = duration / len(chunks)
-    
-    for i, chunk in enumerate(chunks):
-        txt = (TextClip(chunk, fontsize=70, color='white', font='Liberation-Sans-Bold', 
-                       method='caption', size=(900, None), stroke_color='black', stroke_width=2)
-               .set_position('center')
-               .set_duration(chunk_duration)
-               .set_start(i * chunk_duration))
-        txt_clips.append(txt)
+        # 1. White Banner (Top 25%)
+        banner_h = 400
+        banner = ColorClip(size=(1080, banner_h), color='white', duration=duration).set_position(('center', 'top'))
         
-    final = CompositeVideoClip([clip] + txt_clips)
-    final = final.set_audio(audio)
+        # 2. Setup Text (Black, inside banner)
+        setup_txt_clip = (TextClip(setup_text, fontsize=60, color='black', font='Liberation-Sans-Bold',
+                                  method='caption', size=(950, banner_h-50), align='center')
+                          .set_position(('center', 25)) # Slight padding top
+                          .set_duration(duration))
+                          
+        # 3. Punchline (White with black stroke, bottom overlay)
+        # Only show punchline in the second half approx
+        punch_text = metadata.get('punchline', '')
+        punch_start = duration * 0.4 # Reveal punchline 40% in
+        punch_txt_clip = (TextClip(punch_text, fontsize=80, color='yellow', font='Liberation-Sans-Bold',
+                                  method='caption', size=(900, None), stroke_color='black', stroke_width=4)
+                          .set_position(('center', 1200)) # Bottom area
+                          .set_start(punch_start)
+                          .set_duration(duration - punch_start))
+                          
+        final_clip = CompositeVideoClip([clip, banner, setup_txt_clip, punch_txt_clip])
+        
+    else:
+        # --- FACT STYLE (Centered Overlay) ---
+        words = text.split()
+        chunks = []
+        chunk_size = 5
+        for i in range(0, len(words), chunk_size):
+            chunks.append(" ".join(words[i:i+chunk_size]))
+            
+        txt_clips = []
+        chunk_duration = duration / len(chunks)
+        
+        for i, chunk in enumerate(chunks):
+            txt = (TextClip(chunk, fontsize=70, color='white', font='Liberation-Sans-Bold', 
+                           method='caption', size=(900, None), stroke_color='black', stroke_width=2)
+                   .set_position('center')
+                   .set_duration(chunk_duration)
+                   .set_start(i * chunk_duration))
+            txt_clips.append(txt)
+            
+        final_clip = CompositeVideoClip([clip] + txt_clips)
+        
+    final_clip = final_clip.set_audio(audio)
+    final_clip.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
     
-    final.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
-    
-    # Cleanup
     try:
         os.remove("temp_audio.mp3")
         if bg_file: os.remove(bg_file)

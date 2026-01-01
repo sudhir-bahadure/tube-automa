@@ -52,6 +52,36 @@ def get_fact():
         
     return final_script
 
+def get_meme_metadata():
+    # Fetch a safe joke
+    setup = "Why did the programmer quit his job?"
+    punchline = "Because he didn't get arrays."
+    
+    try:
+        r = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            setup = data['setup']
+            punchline = data['punchline']
+    except:
+        pass
+        
+    # Script for audio
+    script = f"{setup} ... ... {punchline} ... Hahaha!"
+    
+    # Hashtags
+    hashtags = "#Memes #Funny #DailyJoke #Humor #Shorts"
+    
+    return {
+        "text": script,
+        "title": f"Daily Meme: {setup[:30]}... 😂",
+        "description": f"{setup}\n\n{punchline}\n\n{hashtags}",
+        "tags": hashtags,
+        "mode": "meme",
+        "setup": setup,
+        "punchline": punchline
+    }
+
 def get_hashtags(category="facts"):
     # Viral hashtags for Shorts/Reels
     tags = [
