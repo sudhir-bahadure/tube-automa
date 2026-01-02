@@ -68,6 +68,23 @@ def is_joke_used(joke_text):
     joke_key = joke_text[:50].lower().strip()
     return joke_key in used_jokes
 
+
+def load_daily_plan():
+    """Load the strategic plan from The Brain"""
+    import json
+    import os
+    plan_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'daily_plan.json')
+    if os.path.exists(plan_path):
+        try:
+            with open(plan_path, 'r', encoding='utf-8') as f:
+                plan = json.load(f)
+            print(f"[*] Content Strat: Loaded plan for '{plan.get('today_topic', 'Unknown')}'")
+            return plan
+        except Exception as e:
+            print(f"  [WARN] Failed to load daily plan: {e}")
+            return None
+    return None
+
 def get_meme_theme():
     """Select a daily theme for potential viral reach"""
     themes = [
@@ -107,17 +124,27 @@ def get_meme_theme():
     return theme
 
 def get_trending_memes_reddit(theme=None):
-    """Fetch trending content based on theme"""
+    """Fetch trending content based on theme or search"""
     jokes = []
     
+    # --- BRAIN INTEGRATION: Support Search ---
+    search_term = theme.get('search_term') if theme else None
+    subreddit = theme['subreddit'] if theme else "memes"
+    
     if theme:
-        subreddits = [theme['subreddit']]
+        subreddits = [subreddit]
     else:
         subreddits = ['Jokes', 'dadjokes', 'cleanjokes']
     
     for subreddit in subreddits:
         try:
-            url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
+            if search_term:
+                 # Search URL
+                 url = f"https://www.reddit.com/r/{subreddit}/search.json?q={search_term}&restrict_sr=1&sort=top&limit=20"
+                 print(f"  [BRAIN] Searching r/{subreddit} for '{search_term}'...")
+            else:
+                 # Standard Hot URL
+                 url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
             headers = {'User-Agent': 'TubeAutoma/1.0'}
             response = requests.get(url, headers=headers, timeout=10)
             
@@ -362,11 +389,36 @@ def get_fact():
 
 def get_meme_metadata():
     print("\n[*] Selecting Daily Theme...")
-    theme = get_meme_theme()
+    
+    # --- BRAIN INTEGRATION ---
+    plan = load_daily_plan()
+    theme = None
+    
+    if plan and 'meme' in plan:
+        meme_strat = plan['meme']
+        print(f"  [BRAIN] Executing Meme Strategy: {meme_strat.get('forced_topic', 'Random')}")
+        
+        # Construct theme object from brain data
+        if meme_strat.get('backup_theme'):
+            theme = {
+                "id": "trending",
+                "subreddit": meme_strat['backup_theme']['subreddit'],
+                "title_template": f"Trending: {meme_strat.get('forced_topic')} Memes 🤣",
+                "hashtags": meme_strat['backup_theme']['hashtags']
+            }
+            # Add specific search term instructions for the reddit fetcher if needed
+            # (Assuming get_trending_memes_reddit can take a search term or we modify it)
+            # For now, we rely on the subreddit or if we modify get_trending_memes_reddit to search
+            theme['search_term'] = meme_strat.get('forced_topic')
+    
+    if not theme:
+        theme = get_meme_theme()
+    # -------------------------
     
     print(f"\n[*] Fetching trending content from r/{theme['subreddit']}...")
     
     # Try to get trending jokes from Reddit with theme
+    # Pass search_term if present (requires update to get_trending_memes_reddit, or we just trust the subreddit)
     trending_jokes = get_trending_memes_reddit(theme)
     
     if trending_jokes and len(trending_jokes) >= 5:
@@ -567,17 +619,31 @@ def get_long_video_metadata():
     # --- REBRANDING: Long Video is now a MEME COMPILATION ---
     print(f"\n[*] Generating LONG FORM Meme Compilation...")
     
+    # --- BRAIN INTEGRATION ---
+    plan = load_daily_plan()
+    brain_topic = None
+    if plan and 'long' in plan:
+        brain_topic = plan['long'].get('topic')
+        print(f"  [BRAIN] Long Video Strategy: {brain_topic}")
+    
     # Target: ~8 minutes. Approx 15 seconds per meme = 32 memes needed. Safety margin -> 50 memes.
     target_count = 50
     meme_pool = []
     
     # 1. Try Reddit (Multiple Themes)
-    themes = [
+    # If Brain provided a topic, try to find memes about THAT topic first
+    themes = []
+    if brain_topic:
+         themes.append({"subreddit": "memes", "id": "brain_trend", "search_term": brain_topic})
+         themes.append({"subreddit": "dankmemes", "id": "brain_trend_2", "search_term": brain_topic})
+         
+    # Add standard backups
+    themes.extend([
         {"subreddit": "dadjokes", "id": "dad_jokes"},
         {"subreddit": "Showerthoughts", "id": "shower_thoughts"},
         {"subreddit": "cleanjokes", "id": "clean_jokes"},
         {"subreddit": "Jokes", "id": "generic"}
-    ]
+    ])
     
     for theme in themes:
         if len(meme_pool) >= target_count: break

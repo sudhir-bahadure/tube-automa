@@ -1,0 +1,40 @@
+name: Daily Brain (Content Strategist)
+
+on:
+  schedule:
+    # Run at 00:00 UTC daily (Before all content generation)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  strategize:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install feedparser
+
+    - name: Run The Brain
+      run: |
+        python src/brain.py
+
+    - name: Commit Daily Plan
+      # Commit the plan so subsequent workflows can read it
+      run: |
+        git config --global user.name 'TubeAutoma Brain'
+        git config --global user.email 'brain@tubeautoma.com'
+        git add assets/daily_plan.json || true
+        git commit -m "Brain: Updated content plan for $(date +'%Y-%m-%d') [skip ci]" || echo "No changes to plan"
+        git push
