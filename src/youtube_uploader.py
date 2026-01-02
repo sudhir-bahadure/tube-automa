@@ -5,10 +5,8 @@ import googleapiclient.errors
 from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaFileUpload
 
-# YouTube Data API - Upload & Analytics Scope
 SCOPES = [
-    "https://www.googleapis.com/auth/youtube.upload",
-    "https://www.googleapis.com/auth/yt-analytics.readonly"
+    "https://www.googleapis.com/auth/youtube.upload"
 ]
 
 def get_authenticated_service():
