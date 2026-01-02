@@ -61,6 +61,43 @@ def get_varied_keyword(base_keyword, segment_index):
     ]
     return variations[segment_index % len(variations)]
 
+
+# Audio Mixing Engine
+def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
+    """Mix voice with background music and optional SFX"""
+    audio_clips = [voice_clip]
+    
+    # 1. Background Music
+    if music_path and os.path.exists(music_path):
+        try:
+            music = AudioFileClip(music_path)
+            # Loop music to match voice duration
+            if music.duration < voice_clip.duration:
+                from moviepy.audio.fx.all import audio_loop
+                music = audio_loop(music, duration=voice_clip.duration)
+            else:
+                music = music.subclip(0, voice_clip.duration)
+            
+            # Apply ducking (volume reduction)
+            music = music.volumex(music_vol)
+            audio_clips.append(music)
+        except Exception as e:
+            print(f"  [WARN] Music mix failed: {e}")
+
+    # 2. Sound Effects (e.g., Laugh Track)
+    if sfx_path and os.path.exists(sfx_path):
+        try:
+            sfx = AudioFileClip(sfx_path)
+            # Add SFX at the end/punchline (simple logic: start at 70% of clip)
+            start_time = max(0, voice_clip.duration - sfx.duration - 0.5) 
+            sfx = sfx.set_start(start_time).volumex(0.8)
+            audio_clips.append(sfx)
+        except Exception as e:
+            print(f"  [WARN] SFX mix failed: {e}")
+            
+    from moviepy.audio.AudioClip import CompositeAudioClip
+    return CompositeAudioClip(audio_clips).set_duration(voice_clip.duration)
+
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
     voice = "en-US-AriaNeural" # Female, Natural, Professional 
@@ -203,8 +240,33 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             duration = audio_clip.duration + 0.5
             # Fix: Pad audio to match video duration to avoid MoviePy OSError
-            from moviepy.audio.AudioClip import CompositeAudioClip
-            audio = CompositeAudioClip([audio_clip]).set_duration(duration)
+            # from moviepy.audio.AudioClip import CompositeAudioClip
+            # audio = CompositeAudioClip([audio_clip]).set_duration(duration)
+            
+            # --- VIRAL POLISH: mix_audio implementation ---
+            # 1. Select Music (Random from assets/music/*.mp3)
+            music_file = None
+            try:
+                music_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'music')
+                if os.path.exists(music_dir):
+                    mp3s = [f for f in os.listdir(music_dir) if f.endswith('.mp3')]
+                    if mp3s:
+                        music_file = os.path.join(music_dir, random.choice(mp3s))
+            except: pass
+
+            # 2. Select SFX (Laugh Track)
+            sfx_file = None
+            try:
+                sfx_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'sfx')
+                # Only add laugh track for punchlines (every clip in meme mode is essentially a punchline/joke)
+                if os.path.exists(sfx_dir) and random.random() > 0.3: # 70% chance of laugh track
+                    sfxs = [f for f in os.listdir(sfx_dir) if "laugh" in f.lower() or "punch" in f.lower()]
+                    if sfxs:
+                        sfx_file = os.path.join(sfx_dir, random.choice(sfxs))
+            except: pass
+            
+            audio = mix_audio(audio_clip, music_path=music_file, sfx_path=sfx_file, music_vol=0.08)
+            # -----------------------------------------------
             
             # 2. Get Background for this segment
             # Use unique filename to prevent locking/overwrite issues
@@ -536,31 +598,33 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
     else:
         # --- FACT STYLE (OR SINGLE JOKE FALLBACK) ---
         text = metadata['text']
-        # Default mode: fact video (short vertical)
-        print(f"Generating single video: {text[:30]}...")
+        # --- VIRAL POLISH: Use Contextual Keyword ---
+        # Default to "satisfying" if no keyword passed, or specific keyword if present
+        visual_keyword = metadata.get('keyword', 'satisfying')
+        print(f" using visual keyword: {visual_keyword}")
         
-        # Generate audio
+        # 1. Generate Audio
         asyncio.run(generate_audio(text, "temp_audio.mp3"))
-        audio_raw = AudioFileClip("temp_audio.mp3")
-        duration = audio_raw.duration + 0.5 # Adjusted duration
-        from moviepy.audio.AudioClip import CompositeAudioClip
-        audio = CompositeAudioClip([audio_raw]).set_duration(duration)
+        audio_clip = AudioFileClip("temp_audio.mp3")
+        duration = audio_clip.duration + 0.5 
+
+        # --- VIRAL POLISH: Audio Mixing for Facts ---
+        # Facts usually need subtle background music to keep retention
+        music_file = None
+        try:
+             music_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'music')
+             if os.path.exists(music_dir):
+                 mp3s = [f for f in os.listdir(music_dir) if f.endswith('.mp3')]
+                 if mp3s:
+                     music_file = os.path.join(music_dir, random.choice(mp3s))
+        except: pass
         
-        # Get Background - Use varied keywords for diversity
-        bg_keywords = [
-            "science laboratory",
-            "space cosmos",
-            "nature wildlife",
-            "technology innovation",
-            "ocean underwater",
-            "microscope research"
-        ]
-        # Rotate through keywords based on time/random
-        import hashlib
-        keyword_index = int(hashlib.md5(text.encode()).hexdigest(), 16) % len(bg_keywords)
-        bg_keyword = bg_keywords[keyword_index]
+        # Mix with ducking (no SFX usually for facts)
+        audio = mix_audio(audio_clip, music_path=music_file, music_vol=0.10)
+        # ---------------------------------------------
         
-        bg_file = download_background_video(bg_keyword, pexels_key, segment_index=keyword_index)
+        # 2. Get Background
+        bg_file = download_background_video(visual_keyword, pexels_key, "temp_bg.mp4")
         
         if bg_file:
             try:

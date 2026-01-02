@@ -466,12 +466,27 @@ def get_video_metadata():
     subscribe_text = "Subscribe to Daily Meme Dose for more!"
     full_text = f"{fact} {subscribe_text}"
     
+    # --- VIRAL POLISH: Contextual Visuals ---
+    # Extract keyword from fact (Simple NLP: Longest noun-like word)
+    import re
+    words = re.findall(r'\b[A-Za-z]{4,}\b', fact) # Words > 4 chars
+    # Remove common stop words
+    stop_words = {'that', 'this', 'with', 'from', 'have', 'what', 'your', 'about', 'know', 'make', 'just', 'like'}
+    good_words = [w for w in words if w.lower() not in stop_words]
+    
+    keyword = "satisfying" # Default
+    if good_words:
+        # Pick longest word (usually the most specific topic)
+        keyword = max(good_words, key=len)
+        print(f"  [VISUAL] Extracted keyword: {keyword}")
+        
     hashtags = get_hashtags()
     title = f"Did you know this? 🤯 {hashtags.split()[1]}" # Catchy title
     description = f"{fact}\n\n{subscribe_text}\n\n{hashtags}"
     
     return {
         "text": full_text,
+        "keyword": keyword, # Pass keyword to generator
         "title": title,
         "description": description,
         "tags": hashtags,
