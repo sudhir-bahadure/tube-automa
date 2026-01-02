@@ -6,6 +6,9 @@ on:
     - cron: '30 15 * * *'
   workflow_dispatch: # Allow manual trigger
 
+permissions:
+  contents: write
+
 jobs:
   build-and-post:
     runs-on: ubuntu-latest
