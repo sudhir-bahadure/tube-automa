@@ -1,0 +1,26 @@
+0000000000000000000000000000000000000000 9a3f34c287b1cac3f15a037c2f007141b17b651a Antigravity Bot <bot@antigravity.com> 1767193173 +0530	commit (initial): Initial commit of TubeAutoma
+9a3f34c287b1cac3f15a037c2f007141b17b651a 9a3f34c287b1cac3f15a037c2f007141b17b651a Antigravity Bot <bot@antigravity.com> 1767193174 +0530	Branch: renamed refs/heads/master to refs/heads/main
+9a3f34c287b1cac3f15a037c2f007141b17b651a 3bf0292f83d90112958f3892db707975d81c9715 Antigravity Bot <bot@antigravity.com> 1767201311 +0530	commit: Fix font issue for Linux runner
+3bf0292f83d90112958f3892db707975d81c9715 7ce0bb8a513a31ae052a6527c0427b1fc19c566d Antigravity Bot <bot@antigravity.com> 1767201788 +0530	commit: Downgrade Pillow to 9.5.0
+7ce0bb8a513a31ae052a6527c0427b1fc19c566d 8e19f8dde6bcf0bd5ec80e2ffd7d7ce5984ccd7a Antigravity Bot <bot@antigravity.com> 1767204254 +0530	commit: Upgrade: Female Voice and 40s+ Video Length
+8e19f8dde6bcf0bd5ec80e2ffd7d7ce5984ccd7a 3c87762843b755f651a237e9ca3d4066aecc412e Antigravity Bot <bot@antigravity.com> 1767250635 +0530	commit: Update schedule to 9 AM IST
+3c87762843b755f651a237e9ca3d4066aecc412e 7a29b2d018c29227466a436438b6cd5c24b64af6 Antigravity Bot <bot@antigravity.com> 1767251203 +0530	commit: Implement Double Shift: Facts & Meme Workflows
+7a29b2d018c29227466a436438b6cd5c24b64af6 94b2462f405a9bedea04e0238b9bdf604438e3cb Antigravity Bot <bot@antigravity.com> 1767251503 +0530	commit: Fix NameError: Import os
+94b2462f405a9bedea04e0238b9bdf604438e3cb b54c5947cecebbf618bdacf06cd8d05dfddc9cfd Antigravity Bot <bot@antigravity.com> 1767251646 +0530	commit: Fix MoviePy RGB Broadcast Error
+b54c5947cecebbf618bdacf06cd8d05dfddc9cfd a3f741144a6bc33e86aee69a411e2a52e95ae861 Antigravity Bot <bot@antigravity.com> 1767254356 +0530	commit: Upgrade: Multi-Meme Compilation (5 jokes) for ~40s video length
+a3f741144a6bc33e86aee69a411e2a52e95ae861 100ea7939dad30beb12e7fa4363d8a0542c6d332 Antigravity Bot <bot@antigravity.com> 1767255520 +0530	commit: Optimize meme video length, style and add robustness fixes
+100ea7939dad30beb12e7fa4363d8a0542c6d332 2e73f8cf2e912ba49f3881f2ef52ac0d03185a50 Antigravity Bot <bot@antigravity.com> 1767255731 +0530	commit: Fix Audio/Video duration mismatch to prevent OSError in MoviePy
+2e73f8cf2e912ba49f3881f2ef52ac0d03185a50 a3c15a229258586dfa003842164c3b4504208384 Antigravity Bot <bot@antigravity.com> 1767255950 +0530	commit: Robust background video validation: check file size and read first frame
+a3c15a229258586dfa003842164c3b4504208384 17e648f1541e2713c23886a29b96ea8ee3c33610 Antigravity Bot <bot@antigravity.com> 1767256316 +0530	commit: Fix IndentationError in fact style generation
+17e648f1541e2713c23886a29b96ea8ee3c33610 86ac3949ddd4dd637867837e92b06a15bf16b4b8 Antigravity Bot <bot@antigravity.com> 1767256839 +0530	commit: Defer deletion of background videos until after final render to prevent locking/corruption issues
+86ac3949ddd4dd637867837e92b06a15bf16b4b8 d8f6bcae13de3e911401e3e293878bd701dae399 Antigravity Bot <bot@antigravity.com> 1767258333 +0530	commit: Final cleanup: Fix NameError and IndentationError for both workflows
+d8f6bcae13de3e911401e3e293878bd701dae399 9397d4d81f65ea30f849503d03747361bcfac3de Antigravity Bot <bot@antigravity.com> 1767258350 +0530	reset: moving to origin/main
+9397d4d81f65ea30f849503d03747361bcfac3de a881382f6b87f94e4604b06d0ffd8b7652a8d4c8 Antigravity Bot <bot@antigravity.com> 1767259644 +0530	commit: FIX: Absolute final indentation and NameError fix for both workflows
+a881382f6b87f94e4604b06d0ffd8b7652a8d4c8 50d1e9dc7f97a4cfd8b37f68f461948d6d46570d Antigravity Bot <bot@antigravity.com> 1767260458 +0530	commit: Optimize: Shift schedules to target peak US viewership times for monetization
+50d1e9dc7f97a4cfd8b37f68f461948d6d46570d 160dda340a153a08a05d9119116fca56e179f01c Antigravity Bot <bot@antigravity.com> 1767270112 +0530	commit: Feature: Implement Long-Form Documentary Engine (8-10 min videos) with trending topic discovery
+160dda340a153a08a05d9119116fca56e179f01c b27fa696dfef06ec42400a107715c4a981014b7e Antigravity Bot <bot@antigravity.com> 1767274509 +0530	commit: feat: Add trending topics, visual tracking, and optimal timing
+b27fa696dfef06ec42400a107715c4a981014b7e 5040fd981161d2b4aa549fe08e47d6d7fcd92120 Antigravity Bot <bot@antigravity.com> 1767275033 +0530	commit: fix: Add trending memes and prevent repetition
+5040fd981161d2b4aa549fe08e47d6d7fcd92120 e1e2e55970691be5d58e3d7495411fecaeafb179 Antigravity Bot <bot@antigravity.com> 1767275526 +0530	commit: feat: Add trending facts, visual variety, and YouTube compliance
+e1e2e55970691be5d58e3d7495411fecaeafb179 909860675840aaed1a7c0c7e6afb9c15a36b8bd7 Antigravity Bot <bot@antigravity.com> 1767289698 +0530	commit: feat: Add YPP compliance enhancements for all workflows
+909860675840aaed1a7c0c7e6afb9c15a36b8bd7 9fc18ab81582f618d33448f41283ac8c2f320ac8 Antigravity Bot <bot@antigravity.com> 1767289818 +0530	commit: fix: Correct workflow schedules to match IST times
+9fc18ab81582f618d33448f41283ac8c2f320ac8 0a109850c34c07bf83c5ef49635deffe63a97111 Antigravity Bot <bot@antigravity.com> 1767290477 +0530	commit: fix: Resolve syntax error in get_meme_metadata function
