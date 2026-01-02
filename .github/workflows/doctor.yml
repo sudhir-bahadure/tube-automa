@@ -1,0 +1,36 @@
+name: The Doctor (System Maintenance)
+
+on:
+  schedule:
+    # Runs approximately every 1.5 days to keep close to the 42-hour requirement
+    - cron: '0 6 */2 * *' 
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Run The Doctor
+      run: |
+        python src/doctor.py
+
+    - name: Commit Health Updates
+      # Commit any auto-fixed files or tracking resets
+      run: |
+        git config --global user.name 'TubeAutoma Doctor'
+        git config --global user.email 'doctor@tubeautoma.com'
+        git add used_jokes.json used_videos.json assets/*.json || true
+        git commit -m "Doctor: System health check and auto-repairs performed [skip ci]" || echo "No health issues found"
+        git push
