@@ -68,10 +68,52 @@ def is_joke_used(joke_text):
     joke_key = joke_text[:50].lower().strip()
     return joke_key in used_jokes
 
-def get_trending_memes_reddit():
-    """Fetch trending jokes from Reddit (Free, No API Key)"""
+def get_meme_theme():
+    """Select a daily theme for potential viral reach"""
+    themes = [
+        {
+            "id": "dad_jokes",
+            "name": "Dad Jokes",
+            "subreddit": "dadjokes",
+            "title_template": "Top 5 Dad Jokes to annoy your friends 🤣",
+            "hashtags": "#DadJokes #Puns #Funny #Humor #Shorts",
+            "intro": "Get ready to groan..."
+        },
+        {
+            "id": "shower_thoughts",
+            "name": "Shower Thoughts",
+            "subreddit": "Showerthoughts",
+            "title_template": "Shower Thoughts that will break your brain 🤯",
+            "hashtags": "#ShowerThoughts #MindBlown #DeepThoughts #Facts #Shorts",
+            "intro": "Think about this..."
+        },
+        {
+            "id": "clean_jokes",
+            "name": "Clean Comedy",
+            "subreddit": "cleanjokes",
+            "title_template": "Daily Dose of Clean Comedy 😂",
+            "hashtags": "#CleanComedy #Jokes #Wholesome #Funny #Shorts",
+            "intro": "Here is your daily dose of laughter..."
+        }
+    ]
+    
+    # Select predictable theme based on day of year to ensure variety
+    # day_of_year = datetime.now().timetuple().tm_yday
+    # theme = themes[day_of_year % len(themes)]
+    
+    # Or just random for now to keep it fresh
+    theme = random.choice(themes)
+    print(f"[*] Daily Theme Selected: {theme['name']}")
+    return theme
+
+def get_trending_memes_reddit(theme=None):
+    """Fetch trending content based on theme"""
     jokes = []
-    subreddits = ['Jokes', 'dadjokes', 'cleanjokes']
+    
+    if theme:
+        subreddits = [theme['subreddit']]
+    else:
+        subreddits = ['Jokes', 'dadjokes', 'cleanjokes']
     
     for subreddit in subreddits:
         try:
@@ -89,20 +131,34 @@ def get_trending_memes_reddit():
                     # Skip if already used
                     if is_joke_used(title):
                         continue
-                    
-                    # Format as setup/punchline
-                    if selftext and selftext != '[removed]' and selftext != '[deleted]':
-                        jokes.append({
-                            'setup': title,
-                            'punchline': selftext
-                        })
-                    elif '?' in title:  # Question format
-                        parts = title.split('?', 1)
-                        if len(parts) == 2:
+
+                    # Theme specific parsing
+                    if theme and theme['id'] == 'shower_thoughts':
+                        # Shower thoughts are usually just the title
+                        clean_title = title
+                        # Remove "Shower thought:" prefix if present
+                        if clean_title.lower().startswith("shower thought"):
+                            clean_title = clean_title.split(":", 1)[1].strip()
+                            
+                        if len(clean_title) < 150: # Keep it shortish
                             jokes.append({
-                                'setup': parts[0] + '?',
-                                'punchline': parts[1].strip()
+                                'setup': "Shower Thought...",
+                                'punchline': clean_title
                             })
+                    else:
+                        # Standard Setup/Punchline format
+                        if selftext and selftext != '[removed]' and selftext != '[deleted]':
+                            jokes.append({
+                                'setup': title,
+                                'punchline': selftext
+                            })
+                        elif '?' in title:  # Question format
+                            parts = title.split('?', 1)
+                            if len(parts) == 2:
+                                jokes.append({
+                                    'setup': parts[0] + '?',
+                                    'punchline': parts[1].strip()
+                                })
         except Exception as e:
             print(f"  [WARN] Reddit r/{subreddit} error: {e}")
             continue
@@ -305,14 +361,17 @@ def get_fact():
     return final_script
 
 def get_meme_metadata():
-    print("\n[*] Fetching trending memes from Reddit...")
+    print("\n[*] Selecting Daily Theme...")
+    theme = get_meme_theme()
     
-    # Try to get trending jokes from Reddit
-    trending_jokes = get_trending_memes_reddit()
+    print(f"\n[*] Fetching trending content from r/{theme['subreddit']}...")
+    
+    # Try to get trending jokes from Reddit with theme
+    trending_jokes = get_trending_memes_reddit(theme)
     
     if trending_jokes and len(trending_jokes) >= 5:
         # Use trending jokes
-        print(f"  [OK] Found {len(trending_jokes)} trending jokes from Reddit")
+        print(f"  [OK] Found {len(trending_jokes)} trending items")
         # Select 5 random jokes from trending
         import random
         selected_jokes = random.sample(trending_jokes, min(5, len(trending_jokes)))
@@ -323,7 +382,7 @@ def get_meme_metadata():
         
         memes_list = selected_jokes
     else:
-        # Fallback to curated jokes
+        # Fallback to curated jokes (generic)
         print(f"  [WARN] Using curated jokes (trending not available)")
         memes_list = [
             {"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"},
@@ -332,19 +391,23 @@ def get_meme_metadata():
             {"setup": "What do you call fake spaghetti?", "punchline": "An impasta!"},
             {"setup": "Why don't eggs tell jokes?", "punchline": "They'd crack each other up!"}
         ]
+        theme = { # Fallback theme
+            "title_template": "Daily Meme Therapy! 😂",
+            "hashtags": "#Memes #Funny #DailyMemes #Humor #Shorts #Jokes #Compilation"
+        }
     
     # Combine scripts for description/tts if needed, but generator will handle individual clips
     full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
     
-    # Hashtags
-    hashtags = "#Memes #Funny #DailyMemes #Humor #Shorts #Jokes #Compilation"
+    # Dynamic Hashtags
+    hashtags = f"{theme['hashtags']} #DailyMemeDose"
     
     return {
         "mode": "meme",
         "memes": memes_list,  # List of {setup, punchline}
         "text": full_script_text, # Legacy support
-        "title": f"Daily Meme Therapy! 😂 ({len(memes_list)} Jokes)",
-        "description": f"Enjoy these funny jokes!\n\n{hashtags}",
+        "title": f"{theme['title_template']} ({len(memes_list)} Jokes)",
+        "description": f"Enjoy these funny moments!\n\nSubscribe to Daily Meme Dose for more!\n\n{hashtags}",
         "tags": hashtags,
         "youtube_category": "23" # Comedy
     }
