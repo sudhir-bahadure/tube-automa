@@ -2,9 +2,12 @@ name: Daily TubeAutoma Video
 
 on:
   schedule:
-    # Run at 9:00 AM IST (03:30 UTC) daily
-    - cron: '30 3 * * *'
+    # Run at 2:00 AM IST (20:30 UTC) - US Afternoon
+    - cron: '30 20 * * *'
   workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
 
 jobs:
   build-and-post:
@@ -40,3 +43,11 @@ jobs:
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
       run: |
         python src/main.py
+
+    - name: Commit and Push Tracking Data
+      run: |
+        git config --global user.name 'TubeAutoma Bot'
+        git config --global user.email 'bot@tubeautoma.com'
+        git add used_jokes.json used_videos.json || true
+        git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
+        git push

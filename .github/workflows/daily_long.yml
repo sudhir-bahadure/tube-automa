@@ -2,12 +2,12 @@ name: Daily TubeAutoma Documentary
 
 on:
   schedule:
-    # Run at 4:30 PM IST (11:00 UTC) daily - Optimal for faster monetization
-    # - Catches US morning commute
-    # - YouTube review team active
-    # - Less competition, better algorithm boost
-    - cron: '0 11 * * *'
+    # Run at 6:30 PM IST (13:00 UTC) - US Early Morning
+    - cron: '0 13 * * *'
   workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
 
 jobs:
   build-and-post:
@@ -43,3 +43,11 @@ jobs:
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
       run: |
         python src/main.py --category long
+
+    - name: Commit and Push Tracking Data
+      run: |
+        git config --global user.name 'TubeAutoma Bot'
+        git config --global user.email 'bot@tubeautoma.com'
+        git add used_jokes.json used_videos.json || true
+        git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
+        git push

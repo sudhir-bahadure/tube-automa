@@ -75,24 +75,24 @@ def get_meme_theme():
             "id": "dad_jokes",
             "name": "Dad Jokes",
             "subreddit": "dadjokes",
-            "title_template": "Top 5 Dad Jokes to annoy your friends 🤣",
-            "hashtags": "#DadJokes #Puns #Funny #Humor #Shorts",
+            "title_template": "Dad Jokes That Actually Make You Laugh 🤣",
+            "hashtags": "#DadJokes #Puns #Funny #Humor #Shorts #TryNotToLaugh",
             "intro": "Get ready to groan..."
         },
         {
             "id": "shower_thoughts",
             "name": "Shower Thoughts",
             "subreddit": "Showerthoughts",
-            "title_template": "Shower Thoughts that will break your brain 🤯",
-            "hashtags": "#ShowerThoughts #MindBlown #DeepThoughts #Facts #Shorts",
+            "title_template": "Shower Thoughts That Will Keep You Up At Night 🤯",
+            "hashtags": "#ShowerThoughts #MindBlown #DeepThoughts #Facts #Shorts #Viral",
             "intro": "Think about this..."
         },
         {
             "id": "clean_jokes",
             "name": "Clean Comedy",
             "subreddit": "cleanjokes",
-            "title_template": "Daily Dose of Clean Comedy 😂",
-            "hashtags": "#CleanComedy #Jokes #Wholesome #Funny #Shorts",
+            "title_template": "Best Clean Jokes 2026 (Funny!) 😂",
+            "hashtags": "#CleanComedy #Jokes #Wholesome #Funny #Shorts #DailyMeme",
             "intro": "Here is your daily dose of laughter..."
         }
     ]
@@ -382,16 +382,36 @@ def get_meme_metadata():
         
         memes_list = selected_jokes
     else:
-        # Fallback to curated jokes (generic)
-        print(f"  [WARN] Using curated jokes (trending not available)")
-        memes_list = [
-            {"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"},
-            {"setup": "What do you call a bear with no teeth?", "punchline": "A gummy bear!"},
-            {"setup": "Why did the scarecrow win an award?", "punchline": "He was outstanding in his field!"},
-            {"setup": "What do you call fake spaghetti?", "punchline": "An impasta!"},
-            {"setup": "Why don't eggs tell jokes?", "punchline": "They'd crack each other up!"}
-        ]
-        theme = { # Fallback theme
+        # Fallback to local database (avoiding the 5-joke repetition)
+        print(f"  [WARN] Reddit fetch failed/low. Using backup database.")
+        try:
+            db_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'jokes_db.json')
+            with open(db_path, 'r', encoding='utf-8') as f:
+                all_backup_jokes = json.load(f)
+            
+            # Filter used jokes
+            available_jokes = [j for j in all_backup_jokes if not is_joke_used(j['setup'])]
+            
+            if len(available_jokes) < 5:
+                print("  [WARN] Running low on backup jokes! Resetting or re-using...")
+                available_jokes = all_backup_jokes # Emergency reset
+            
+            # Select 5 random
+            import random
+            memes_list = random.sample(available_jokes, min(5, len(available_jokes)))
+            
+            # Track them
+            for joke in memes_list:
+                save_used_joke(joke['setup'])
+                
+        except Exception as e:
+            print(f"  [ERROR] Could not load backup jokes: {e}")
+            # Ultimate fail-safe (should rarely happen)
+            memes_list = [
+                {"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"}
+            ]
+
+        theme = { # Generic theme for backup
             "title_template": "Daily Meme Therapy! 😂",
             "hashtags": "#Memes #Funny #DailyMemes #Humor #Shorts #Jokes #Compilation"
         }
@@ -529,53 +549,85 @@ def fetch_wikipedia_content(topic):
         return None
 
 def get_long_video_metadata():
-    # Try to get trending topic first
-    trending_topic, trending_niche = get_trending_video_topic()
+    # --- REBRANDING: Long Video is now a MEME COMPILATION ---
+    print(f"\n[*] Generating LONG FORM Meme Compilation...")
     
-    if trending_topic and trending_niche:
-        # Use trending topic
-        topic = trending_topic
-        niche_name = trending_niche
-        print(f"[*] Using TRENDING topic: {topic}")
-    else:
-        # Fallback to curated topics
-        print(f"[*] Using CURATED topic (trending not available)")
-        niches = {
-            "Space & Universe": [
-                "Black Holes", "Mars Exploration", 
-                "Nebulas", "Heat Death of the Universe",
-                "James Webb Space Telescope"
-            ],
-            "Mysteries & History": [
-                "Atlantis", "Antikythera Mechanism",
-                "Egyptian Pyramids", "Voynich Manuscript",
-                "Roman Empire"
-            ],
-            "Future Tech & AI": [
-                "Artificial Intelligence", "Quantum Computing",
-                "Neuralink", "Humanoid Robots",
-                "Autonomous Vehicles"
-            ],
-            "Nature & Deep Sea": [
-                "Deep Sea Creatures", "Amazon Rainforest",
-                "Evolution", "Volcanic Eruptions",
-                "Mariana Trench"
-            ]
-        }
+    # Target: ~8 minutes. Approx 15 seconds per meme = 32 memes needed. Safety margin -> 50 memes.
+    target_count = 50
+    meme_pool = []
+    
+    # 1. Try Reddit (Multiple Themes)
+    themes = [
+        {"subreddit": "dadjokes", "id": "dad_jokes"},
+        {"subreddit": "Showerthoughts", "id": "shower_thoughts"},
+        {"subreddit": "cleanjokes", "id": "clean_jokes"},
+        {"subreddit": "Jokes", "id": "generic"}
+    ]
+    
+    for theme in themes:
+        if len(meme_pool) >= target_count: break
+        print(f"  Fetching from r/{theme['subreddit']}...")
+        new_jokes = get_trending_memes_reddit(theme)
+        if new_jokes:
+             # Filter used
+             unique_jokes = [j for j in new_jokes if not is_joke_used(j['setup'])]
+             meme_pool.extend(unique_jokes)
+    
+    # 2. Fill with Backup DB if needed
+    if len(meme_pool) < target_count:
+        print(f"  [WARN] Not enough Reddit content ({len(meme_pool)}). Filling from Backup DB...")
+        try:
+            db_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'jokes_db.json')
+            with open(db_path, 'r', encoding='utf-8') as f:
+                all_backup = json.load(f)
+            
+            # Shuffle backup to avoid same order
+            import random
+            random.shuffle(all_backup)
+            
+            for joke in all_backup:
+                if len(meme_pool) >= target_count: break
+                if not is_joke_used(joke['setup']):
+                    meme_pool.append(joke)
+                    
+            # If STILL not enough (rare), reset used tracking for backup jokes and reuse
+            if len(meme_pool) < target_count:
+                 print("  [CRITICAL] Backup exhausted. Reusing jokes for volume.")
+                 random.shuffle(all_backup)
+                 meme_pool.extend(all_backup[:target_count - len(meme_pool)])
+                 
+        except Exception as e:
+            print(f"  [ERROR] Backup DB failure: {e}")
+            while len(meme_pool) < target_count:
+                 meme_pool.append({"setup": "Why did the robot cross the road?", "punchline": "To optimize the traffic flow."})
+    
+    # Cap at target
+    final_memes = meme_pool[:target_count]
+    
+    # Track them
+    for m in final_memes:
+        save_used_joke(m['setup'])
         
-        niche_name = random.choice(list(niches.keys()))
-        topic = random.choice(niches[niche_name])
+    print(f"  [OK] Compiled {len(final_memes)} memes for Long Video.")
     
-    # Fetch Wikipedia content
-    wiki_data = fetch_wikipedia_content(topic)
+    # Create Title/Desc
+    import random
+    hashtags = "#Memes #DailyMemes #Comedy #Compilation #FunnyVideos #TryNotToLaugh #Humor #Shorts"
+    title = f"Ultimate Meme Compilation V{random.randint(1,100)} 🤣 Try Not To Laugh! | yoDailyMemeDose"
+    description = f"Welcome to yoDailyMemeDose! Enjoy this ultimate compilation of the funniest memes and jokes.\n\nSubscribe for more daily laughter!\n\n{hashtags}\n\nDisclaimer: Content sourced from the internet."
     
-    # Enhanced structure for 10+ minute video (15 segments)
-    # Each segment will be 40-50 seconds = ~10-12 minutes total
-    segments = []
-    
-    if wiki_data and len(wiki_data['sentences']) >= 10:
-        # We have good Wikipedia data - use it!
-        sentences = wiki_data['sentences']
+    return {
+        "mode": "meme", 
+        "is_long_compilation": True,
+        "memes": final_memes,
+        "title": title,
+        "description": description,
+        "tags": hashtags,
+        "youtube_category": "23"
+    }
+
+# (Commented out old code to prevent errors if we didn't match perfectly)
+'''
         
         # Opening Hook (30-40s)
         hook_options = [
@@ -800,3 +852,4 @@ Join us as we deep dive into the mysteries of {niche_name}.
 
 if __name__ == "__main__":
     print(get_video_metadata())
+'''

@@ -158,6 +158,38 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         
         print(f"Generating meme compilation with {len(memes)} jokes...")
         
+        # --- INTRO HOOK (For Long Compilations or Branding) ---
+        if metadata.get('is_long_compilation', False):
+             # Generate Intro Audio
+             intro_audio_path = "temp_intro_audio.mp3"
+             intro_script = "Welcome to yo Daily Meme Dose! Get ready to laugh!"
+             asyncio.run(generate_audio(intro_script, intro_audio_path))
+             intro_audio_clip = AudioFileClip(intro_audio_path)
+             temp_audio_files.append(intro_audio_path)
+             
+             # Intro Clip (Standard Banner Style)
+             intro_dur = intro_audio_clip.duration + 0.5
+             intro_audio = CompositeAudioClip([intro_audio_clip]).set_duration(intro_dur)
+             
+             # Visual
+             intro_bg = download_background_video("happy girl waving", pexels_key, "temp_intro_bg.mp4", 0)
+             if intro_bg:
+                 intro_clip = VideoFileClip(intro_bg).resize(newsize=(1080, 1920))
+                 if intro_clip.duration < intro_dur: intro_clip = intro_clip.loop(duration=intro_dur)
+                 else: intro_clip = intro_clip.subclip(0, intro_dur)
+                 temp_bg_files.append(intro_bg)
+             else:
+                 intro_clip = ColorClip(size=(1080, 1920), color=(50, 50, 200), duration=intro_dur)
+
+             # Overlay
+             intro_txt = (TextClip("WELCOME TO\nyoDailyMemeDose", fontsize=80, color='white', font='Impact',
+                                   size=(1000, 1920), method='caption', align='center', stroke_color='black', stroke_width=4)
+                           .set_position('center')
+                           .set_duration(intro_dur))
+             
+             intro_segment = CompositeVideoClip([intro_clip, intro_txt]).set_audio(intro_audio)
+             meme_clips.append(intro_segment)
+
         for i, meme in enumerate(memes):
             setup = meme['setup']
             punchline = meme['punchline']
@@ -178,17 +210,16 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Use unique filename to prevent locking/overwrite issues
             # Vary keywords for different visuals each time
             # Vary keywords for different visuals each time
-            # Vary keywords for different visuals each time - DIVERSE FACES
+            # Vary keywords for different visuals each time - GIRLS ONLY (User Request)
             bg_keywords = [
-                "face laughing",
-                "man laughing portrait",
+                "girl laughing",
                 "woman laughing portrait",
-                "girl giggling",
-                "boy laughing",
-                "happy senior laughing",
-                "person smiling laughing",
-                "genuine laughter face",
-                "close up laugh"
+                "happy girl smiling",
+                "woman giggling",
+                "female model laughing",
+                "pretty girl laugh",
+                "woman happy face",
+                "girl reaction laugh"
             ]
             bg_keyword = bg_keywords[i % len(bg_keywords)]
             bg_filename = f"temp_bg_{i}.mp4"
