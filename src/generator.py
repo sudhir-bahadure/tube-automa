@@ -478,7 +478,6 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             temp_audio_files.append(audio_path)
             
             duration = audio_clip.duration + 0.5
-            from moviepy.audio.AudioClip import CompositeAudioClip
             audio = CompositeAudioClip([audio_clip]).set_duration(duration)
             
             # 2. Get Background (Landscape for long videos)
