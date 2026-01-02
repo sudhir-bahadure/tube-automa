@@ -259,6 +259,56 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 meme_segment = CompositeVideoClip([clip, banner, divider, setup_txt, punch_txt]).set_audio(audio)
             meme_clips.append(meme_segment.set_duration(duration))
 
+        # --- NEW SUBSCRIBE HOOK ---
+        # Generate Audio for Subscribe
+        sub_audio_path = "temp_audio_sub.mp3"
+        sub_script = "Subscribe for more Daily Meme Dose!"
+        asyncio.run(generate_audio(sub_script, sub_audio_path))
+        sub_audio_clip = AudioFileClip(sub_audio_path)
+        temp_audio_files.append(sub_audio_path)
+        
+        sub_duration = sub_audio_clip.duration + 1.0 # Little extra pause
+        from moviepy.audio.AudioClip import CompositeAudioClip
+        sub_audio = CompositeAudioClip([sub_audio_clip]).set_duration(sub_duration)
+        
+        # Subscribe Visuals
+        # Use a nice varied background
+        sub_bg_file = download_background_video("happy celebration", pexels_key, "temp_bg_sub.mp4", segment_index=99)
+        sub_clip = None
+        if sub_bg_file:
+             try:
+                 sub_clip = VideoFileClip(sub_bg_file)
+                 # Resize logic
+                 w, h = sub_clip.size
+                 target_ratio = 9/16
+                 if w/h > target_ratio:
+                     new_w = h * target_ratio
+                     sub_clip = crop(sub_clip, x1=(w/2 - new_w/2), width=new_w, height=h)
+                 else:
+                     new_h = w / target_ratio
+                     sub_clip = crop(sub_clip, y1=(h/2 - new_h/2), width=w, height=new_h)
+                 sub_clip = sub_clip.resize(newsize=(1080, 1920))
+                 
+                 if sub_clip.duration < sub_duration:
+                     sub_clip = sub_clip.loop(duration=sub_duration)
+                 else:
+                      sub_clip = sub_clip.subclip(0, sub_duration)
+                 temp_bg_files.append(sub_bg_file)
+             except:
+                 sub_clip = None
+        
+        if not sub_clip:
+            sub_clip = ColorClip(size=(1080, 1920), color=(255, 50, 50), duration=sub_duration)
+            
+        # Add Overlay
+        sub_txt = (TextClip("SUBSCRIBE\n@DailyMemeDose", fontsize=110, color='white', font='Impact',
+                               size=(1000, 1920), method='caption', align='center', stroke_color='black', stroke_width=4)
+                       .set_position('center')
+                       .set_duration(sub_duration))
+        
+        sub_segment = CompositeVideoClip([sub_clip, sub_txt]).set_audio(sub_audio)
+        meme_clips.append(sub_segment)
+
         # Final Concatenation
         final_video = concatenate_videoclips(meme_clips, method="compose")
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")

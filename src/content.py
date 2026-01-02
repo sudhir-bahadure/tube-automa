@@ -379,12 +379,16 @@ def get_video_metadata():
         # Fallback to curated facts
         print(f"  [WARN] Using curated facts (trending not available)")
         fact = get_fact()
+    # Add subscribe hook
+    subscribe_text = "Subscribe to Daily Meme Dose for more!"
+    full_text = f"{fact} {subscribe_text}"
+    
     hashtags = get_hashtags()
     title = f"Did you know this? 🤯 {hashtags.split()[1]}" # Catchy title
-    description = f"{fact}\n\nSubscribe for more daily facts! 🧠\n\n{hashtags}"
+    description = f"{fact}\n\n{subscribe_text}\n\n{hashtags}"
     
     return {
-        "text": fact,
+        "text": full_text,
         "title": title,
         "description": description,
         "tags": hashtags,
@@ -614,7 +618,7 @@ def get_long_video_metadata():
         
         # Call to Action (25-30s)
         segments.append({
-            "text": f"Thanks for watching this documentary on {topic}. If you enjoyed this, please subscribe for more fascinating content. What topic should we explore next? Let us know in the comments!",
+            "text": f"Thanks for watching this documentary on {topic}. If you enjoyed this, please subscribe to Daily Meme Dose for more fascinating content. What topic should we explore next? Let us know in the comments!",
             "keyword": topic
         })
         
@@ -681,7 +685,7 @@ def get_long_video_metadata():
                 "keyword": topic
             },
             {
-                "text": f"Thank you so much for watching this complete documentary on {topic}. If you found this exploration fascinating and educational, please subscribe to our channel for more in-depth documentaries covering the most intriguing topics in science, history, and discovery. What topic should we explore next? Let us know in the comments below, and don't forget to like and share this video with anyone who loves learning about the mysteries of our universe! Your support helps us create more content and continue our mission of making complex scientific concepts accessible to everyone. Join our community of curious minds today!",
+                "text": f"Thank you so much for watching this complete documentary on {topic}. If you found this exploration fascinating and educational, please subscribe to Daily Meme Dose for more in-depth documentaries covering the most intriguing topics in science, history, and discovery. What topic should we explore next? Let us know in the comments below, and don't forget to like and share this video with anyone who loves learning about the mysteries of our universe! Your support helps us create more content and continue our mission of making complex scientific concepts accessible to everyone. Join our community of curious minds today!",
                 "keyword": topic
             }
         ]
