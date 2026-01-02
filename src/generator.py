@@ -422,7 +422,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         final_video = concatenate_videoclips(meme_clips, method="compose")
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
         
-        # Cleanup
+        # --- ENHANCED CLEANUP: Close all clips to free resources ---
+        final_video.close()
+        for c in meme_clips:
+            try: c.close()
+            except: pass
+        
+        # Cleanup temp files
         for f in temp_audio_files + temp_bg_files:
             try:
                 if os.path.exists(f): os.remove(f)
@@ -585,7 +591,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", 
                                     preset="medium", bitrate="2500k")
         
-        # Cleanup
+        # --- ENHANCED CLEANUP ---
+        final_video.close()
+        for c in segment_clips:
+            try: c.close()
+            except: pass
+
+        # Cleanup temp files
         for f in temp_audio_files + temp_bg_files:
             try:
                 if os.path.exists(f): os.remove(f)
@@ -680,6 +692,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         final_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
         final_clip.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
         
+        # --- ENHANCED CLEANUP ---
+        final_clip.close()
+        if clip: clip.close()
+        for t in txt_clips: t.close()
+        # ------------------------
+
         try:
             os.remove("temp_audio.mp3")
             if bg_file: os.remove(bg_file)

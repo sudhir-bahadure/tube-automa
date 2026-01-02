@@ -18,10 +18,10 @@ except ImportError:
 # ============================================================================
 
 NICHE_KEYWORDS = {
-    "Space & Universe": ["space", "mars", "nasa", "telescope", "galaxy", "planet", "asteroid", "moon", "star", "universe", "cosmic"],
-    "Mysteries & History": ["ancient", "mystery", "history", "civilization", "artifact", "pyramid", "archaeological", "historical"],
-    "Future Tech & AI": ["ai", "robot", "tech", "quantum", "future", "innovation", "artificial intelligence", "machine learning"],
-    "Nature & Deep Sea": ["ocean", "sea", "nature", "wildlife", "volcano", "earth", "animal", "marine", "rainforest"]
+    "Internet Culture": ["meme", "funny", "viral", "trend", "tiktok", "reddit", "twitter", "post", "social media", "internet", "culture"],
+    "Humor & Satire": ["joke", "humor", "satire", "laugh", "comedy", "hilarious", "prank", "funny", "puns", "dad jokes"],
+    "Relatable Content": ["relatable", "struggles", "gym", "work", "school", "office", "student", "life", "relationship", "gym memes"],
+    "Viral Trends": ["trending", "challenge", "vlog", "popular", "hot", "new", "moment", "fail", "win", "epic"]
 }
 
 # Tracking for used jokes to prevent repetition
@@ -305,7 +305,7 @@ def get_trending_video_topic():
 def get_trending_facts_reddit():
     """Fetch "Fun" or "Weird" facts (Better for a Meme Channel)"""
     facts = []
-    subreddits = ['todayilearned', 'funfacts', 'weirdfacts', 'Unexpected']
+    subreddits = ['weirdfacts', 'Unexpected', 'BeAmazed', 'rareinsults']
     
     for subreddit in subreddits:
         try:
@@ -341,16 +341,16 @@ def get_trending_facts_reddit():
 def get_fact():
     # Fallback facts if API fails
     facts = [
-        "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly edible.",
-        "Octopuses have three hearts. Two pump blood to the gills, while the third pumps it to the rest of the body.",
-        "Bananas are berries, but strawberries aren't. Botanically speaking, true berries arise from a single flower with one ovary.",
-        "A day on Venus is longer than a year on Venus. It takes Venus 243 Earth days to rotate once on its axis, but only 225 Earth days to orbit the Sun.",
-        "There are more trees on Earth than stars in the Milky Way. Estimates suggest 3 trillion trees vs. 100-400 billion stars.",
-        "The Eiffel Tower can be 15 cm taller during the summer. Thermal expansion causes the iron structure to grow when it gets hot.",
-        "Wombat poop is cube-shaped. This prevents it from rolling away and marks their territory effectively.",
-        "Human teeth are the only part of the body that cannot heal themselves. They lack the cells necessary for regeneration.",
-        "The shortest war in history lasted 38 to 45 minutes. It was between Britain and Zanzibar on August 27, 1896.",
-        "A cloud weighs around a million tonnes. A typical cumulus cloud has a volume of about one cubic kilometer."
+        "In 1923, a jockey named Frank Hayes won a race at Belmont Park despite being dead. He had suffered a heart attack mid-race!",
+        "The probability of you drinking a glass of water that contains a molecule of water that also passed through a dinosaur is almost 100%.",
+        "A group of flamingos is called a 'flamboyance'. Imagine being that extra just by existing.",
+        "You can't hum while holding your nose. Go ahead, try it. I'll wait.",
+        "There’s a company that turns dead people into ocean reefs. Talk about a permanent beach vacation.",
+        "The first webcam was created just to check if a coffee pot at Cambridge University was full so people didn't walk there for nothing.",
+        "A 'jiffy' is an actual unit of time. It's the time it takes for light to travel one centimeter in a vacuum.",
+        "Sloths can hold their breath longer than dolphins can. That's a weird flex for a slow animal.",
+        "The average person spends 6 months of their lifetime waiting for red lights to turn green.",
+        "Cows have 'best friends' and they get stressed when they are separated. Peak relatable content."
     ]
     
     # Fetch 3 unique facts to make the video longer (~40s)
@@ -512,7 +512,7 @@ def get_video_metadata():
     trending_facts = []
     if planned_topic:
         # Search for for "Fun" or "Weird" facts about the topic
-        subreddits = ['todayilearned', 'funfacts', 'weirdfacts', 'Unexpected']
+        subreddits = ['weirdfacts', 'Unexpected', 'BeAmazed']
         for sub in subreddits:
             try:
                 url = f"https://www.reddit.com/r/{sub}/search.json?q={planned_topic}&restrict_sr=1&sort=top&limit=10"
