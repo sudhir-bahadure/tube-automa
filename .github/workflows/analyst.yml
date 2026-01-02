@@ -1,0 +1,44 @@
+name: The Analyst (Channel Strategist)
+
+on:
+  schedule:
+    # Run at 02:00 UTC every Sunday
+    - cron: '0 2 * * 0'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+
+    - name: Run The Analyst
+      env:
+        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      run: |
+        python src/analyst.py
+
+    - name: Commit Directives
+      # Commit the directives so The Brain can read them
+      run: |
+        git config --global user.name 'TubeAutoma Analyst'
+        git config --global user.email 'analyst@tubeautoma.com'
+        git add assets/analyst_directives.json || true
+        git commit -m "Analyst: New strategy directives generated [skip ci]" || echo "No changes to directives"
+        git push

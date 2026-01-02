@@ -4,9 +4,10 @@ import os
 import random
 import datetime
 
-# Path to the plan file
+# Path to files
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), '..', 'assets')
 PLAN_FILE = os.path.join(ASSETS_DIR, 'daily_plan.json')
+DIRECTIVES_FILE = os.path.join(ASSETS_DIR, 'analyst_directives.json')
 
 def fetch_google_trends():
     """Fetch top daily trending searches from Google Trends RSS (US)"""
@@ -41,9 +42,28 @@ def determine_strategy(trends):
     if not trends:
         trends = fetch_backup_trends()
     
-    # Filter out likely sports scores or celebrity gossip if we want more "educational/meme" vibes
-    # But for a viral channel, celebrity/pop culture is good. Let's keep it broad.
     hero_topic = random.choice(trends)
+    
+    # --- Analyst Integration ---
+    if os.path.exists(DIRECTIVES_FILE):
+        try:
+            with open(DIRECTIVES_FILE, 'r', encoding='utf-8') as f:
+                directives = json.load(f)
+            
+            # Check if directive is reasonably fresh (e.g., from last 7 days)
+            gen_time_str = directives.get("generated_at")
+            if gen_time_str:
+                gen_time = datetime.datetime.fromisoformat(gen_time_str)
+                now = datetime.datetime.now()
+                if (now - gen_time).days < 8:
+                    winning_topic = directives.get("winning_topic")
+                    if winning_topic and winning_topic != "unknown":
+                        print(f"[*] Brain: Analyst Directive Found! Pivoting to: '{winning_topic}'")
+                        hero_topic = winning_topic
+        except Exception as e:
+            print(f"[!] Brain: Failed to read Analyst Directives: {e}")
+    # ---------------------------
+
     print(f"[*] Brain: Selected Hero Topic of the Day: '{hero_topic}'")
 
     # 2. Plan Meme Content
