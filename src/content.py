@@ -301,9 +301,9 @@ def get_trending_video_topic():
 # ============================================================================
 
 def get_trending_facts_reddit():
-    """Fetch trending facts from Reddit science/TIL (Free, No API Key)"""
+    """Fetch "Fun" or "Weird" facts (Better for a Meme Channel)"""
     facts = []
-    subreddits = ['todayilearned', 'science', 'Damnthatsinteresting']
+    subreddits = ['todayilearned', 'funfacts', 'weirdfacts', 'Unexpected']
     
     for subreddit in subreddits:
         try:
@@ -509,8 +509,8 @@ def get_video_metadata():
     # If Brain provided a topic, we want facts about THAT topic
     trending_facts = []
     if planned_topic:
-        # Search TIL or science for the specific topic
-        subreddits = ['todayilearned', 'science', 'Damnthatsinteresting']
+        # Search for for "Fun" or "Weird" facts about the topic
+        subreddits = ['todayilearned', 'funfacts', 'weirdfacts', 'Unexpected']
         for sub in subreddits:
             try:
                 url = f"https://www.reddit.com/r/{sub}/search.json?q={planned_topic}&restrict_sr=1&sort=top&limit=10"

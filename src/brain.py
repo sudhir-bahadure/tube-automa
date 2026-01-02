@@ -10,17 +10,18 @@ PLAN_FILE = os.path.join(ASSETS_DIR, 'daily_plan.json')
 DIRECTIVES_FILE = os.path.join(ASSETS_DIR, 'analyst_directives.json')
 HISTORY_FILE = os.path.join(ASSETS_DIR, 'strategy_history.json')
 
-# Niche Weighting (Higher = More likely to be picked as a backup)
+# Niche Weighting (Focus on Meme/Internet Culture)
 NICHE_WEIGHTS = {
-    "Artificial Intelligence": 1.5,
-    "Space Exploration": 1.3,
-    "Psychology Facts": 1.2,
-    "Ancient Civilizations": 1.0,
-    "Deep Sea Mysteries": 1.1,
-    "Future Technology": 1.4,
-    "Human Behavior": 1.2,
-    "Life Hacks": 0.8,
-    "Optical Illusions": 0.7
+    "Internet Culture": 1.5,
+    "Relationship Humor": 1.4,
+    "Gaming Memes": 1.3,
+    "Work & Corporate Life": 1.2,
+    "Gym & Fitness Memes": 1.1,
+    "School & Student Life": 1.1,
+    "Social Media Trends": 1.4,
+    "Pet & Animal Humor": 1.2,
+    "Dad Jokes & Puns": 1.0,
+    "Daily Relatable Struggles": 1.3
 }
 
 def fetch_google_trends():
@@ -41,11 +42,11 @@ def fetch_google_trends():
     return trends
 
 def fetch_backup_trends():
-    """Evergreen viral topics if live fetch fails"""
+    """Evergreen viral meme topics if live fetch fails"""
     return [
-        "Artificial Intelligence", "Space Exploration", "Psychology Facts", 
-        "Ancient Civilizations", "Deep Sea Mysteries", "Future Technology",
-        "Human Behavior", "Life Hacks", "Optical Illusions"
+        "Internet Culture", "Relationship Humor", "Gaming Memes", 
+        "Work & Corporate Life", "Gym & Fitness Memes", "School & Student Life",
+        "Social Media Trends", "Pet & Animal Humor", "Daily Relatable Struggles"
     ]
 
 def load_history():
