@@ -178,15 +178,17 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Use unique filename to prevent locking/overwrite issues
             # Vary keywords for different visuals each time
             # Vary keywords for different visuals each time
+            # Vary keywords for different visuals each time - DIVERSE FACES
             bg_keywords = [
-                "girl laughing",
-                "woman laughing",
-                "funny reaction woman",
-                "girl smile laugh",
-                "happy woman laughing",
-                "female reaction comedy",
+                "face laughing",
+                "man laughing portrait",
+                "woman laughing portrait",
                 "girl giggling",
-                "woman funny face"
+                "boy laughing",
+                "happy senior laughing",
+                "person smiling laughing",
+                "genuine laughter face",
+                "close up laugh"
             ]
             bg_keyword = bg_keywords[i % len(bg_keywords)]
             bg_filename = f"temp_bg_{i}.mp4"
