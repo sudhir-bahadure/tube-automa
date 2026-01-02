@@ -2,6 +2,8 @@ import requests
 import random
 import re
 import feedparser
+import os
+import json
 from datetime import datetime
 from ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
 try:

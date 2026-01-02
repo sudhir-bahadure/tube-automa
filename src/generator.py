@@ -6,6 +6,7 @@ import edge_tts
 import json
 from datetime import datetime, timedelta
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip, ColorClip, ImageClip, concatenate_videoclips
+from moviepy.audio.AudioClip import CompositeAudioClip
 from moviepy.video.fx.all import crop, resize
 # Removed silent logging override as it causes issues in some moviepy versions
 
@@ -95,7 +96,6 @@ def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
         except Exception as e:
             print(f"  [WARN] SFX mix failed: {e}")
             
-    from moviepy.audio.AudioClip import CompositeAudioClip
     return CompositeAudioClip(audio_clips).set_duration(voice_clip.duration)
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
@@ -366,7 +366,6 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         temp_audio_files.append(sub_audio_path)
         
         sub_duration = sub_audio_clip.duration + 1.0 # Little extra pause
-        from moviepy.audio.AudioClip import CompositeAudioClip
         sub_audio = CompositeAudioClip([sub_audio_clip]).set_duration(sub_duration)
         
         # Subscribe Visuals
