@@ -304,14 +304,26 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         
         if not sub_clip:
             sub_clip = ColorClip(size=(1080, 1920), color=(255, 50, 50), duration=sub_duration)
-            
-        # Add Overlay
-        sub_txt = (TextClip("SUBSCRIBE\n@DailyMemeDose", fontsize=110, color='white', font='Impact',
-                               size=(1000, 1920), method='caption', align='center', stroke_color='black', stroke_width=4)
-                       .set_position('center')
+
+        # Standardize Subscribe Hook Layout (White Banner)
+        # Banner & Divider
+        banner_h = 350
+        sub_banner = ColorClip(size=(1080, banner_h), color=(255, 255, 255), duration=sub_duration).set_position(('center', 'top'))
+        sub_divider = ColorClip(size=(1080, 5), color=(200, 200, 200), duration=sub_duration).set_position(('center', banner_h))
+        
+        # Text in Banner
+        sub_banner_txt = (TextClip("SUBSCRIBE FOR MORE", fontsize=65, color='black', font='Impact',
+                              method='caption', size=(1000, banner_h-40), align='center')
+                      .set_position(('center', 20))
+                      .set_duration(sub_duration))
+                      
+        # Channel Name Overlay (Bottom)
+        sub_channel_txt = (TextClip("@DailyMemeDose", fontsize=80, color='white', font='Impact',
+                               size=(1000, None), method='caption', align='center', stroke_color='black', stroke_width=3)
+                       .set_position(('center', 1200)) # Lower area
                        .set_duration(sub_duration))
         
-        sub_segment = CompositeVideoClip([sub_clip, sub_txt]).set_audio(sub_audio)
+        sub_segment = CompositeVideoClip([sub_clip, sub_banner, sub_divider, sub_banner_txt, sub_channel_txt]).set_audio(sub_audio)
         meme_clips.append(sub_segment)
 
         # Final Concatenation
