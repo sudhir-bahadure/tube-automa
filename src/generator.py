@@ -177,13 +177,16 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # 2. Get Background for this segment
             # Use unique filename to prevent locking/overwrite issues
             # Vary keywords for different visuals each time
+            # Vary keywords for different visuals each time
             bg_keywords = [
-                "funny reaction",
-                "people laughing",
-                "comedy show",
-                "happy people",
-                "celebration party",
-                "friends laughing"
+                "girl laughing",
+                "woman laughing",
+                "funny reaction woman",
+                "girl smile laugh",
+                "happy woman laughing",
+                "female reaction comedy",
+                "girl giggling",
+                "woman funny face"
             ]
             bg_keyword = bg_keywords[i % len(bg_keywords)]
             bg_filename = f"temp_bg_{i}.mp4"

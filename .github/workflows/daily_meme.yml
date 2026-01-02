@@ -40,3 +40,12 @@ jobs:
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
       run: |
         python src/main.py --category meme
+
+    - name: Commit and Push Tracking Data
+      run: |
+        git config --global user.name 'TubeAutoma Bot'
+        git config --global user.email 'bot@tubeautoma.com'
+        git add used_jokes.json used_videos.json || true
+        git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
+        git push
+
