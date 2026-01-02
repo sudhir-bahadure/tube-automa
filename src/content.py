@@ -496,10 +496,40 @@ def get_hashtags(category="facts"):
     return " ".join(recommended)
 
 def get_video_metadata():
-    print("\n[*] Fetching trending facts from Reddit...")
+    print("\n[*] Fetching facts for the day...")
     
-    # Try to get trending facts from Reddit
-    trending_facts = get_trending_facts_reddit()
+    # --- BRAIN INTEGRATION ---
+    plan = load_daily_plan()
+    planned_topic = None
+    if plan and 'fact' in plan:
+        planned_topic = plan['fact'].get('topic')
+        print(f"  [BRAIN] Fact Strategy Topic: {planned_topic}")
+    
+    # 1. Try to get trending facts from Reddit (Contextual or Random)
+    # If Brain provided a topic, we want facts about THAT topic
+    trending_facts = []
+    if planned_topic:
+        # Search TIL or science for the specific topic
+        subreddits = ['todayilearned', 'science', 'Damnthatsinteresting']
+        for sub in subreddits:
+            try:
+                url = f"https://www.reddit.com/r/{sub}/search.json?q={planned_topic}&restrict_sr=1&sort=top&limit=10"
+                headers = {'User-Agent': 'TubeAutoma/1.0'}
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    posts = response.json()['data']['children']
+                    for post in posts:
+                        title = post['data'].get('title', '')
+                        if not is_joke_used(title) and len(title) > 30 and len(title) < 200:
+                            if title.startswith('TIL '): title = title[4:]
+                            elif title.startswith('TIL: '): title = title[5:]
+                            trending_facts.append(title)
+            except:
+                pass
+    
+    # If no specific matches or no planned topic, fallback to general hot facts
+    if not trending_facts:
+        trending_facts = get_trending_facts_reddit()
     
     if trending_facts and len(trending_facts) > 0:
         # Use trending fact

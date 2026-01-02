@@ -8,6 +8,20 @@ import datetime
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), '..', 'assets')
 PLAN_FILE = os.path.join(ASSETS_DIR, 'daily_plan.json')
 DIRECTIVES_FILE = os.path.join(ASSETS_DIR, 'analyst_directives.json')
+HISTORY_FILE = os.path.join(ASSETS_DIR, 'strategy_history.json')
+
+# Niche Weighting (Higher = More likely to be picked as a backup)
+NICHE_WEIGHTS = {
+    "Artificial Intelligence": 1.5,
+    "Space Exploration": 1.3,
+    "Psychology Facts": 1.2,
+    "Ancient Civilizations": 1.0,
+    "Deep Sea Mysteries": 1.1,
+    "Future Technology": 1.4,
+    "Human Behavior": 1.2,
+    "Life Hacks": 0.8,
+    "Optical Illusions": 0.7
+}
 
 def fetch_google_trends():
     """Fetch top daily trending searches from Google Trends RSS (US)"""
@@ -34,23 +48,77 @@ def fetch_backup_trends():
         "Human Behavior", "Life Hacks", "Optical Illusions"
     ]
 
+def load_history():
+    """Load selection history to avoid over-repetition and evolve strategy"""
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_history(history):
+    """Save selection history"""
+    try:
+        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(history, f, indent=2)
+    except Exception as e:
+        print(f"[!] Brain: Failed to save history: {e}")
+
+def evolve_trends(trends, history):
+    """Evolve trend selection based on history and weights"""
+    today_str = datetime.date.today().isoformat()
+    
+    # 1. Score each trend
+    scored_trends = []
+    for t in trends:
+        score = 1.0
+        # Apply Niche Weight if recognized
+        score *= NICHE_WEIGHTS.get(t, 1.0)
+        
+        # Penalize if used recently (Recency bias)
+        times_used = history.get("topics", {}).get(t, {}).get("count", 0)
+        last_used = history.get("topics", {}).get(t, {}).get("last_used")
+        
+        if last_used:
+            days_since = (datetime.date.today() - datetime.date.fromisoformat(last_used)).days
+            if days_since < 14: # Penalize if used in last 2 weeks
+                score *= 0.1 # Heavy penalty to ensure variety
+            elif days_since < 30:
+                score *= 0.5
+        
+        # Reward if it's a "trending" trend (not a backup)
+        if t not in fetch_backup_trends():
+            score *= 2.0 
+            
+        scored_trends.append((t, score))
+    
+    # Sort and pick
+    scored_trends.sort(key=lambda x: x[1], reverse=True)
+    
+    # Evolution part: Return top 5 potential candidates, determine_strategy will pick the best
+    return scored_trends[:5]
+
 def determine_strategy(trends):
-    """Decide on the day's content strategy based on trends"""
+    """Decide on the day's content strategy based on trends and evolution"""
+    history = load_history()
     
     # 1. Select Main Topic (The "Hero" Topic)
-    # Prefer topics that are substantive (good for long video/facts)
     if not trends:
         trends = fetch_backup_trends()
     
-    hero_topic = random.choice(trends)
+    # Evolve the trends list
+    candidates = evolve_trends(trends, history)
+    hero_topic = candidates[0][0] if candidates else random.choice(trends)
     
-    # --- Analyst Integration ---
+    # --- Analyst Integration (The Ultimate Evolution Signal) ---
+    is_analyst_pick = False
     if os.path.exists(DIRECTIVES_FILE):
         try:
             with open(DIRECTIVES_FILE, 'r', encoding='utf-8') as f:
                 directives = json.load(f)
             
-            # Check if directive is reasonably fresh (e.g., from last 7 days)
             gen_time_str = directives.get("generated_at")
             if gen_time_str:
                 gen_time = datetime.datetime.fromisoformat(gen_time_str)
@@ -60,17 +128,26 @@ def determine_strategy(trends):
                     if winning_topic and winning_topic != "unknown":
                         print(f"[*] Brain: Analyst Directive Found! Pivoting to: '{winning_topic}'")
                         hero_topic = winning_topic
+                        is_analyst_pick = True
         except Exception as e:
             print(f"[!] Brain: Failed to read Analyst Directives: {e}")
     # ---------------------------
 
     print(f"[*] Brain: Selected Hero Topic of the Day: '{hero_topic}'")
+    
+    # Update History
+    history.setdefault("topics", {})
+    history["topics"].setdefault(hero_topic, {"count": 0, "last_used": ""})
+    history["topics"][hero_topic]["count"] += 1
+    history["topics"][hero_topic]["last_used"] = datetime.date.today().isoformat()
+    history["last_updated"] = datetime.datetime.now().isoformat()
+    save_history(history)
 
     # 2. Plan Meme Content
-    # Memes can ride variables of the trend or fallback to general humor
     meme_plan = {
         "theme_mode": "trending_or_random",
         "forced_topic": hero_topic,
+        "is_analyst_pick": is_analyst_pick,
         "backup_theme": {
              "subreddit": "memes",
              "hashtags": f"#{hero_topic.replace(' ', '')} #Trending #Viral #Funny"
@@ -78,14 +155,12 @@ def determine_strategy(trends):
     }
 
     # 3. Plan Fact Content
-    # Fact video MUST be about the hero topic to be relevant
     fact_plan = {
         "topic": hero_topic,
         "search_query": f"interesting facts about {hero_topic}"
     }
 
     # 4. Plan Long Video
-    # Documentary style on the hero topic
     long_plan = {
         "topic": hero_topic,
         "title_concept": f"Why Everyone is Talking About {hero_topic}",
@@ -95,6 +170,7 @@ def determine_strategy(trends):
     return {
         "generated_at": datetime.datetime.now().isoformat(),
         "today_topic": hero_topic,
+        "is_analyst_boosted": is_analyst_pick,
         "all_trends_snapshot": trends,
         "meme": meme_plan,
         "fact": fact_plan,
@@ -117,7 +193,7 @@ def main():
         json.dump(plan, f, indent=2, ensure_ascii=False)
         
     print(f"[*] Brain: Daily Plan Generated & Saved to {PLAN_FILE}")
-    print(json.dumps(plan, indent=2))
+    # print(json.dumps(plan, indent=2))
 
 if __name__ == "__main__":
     main()
