@@ -25,7 +25,7 @@ NICHE_KEYWORDS = {
 }
 
 # Tracking for used jokes to prevent repetition
-USED_JOKES_FILE = "used_jokes.json"
+USED_JOKES_FILE = os.path.join(os.path.dirname(__file__), '..', 'assets', 'used_jokes.json')
 
 def load_used_jokes():
     """Load used jokes to prevent repetition"""
