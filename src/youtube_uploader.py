@@ -31,7 +31,7 @@ def get_authenticated_service():
     
     return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
-def upload_video(file_path, title, description, tags, category_id="27"):
+def upload_video(file_path, title, description, tags, category_id="27", thumbnail_path=None):
     """
     Uploads a video to YouTube.
     category_id "27" is Education. "28" is Science & Tech.
@@ -70,7 +70,21 @@ def upload_video(file_path, title, description, tags, category_id="27"):
                 print(f"Uploaded {int(status.progress() * 100)}%")
         
         print(f"Upload Complete! Video ID: {response.get('id')}")
-        return response.get('id')
+        video_id = response.get('id')
+        
+        # 4. Upload Thumbnail if provided
+        if video_id and thumbnail_path and os.path.exists(thumbnail_path):
+            try:
+                print(f"[*] Uploading Thumbnail: {thumbnail_path}")
+                youtube.thumbnails().set(
+                    videoId=video_id,
+                    media_body=MediaFileUpload(thumbnail_path)
+                ).execute()
+                print("[SUCCESS] Thumbnail uploaded!")
+            except Exception as e:
+                print(f"[WARN] Thumbnail upload failed: {e}")
+                
+        return video_id
         
     except googleapiclient.errors.HttpError as e:
         print(f"An HTTP error occurred: {e.resp.status} {e.content}")

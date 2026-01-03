@@ -9,6 +9,30 @@ import random
 # YPP-COMPLIANT SCRIPT TEMPLATE
 # ============================================================================
 
+# Hook Templates (Professional/High-Impact)
+HOOK_TEMPLATES = {
+    "curiosity": [
+        "Everyone is talking about {topic}, but they missed the most important detail...",
+        "What if I told you that {topic} is about to change everything you know about tech?",
+        "There's a secret about {topic} that most people aren't ready to hear."
+    ],
+    "fomo": [
+        "If you're not using {topic} yet, you're already falling behind in the AI race.",
+        "The window for mastering {topic} is closing fast. Here's what you need to know.",
+        "While everyone else is sleeping, the pro's are moving everything to {topic}."
+    ],
+    "authority": [
+        "We analyzed the latest data on {topic}, and here's the definitive guide.",
+        "After 100 hours of testing {topic}, we've uncovered its true potential.",
+        "As an AI analyst, I've seen many trends, but {topic} is in a league of its own."
+    ],
+    "part_2": [
+        "We're back with Part 2 of our {topic} breakdown, and the updates are huge.",
+        "The story of {topic} is evolving fast. Here's the latest update to our deep dive.",
+        "Continuing our series on {topic}, we're looking at the newest breakthroughs."
+    ]
+}
+
 # Reasoning phrases that MUST appear every 60-90 seconds
 REASONING_PHRASES = [
     "This suggests that",
@@ -202,17 +226,28 @@ def generate_broader_field(topic):
     ]
     return random.choice(templates)
 
+def generate_hook(topic, is_part_2=False):
+    """Generate high-impact hook"""
+    if is_part_2:
+        category = "part_2"
+    else:
+        category = random.choice(["curiosity", "fomo", "authority"])
+    
+    template = random.choice(HOOK_TEMPLATES[category])
+    return template.format(topic=topic)
+
 # ============================================================================
 # YPP-SAFE SCRIPT GENERATOR
 # ============================================================================
 
-def generate_ypp_safe_script(topic, wikipedia_sentences=None):
+def generate_ypp_safe_script(topic, wikipedia_sentences=None, is_part_2=False):
     """
     Generate YPP-compliant analytical script
     
     Args:
         topic: Main topic
         wikipedia_sentences: Optional list of Wikipedia sentences
+        is_part_2: Whether this is a continuation
     
     Returns:
         List of segment dictionaries with text and type
@@ -221,8 +256,9 @@ def generate_ypp_safe_script(topic, wikipedia_sentences=None):
     segments = []
     
     # 1. OPENING - Analytical framing (WHY, not WHAT)
+    hook = generate_hook(topic, is_part_2)
     opening_template = random.choice(YPP_TEMPLATES["opening"])
-    opening = opening_template.format(
+    opening_base = opening_template.format(
         topic=topic,
         aspect="its historical significance",
         significance=generate_significance(topic),
@@ -234,6 +270,7 @@ def generate_ypp_safe_script(topic, wikipedia_sentences=None):
         interpretation=generate_interpretation(""),
         analytical_focus=generate_core_insight(topic)
     )
+    opening = f"{hook} {opening_base}"
     segments.append({"text": opening, "type": "opening", "keyword": topic})
     
     # 2. CONTEXT - Selective facts

@@ -18,10 +18,10 @@ except ImportError:
 # ============================================================================
 
 NICHE_KEYWORDS = {
-    "Internet Culture": ["meme", "funny", "viral", "trend", "tiktok", "reddit", "twitter", "post", "social media", "internet", "culture"],
-    "Humor & Satire": ["joke", "humor", "satire", "laugh", "comedy", "hilarious", "prank", "funny", "puns", "dad jokes"],
-    "Relatable Content": ["relatable", "struggles", "gym", "work", "school", "office", "student", "life", "relationship", "gym memes"],
-    "Viral Trends": ["trending", "challenge", "vlog", "popular", "hot", "new", "moment", "fail", "win", "epic"]
+    "AI Tools": ["ai", "tool", "free", "openai", "gemini", "chatgpt", "automation", "productivity", "software", "best ai", "top ai"],
+    "Digital Productivity": ["efficiency", "hacks", "tips", "workflow", "optimize", "time saving", "digital", "remote work", "organization"],
+    "Software Solutions": ["how to", "fix", "solution", "windows", "linux", "macos", "error", "problem", "solve", "tech support", "tutorial"],
+    "Internet Culture": ["meme", "funny", "viral", "trend", "tiktok", "reddit", "twitter", "culture", "moment", "humor"]
 }
 
 # Tracking for used jokes to prevent repetition
@@ -498,83 +498,79 @@ def get_hashtags(category="facts"):
     return " ".join(recommended)
 
 def get_video_metadata():
-    print("\n[*] Fetching facts for the day...")
+    """AI TOOL SPOTLIGHT (Formerly Daily Fact)"""
+    print("\n[*] Fetching AI Tools for the spotlight...")
     
-    # --- BRAIN INTEGRATION ---
     plan = load_daily_plan()
     planned_topic = None
+    is_part_2 = False
     if plan and 'fact' in plan:
         planned_topic = plan['fact'].get('topic')
-        print(f"  [BRAIN] Fact Strategy Topic: {planned_topic}")
+        is_part_2 = plan.get('is_part_2', False)
+        print(f"  [BRAIN] AI Strategy Topic: {planned_topic} (Part 2: {is_part_2})")
     
-    # 1. Try to get trending facts from Reddit (Contextual or Random)
-    # If Brain provided a topic, we want facts about THAT topic
-    trending_facts = []
-    if planned_topic:
-        # Search for for "Fun" or "Weird" facts about the topic
-        subreddits = ['weirdfacts', 'Unexpected', 'BeAmazed']
-        for sub in subreddits:
-            try:
-                url = f"https://www.reddit.com/r/{sub}/search.json?q={planned_topic}&restrict_sr=1&sort=top&limit=10"
-                headers = {'User-Agent': 'TubeAutoma/1.0'}
-                response = requests.get(url, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    posts = response.json()['data']['children']
-                    for post in posts:
-                        title = post['data'].get('title', '')
-                        if not is_joke_used(title) and len(title) > 30 and len(title) < 200:
-                            if title.startswith('TIL '): title = title[4:]
-                            elif title.startswith('TIL: '): title = title[5:]
-                            trending_facts.append(title)
-            except:
-                pass
+    # 1. Try to get AI tools from Reddit
+    ai_tools = []
+    # AI Focused Subreddits
+    subreddits = ['AItools', 'software', 'productivity']
+    search_query = planned_topic if planned_topic else "free ai"
     
-    # If no specific matches or no planned topic, fallback to general hot facts
-    if not trending_facts:
-        trending_facts = get_trending_facts_reddit()
+    for sub in subreddits:
+        try:
+            url = f"https://www.reddit.com/r/{sub}/search.json?q={search_query}&restrict_sr=1&sort=top&limit=10"
+            headers = {'User-Agent': 'TubeAutoma/1.0'}
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                posts = response.json()['data']['children']
+                for post in posts:
+                    title = post['data'].get('title', '')
+                    content = post['data'].get('selftext', '')
+                    # Filter for "Free" or "Open Source"
+                    if any(kw in title.lower() for kw in ["free", "open source", "no cost", "api"]):
+                        if len(title) < 150:
+                            ai_tools.append({"title": title, "content": content})
+        except:
+            pass
     
-    if trending_facts and len(trending_facts) > 0:
-        # Use trending fact
-        print(f"  [OK] Found {len(trending_facts)} trending facts from Reddit")
-        fact = random.choice(trending_facts)
+    if ai_tools:
+        # Pick a tool
+        selected = random.choice(ai_tools)
+        tool_name = selected['title']
+        print(f"  [SELECTED TOOL] {tool_name}")
         
-        # Track used fact
-        save_used_joke(fact)  # Reuse joke tracking for facts
-        
-        print(f"  [SELECTED] {fact[:80]}...")
+        # Format script for 45-60 sec Short
+        fact_text = f"Looking for a free AI tool? Check out {tool_name}. It's absolute magic for {planned_topic if planned_topic else 'your daily tasks'}. Follow for more AI hacks!"
     else:
-        # Fallback to curated facts
-        print(f"  [WARN] Using curated facts (trending not available)")
-        fact = get_fact()
-    # Add subscribe hook
-    subscribe_text = "Subscribe to Daily Meme Dose for more!"
-    full_text = f"{fact} {subscribe_text}"
+        # Fallback to high-value tech facts
+        print(f"  [WARN] Fallback: Generic AI productivity hack")
+        hacks = [
+            "Did you know you can use Gemini and Claude for free to automate your entire spreadsheet workflow? Just ask for a Python script!",
+            "Stop paying for AI image generators. Leonardo AI and SeaArt provide incredible daily free credits for high-end art.",
+            "You can now run Llama 3 locally on your computer using Ollama for 100% private and free AI without a subscription."
+        ]
+        fact_text = random.choice(hacks)
+
+    # --- Visual Keyword Extraction ---
+    keyword = "technology" 
+    if planned_topic: keyword = planned_topic.split()[0]
     
-    # --- VIRAL POLISH: Contextual Visuals ---
-    # Extract keyword from fact (Simple NLP: Longest noun-like word)
-    import re
-    words = re.findall(r'\b[A-Za-z]{4,}\b', fact) # Words > 4 chars
-    # Remove common stop words
-    stop_words = {'that', 'this', 'with', 'from', 'have', 'what', 'your', 'about', 'know', 'make', 'just', 'like'}
-    good_words = [w for w in words if w.lower() not in stop_words]
+    # --- Professional Hook Integration ---
+    from ypp_script_template import generate_hook
+    hook = generate_hook(planned_topic if planned_topic else "AI Tools", is_part_2)
+    fact_text = f"{hook} {fact_text}"
     
-    keyword = "satisfying" # Default
-    if good_words:
-        # Pick longest word (usually the most specific topic)
-        keyword = max(good_words, key=len)
-        print(f"  [VISUAL] Extracted keyword: {keyword}")
-        
-    hashtags = get_hashtags()
-    title = f"Did you know this? 🤯 {hashtags.split()[1]}" # Catchy title
-    description = f"{fact}\n\n{subscribe_text}\n\n{hashtags}"
+    hashtags = "#AI #ArtificialIntelligence #TechHacks #Productivity #Shorts"
+    title_prefix = "PART 2: " if is_part_2 else "FREE AI Tool! 🤖 "
+    title = f"{title_prefix}{tool_name[:25] if 'tool_name' in locals() else ''}"
+    description = f"{fact_text}\n\n{hashtags}"
     
     return {
-        "text": full_text,
-        "keyword": keyword, # Pass keyword to generator
+        "text": fact_text,
+        "keyword": keyword,
         "title": title,
         "description": description,
         "tags": hashtags,
-        "youtube_category": "27" # Education
+        "youtube_category": "28" # Science & Tech
     }
 
 def fetch_wikipedia_content(topic):
@@ -648,95 +644,42 @@ def fetch_wikipedia_content(topic):
         return None
 
 def get_long_video_metadata():
-    # --- REBRANDING: Long Video is now a MEME COMPILATION ---
-    print(f"\n[*] Generating LONG FORM Meme Compilation...")
+    """TECH SOLUTIONS TUTORIAL (8+ Minutes)"""
+    print(f"\n[*] Generating LONG FORM Tech Solution Tutorial...")
     
-    # --- BRAIN INTEGRATION ---
     plan = load_daily_plan()
-    brain_topic = None
+    planned_topic = None
+    is_part_2 = False
     if plan and 'long' in plan:
-        brain_topic = plan['long'].get('topic')
-        print(f"  [BRAIN] Long Video Strategy: {brain_topic}")
+        planned_topic = plan['long'].get('topic')
+        is_part_2 = plan.get('is_part_2', False)
+        print(f"  [BRAIN] Tech Solution topic: {planned_topic} (Part 2: {is_part_2})")
+
+    topic = planned_topic if planned_topic else "Optimizing Your PC"
     
-    # Target: ~8 minutes. Approx 15 seconds per meme = 32 memes needed. Safety margin -> 50 memes.
-    target_count = 50
-    meme_pool = []
+    # 8-minute video needs ~1200 words. Refactored to use YPP-Safe Script Generator
+    # Fetch Wikipedia content for depth
+    wiki_data = fetch_wikipedia_content(topic)
+    sentences = wiki_data.get('sentences', []) if wiki_data else []
     
-    # 1. Try Reddit (Multiple Themes)
-    # If Brain provided a topic, try to find memes about THAT topic first
-    themes = []
-    if brain_topic:
-         themes.append({"subreddit": "memes", "id": "brain_trend", "search_term": brain_topic})
-         themes.append({"subreddit": "dankmemes", "id": "brain_trend_2", "search_term": brain_topic})
-         
-    # Add standard backups
-    themes.extend([
-        {"subreddit": "dadjokes", "id": "dad_jokes"},
-        {"subreddit": "Showerthoughts", "id": "shower_thoughts"},
-        {"subreddit": "cleanjokes", "id": "clean_jokes"},
-        {"subreddit": "Jokes", "id": "generic"}
-    ])
+    from ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
+    segments = generate_ypp_safe_script(topic, sentences, is_part_2=is_part_2)
+    segments = ensure_minimum_duration(segments, min_duration=480) # Ensure 8+ minutes
     
-    for theme in themes:
-        if len(meme_pool) >= target_count: break
-        print(f"  Fetching from r/{theme['subreddit']}...")
-        new_jokes = get_trending_memes_reddit(theme)
-        if new_jokes:
-             # Filter used
-             unique_jokes = [j for j in new_jokes if not is_joke_used(j['setup'])]
-             meme_pool.extend(unique_jokes)
-    
-    # 2. Fill with Backup DB if needed
-    if len(meme_pool) < target_count:
-        print(f"  [WARN] Not enough Reddit content ({len(meme_pool)}). Filling from Backup DB...")
-        try:
-            db_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'jokes_db.json')
-            with open(db_path, 'r', encoding='utf-8') as f:
-                all_backup = json.load(f)
-            
-            # Shuffle backup to avoid same order
-            import random
-            random.shuffle(all_backup)
-            
-            for joke in all_backup:
-                if len(meme_pool) >= target_count: break
-                if not is_joke_used(joke['setup']):
-                    meme_pool.append(joke)
-                    
-            # If STILL not enough (rare), reset used tracking for backup jokes and reuse
-            if len(meme_pool) < target_count:
-                 print("  [CRITICAL] Backup exhausted. Reusing jokes for volume.")
-                 random.shuffle(all_backup)
-                 meme_pool.extend(all_backup[:target_count - len(meme_pool)])
-                 
-        except Exception as e:
-            print(f"  [ERROR] Backup DB failure: {e}")
-            while len(meme_pool) < target_count:
-                 meme_pool.append({"setup": "Why did the robot cross the road?", "punchline": "To optimize the traffic flow."})
-    
-    # Cap at target
-    final_memes = meme_pool[:target_count]
-    
-    # Track them
-    for m in final_memes:
-        save_used_joke(m['setup'])
-        
-    print(f"  [OK] Compiled {len(final_memes)} memes for Long Video.")
-    
-    # Create Title/Desc
-    import random
-    hashtags = "#Memes #DailyMemes #Comedy #Compilation #FunnyVideos #TryNotToLaugh #Humor #Shorts"
-    title = f"Ultimate Meme Compilation V{random.randint(1,100)} 🤣 Try Not To Laugh! | yoDailyMemeDose"
-    description = f"Welcome to yoDailyMemeDose! Enjoy this ultimate compilation of the funniest memes and jokes.\n\nSubscribe for more daily laughter!\n\n{hashtags}\n\nDisclaimer: Content sourced from the internet."
-    
+    # Ensure duration and title
+    title_prefix = "PART 2: " if is_part_2 else "How to Fix "
+    title = f"{title_prefix}{topic} (COMPLETE 2026 GUIDE) 💻"
+    hashtags = "#TechSolutions #TechSupport #Fix #Software #Tutorial #Computer"
+    description = f"Step-by-step masterclass on resolving {topic}.\n\n{hashtags}\n\nGenerated by TubeAutoma AI Support."
+
     return {
-        "mode": "meme", 
-        "is_long_compilation": True,
-        "memes": final_memes,
+        "mode": "long",
+        "topic": topic,
+        "segments": segments,
         "title": title,
         "description": description,
         "tags": hashtags,
-        "youtube_category": "23"
+        "youtube_category": "28"  # Science & Tech
     }
 
 # (Commented out old code to prevent errors if we didn't match perfectly)

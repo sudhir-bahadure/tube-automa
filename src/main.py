@@ -2,6 +2,7 @@ import argparse
 import os
 from content import get_video_metadata, get_meme_metadata, get_long_video_metadata
 from generator import create_video
+from thumbnail_generator import create_thumbnail
 from telegram_bot import upload_to_telegram
 
 def main():
@@ -28,6 +29,15 @@ def main():
     output_file = f"viral_{args.category}.mp4"
     # Pass entire metadata object to generator now
     final_video_path = create_video(metadata, output_file, pexels_key)
+    
+    # 2.1 Generate Thumbnail
+    thumbnail_file = f"thumb_{args.category}.jpg"
+    try:
+        final_thumb_path = create_thumbnail(metadata['topic'], thumbnail_file, pexels_key)
+    except Exception as e:
+        print(f"Thumbnail Generation Failed: {e}")
+        final_thumb_path = None
+        
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     
     video_path_final = final_video_path
@@ -41,7 +51,8 @@ def main():
             metadata['title'], 
             metadata['description'], 
             metadata['tags'],
-            metadata.get('youtube_category', '27')
+            metadata.get('youtube_category', '27'),
+            thumbnail_path=final_thumb_path
         )
     except Exception as e:
         print(f"YouTube Upload Module Error: {e}")
@@ -61,6 +72,8 @@ def main():
         
         # Cleanup
         os.remove(final_video_path)
+        if final_thumb_path and os.path.exists(final_thumb_path):
+            os.remove(final_thumb_path)
     else:
         print("Error: Video generation failed.")
 

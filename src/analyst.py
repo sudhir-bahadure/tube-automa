@@ -159,4 +159,10 @@ def main():
         print("[*] Analyst: No clear directive generated (Not enough data or auth failure).")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"[!] Analyst critical failure: {e}")
+        # Silent exit to not disturb downstream workflows
+        import sys
+        sys.exit(0)

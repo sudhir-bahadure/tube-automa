@@ -11,17 +11,18 @@ DIRECTIVES_FILE = os.path.join(ASSETS_DIR, 'analyst_directives.json')
 HISTORY_FILE = os.path.join(ASSETS_DIR, 'strategy_history.json')
 
 # Niche Weighting (Focus on Meme/Internet Culture)
+# Niche Weighting (Focus on High-CPM AI & Tech Solutions)
 NICHE_WEIGHTS = {
-    "Internet Culture": 1.5,
-    "Relationship Humor": 1.4,
-    "Gaming Memes": 1.3,
-    "Work & Corporate Life": 1.2,
-    "Gym & Fitness Memes": 1.1,
-    "School & Student Life": 1.1,
-    "Social Media Trends": 1.4,
-    "Pet & Animal Humor": 1.2,
-    "Dad Jokes & Puns": 1.0,
-    "Daily Relatable Struggles": 1.3
+    "AI Agents": 2.0,
+    "Large Language Models": 1.8,
+    "Generative AI": 1.7,
+    "OpenAI News": 1.6,
+    "Nvidia Blackwell": 1.6,
+    "AI Productivity Tools": 1.5,
+    "Software Solutions": 1.3,
+    "Internet Culture": 1.2,
+    "Tech Trends": 1.3,
+    "Cybersecurity": 1.1
 }
 
 def fetch_google_trends():
@@ -39,14 +40,19 @@ def fetch_google_trends():
     except Exception as e:
         print(f"[!] Brain: Google Trends fetch failed: {e}")
         
+    # Priority AI Keywords to inject if trends are unrelated
+    ai_keywords = ["AI Agent", "LLM", "Generative AI", "Nvidia", "OpenAI", "ChatGPT", "Claude AI"]
+    for kw in ai_keywords:
+        trends.insert(0, kw)
+        
     return trends
 
 def fetch_backup_trends():
-    """Evergreen viral meme topics if live fetch fails"""
+    """Evergreen viral AI and tech problem topics if live fetch fails"""
     return [
-        "Internet Culture", "Relationship Humor", "Gaming Memes", 
-        "Work & Corporate Life", "Gym & Fitness Memes", "School & Student Life",
-        "Social Media Trends", "Pet & Animal Humor", "Daily Relatable Struggles"
+        "Best Free AI Video Editors", "How to Fix Windows Update Errors", "Top 5 Chrome Extensions for Productivity", 
+        "Free ChatGPT Alternatives", "How to Recover Deleted Files", "Best AI Image Generators for Free",
+        "How to Speed Up Slow Laptop", "Secret Mac Shortcuts", "Easy AI Branding Tools"
     ]
 
 def load_history():
@@ -113,6 +119,13 @@ def determine_strategy(trends):
     candidates = evolve_trends(trends, history)
     hero_topic = candidates[0][0] if candidates else random.choice(trends)
     
+    # --- PART 2 DETECTION ---
+    is_part_2 = False
+    times_used = history.get("topics", {}).get(hero_topic, {}).get("count", 0)
+    if times_used > 0:
+        print(f"[*] Brain: Topic '{hero_topic}' has been used before. Marking as PART 2.")
+        is_part_2 = True
+    # -------------------------
     # --- Analyst Integration (The Ultimate Evolution Signal) ---
     is_analyst_pick = False
     if os.path.exists(DIRECTIVES_FILE):
@@ -172,6 +185,7 @@ def determine_strategy(trends):
         "generated_at": datetime.datetime.now().isoformat(),
         "today_topic": hero_topic,
         "is_analyst_boosted": is_analyst_pick,
+        "is_part_2": is_part_2,
         "all_trends_snapshot": trends,
         "meme": meme_plan,
         "fact": fact_plan,

@@ -1,34 +1,33 @@
 {
-  "generated_at": "2026-01-02T15:01:12.537922",
-  "today_topic": "Internet Culture",
+  "generated_at": "2026-01-03T12:13:54.067807",
+  "today_topic": "Generative AI",
   "is_analyst_boosted": false,
+  "is_part_2": false,
   "all_trends_snapshot": [
-    "Internet Culture",
-    "Relationship Humor",
-    "Gaming Memes",
-    "Work & Corporate Life",
-    "Gym & Fitness Memes",
-    "School & Student Life",
-    "Social Media Trends",
-    "Pet & Animal Humor",
-    "Daily Relatable Struggles"
+    "Claude AI",
+    "ChatGPT",
+    "OpenAI",
+    "Nvidia",
+    "Generative AI",
+    "LLM",
+    "AI Agent"
   ],
   "meme": {
     "theme_mode": "trending_or_random",
-    "forced_topic": "Internet Culture",
+    "forced_topic": "Generative AI",
     "is_analyst_pick": false,
     "backup_theme": {
       "subreddit": "memes",
-      "hashtags": "#InternetCulture #Trending #Viral #Funny"
+      "hashtags": "#GenerativeAI #Trending #Viral #Funny"
     }
   },
   "fact": {
-    "topic": "Internet Culture",
-    "search_query": "interesting facts about Internet Culture"
+    "topic": "Generative AI",
+    "search_query": "interesting facts about Generative AI"
   },
   "long": {
-    "topic": "Internet Culture",
-    "title_concept": "Why Everyone is Talking About Internet Culture",
-    "search_query": "Internet Culture"
+    "topic": "Generative AI",
+    "title_concept": "Why Everyone is Talking About Generative AI",
+    "search_query": "Generative AI"
   }
 }

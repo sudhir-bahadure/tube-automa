@@ -51,14 +51,16 @@ def is_video_used(video_url):
     return video_url in used_videos
 
 def get_varied_keyword(base_keyword, segment_index):
-    """Add variations to keywords for more variety"""
+    """Add professional cinematic variations to keywords for premium variety"""
     variations = [
-        base_keyword,
-        f"{base_keyword} nature",
-        f"{base_keyword} beautiful",
-        f"{base_keyword} amazing",
-        f"{base_keyword} cinematic",
-        f"{base_keyword} aerial"
+        f"cinematic {base_keyword}",
+        f"{base_keyword} futuristic technology",
+        f"minimalist {base_keyword} workspace",
+        f"abstract {base_keyword} 4k",
+        f"high-tech {base_keyword} laboratory",
+        f"aerial view of {base_keyword}",
+        f"macro shot of {base_keyword}",
+        f"elegant {base_keyword} visualization"
     ]
     return variations[segment_index % len(variations)]
 
@@ -677,8 +679,14 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             txt = None
             for font in font_list:
                 try:
-                    txt = (TextClip(chunk, fontsize=70, color='white', font=font, 
-                                   method='caption', size=(900, None), stroke_color='black', stroke_width=2)
+                    # Professional Caption: Semi-transparent background box
+                    txt_box_h = 150
+                    txt_bg = ColorClip(size=(950, txt_box_h), color=(0, 0, 0), duration=chunk_duration)
+                    txt_bg = txt_bg.set_opacity(0.6).set_position('center').set_start(i * chunk_duration)
+                    txt_clips.append(txt_bg)
+                    
+                    txt = (TextClip(chunk, fontsize=60, color='white', font=font, 
+                                   method='caption', size=(900, None), align='center')
                            .set_position('center')
                            .set_duration(chunk_duration)
                            .set_start(i * chunk_duration))
