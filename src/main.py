@@ -1,6 +1,6 @@
 import argparse
 import os
-from content import get_video_metadata, get_meme_metadata, get_long_video_metadata
+from content_enhanced import get_video_metadata, get_meme_metadata, get_long_video_metadata
 from generator import create_video
 from thumbnail_generator import create_thumbnail
 from telegram_bot import upload_to_telegram

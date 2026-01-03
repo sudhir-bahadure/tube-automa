@@ -102,7 +102,7 @@ def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-AriaNeural" # Female, Natural, Professional 
+    voice = "en-US-AndrewMultilingualNeural" # Natural, Human-like, Conversational 
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
     max_retries = 3
@@ -483,8 +483,21 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             audio = CompositeAudioClip([audio_clip]).set_duration(duration)
             
             # 2. Get Background (Landscape for long videos)
+            # Smart Visual Selection (Stock "Avatar" / Presenter)
+            visual_query = keyword
+            if i % 4 == 0:
+                 # Simulate "Human Host" - Alternate between different presenter types
+                 presenters = [
+                     "business person talking directly to camera",
+                     "tech vlogger talking",
+                     "person explaining looking at camera",
+                     "teacher explaining to camera"
+                 ]
+                 visual_query = f"{random.choice(presenters)} {keyword}"
+                 print(f"  [VISUAL] Segment {i}: Using Stock Presenter ({visual_query})")
+
             bg_filename = f"temp_long_bg_{i}.mp4"
-            bg_file = download_background_video(keyword, pexels_key, bg_filename, orientation="landscape", segment_index=i)
+            bg_file = download_background_video(visual_query, pexels_key, bg_filename, orientation="landscape", segment_index=i)
             clip = None
             if bg_file:
                 try:
