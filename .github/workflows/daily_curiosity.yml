@@ -1,0 +1,108 @@
+name: Daily Curiosity Shorts Uploader
+
+# ============================================================================
+# SCHEDULE: Runs daily at 7:30 PM IST (14:00 UTC)
+# PURPOSE: Generate, render, and upload one education/curiosity Short per day
+# ============================================================================
+
+on:
+  schedule:
+    # Cron: minute hour day month dayofweek (UTC)
+    # 14:00 UTC = 7:30 PM IST
+    - cron: '0 14 * * *'
+  
+  # Manual trigger option (for testing or immediate runs)
+  workflow_dispatch:
+
+# Grant write permissions for potential future needs (e.g., artifact storage)
+permissions:
+  contents: write
+
+jobs:
+  generate-and-upload-short:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # ========================================================================
+    # STEP 1: Checkout repository code
+    # ========================================================================
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    
+    # ========================================================================
+    # STEP 2: Setup Python environment
+    # ========================================================================
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    # ========================================================================
+    # STEP 3: Install system dependencies (FFmpeg, ImageMagick)
+    # ========================================================================
+    - name: Install System Dependencies
+      run: |
+        echo "Installing FFmpeg and ImageMagick..."
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg imagemagick
+        
+        # Fix ImageMagick policy for text rendering
+        echo "Configuring ImageMagick permissions..."
+        sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"\/>/<policy domain="path" rights="read|write" pattern="@*" \/>/g' /etc/ImageMagick-6/policy.xml || echo "Policy file not found, skipping"
+    
+    # ========================================================================
+    # STEP 4: Install Python dependencies
+    # ========================================================================
+    - name: Install Python Dependencies
+      run: |
+        echo "Installing required Python packages..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    # ========================================================================
+    # STEP 5: Generate and upload Short
+    # Environment secrets are injected here
+    # ========================================================================
+    - name: Generate Curiosity Short and Upload to YouTube
+      env:
+        # Pexels API key for stock video/image backgrounds
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        
+        # Telegram bot credentials (for notifications)
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        
+        # YouTube API credentials (for automated upload)
+        # YouTube API credentials (for automated upload)
+        # YouTube API credentials (for automated upload)
+        YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}
+      run: |
+        echo "=================================================="
+        echo "Starting Curiosity Shorts Generation Pipeline"
+        echo "=================================================="
+        echo "Timestamp: $(date)"
+        echo ""
+        
+        # Execute main script with curiosity category
+        python src/main.py --category curiosity
+        
+        echo ""
+        echo "=================================================="
+        echo "Pipeline completed"
+        echo "=================================================="
+    
+    # ========================================================================
+    # STEP 6: Upload artifacts (optional - for debugging)
+    # Saves generated video and thumbnail for review
+    # ========================================================================
+    - name: Upload Generated Assets (Optional)
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: daily-short-output
+        path: |
+          output/*.mp4
+          output/*.jpg
+        retention-days: 7
