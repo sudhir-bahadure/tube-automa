@@ -831,7 +831,9 @@ def get_curiosity_metadata():
     save_used_joke(selected_fact)
     
     # Build structured script (22-35 seconds target)
-    hook = random.choice(selected_pillar['hook_templates'])
+    hook_template = random.choice(selected_pillar['hook_templates'])
+    subject = selected_fact.split('.')[0][:60]
+    hook = f"{hook_template} {subject}."
     build = f"{selected_pillar['build_prefix']} {selected_fact.split('.')[0]}."
     
     # Reveal (rest of fact or elaboration)
