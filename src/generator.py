@@ -439,6 +439,137 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
         return output_path
 
+    elif mode == 'curiosity':
+        # --- NEW CURIOSITY/FACT RENDERING ---
+        text = metadata['text']
+        visual_keyword = metadata.get('keyword', 'abstract')
+        print(f"Generating CURIOSITY video: {visual_keyword}...")
+
+        # 1. Generate Audio (Neutral, Calm)
+        # Using a slightly faster rate for facts
+        asyncio.run(generate_audio(text, "temp_curiosity.mp3", rate="+5%"))
+        audio_clip = AudioFileClip("temp_curiosity.mp3")
+        duration = audio_clip.duration + 1.0 # Pause at end
+
+        # 2. Background Music (Ambient/Lo-fi)
+        music_file = None
+        try:
+             music_dir = os.path.join(os.path.dirname(__file__), '..', 'assets', 'music')
+             if os.path.exists(music_dir):
+                 # Prefer lo-fi or ambient if named as such, otherwise random
+                 mp3s = [f for f in os.listdir(music_dir) if f.endswith('.mp3')]
+                 if mp3s:
+                     music_file = os.path.join(music_dir, random.choice(mp3s))
+        except: pass
+        
+        # Mix Audio
+        audio = mix_audio(audio_clip, music_path=music_file, music_vol=0.15)
+
+        # 3. Visuals (STRICT COPYRIGHT-SAFE ONLY)
+        # Force copyright-safe keywords - NO faces, NO copyrighted content
+        safe_visual_categories = [
+            "abstract geometric patterns",
+            "flowing liquid motion",
+            "particle effects animation",
+            "nature macro photography",
+            "space nebula stars",
+            "technology circuit boards",
+            "minimal gradient backgrounds",
+            "light rays bokeh"
+        ]
+        
+        # Override keyword if it might contain copyrighted content
+        visual_search = visual_keyword.lower()
+        forbidden_terms = ["movie", "tv", "show", "celebrity", "actor", "tiktok", "viral", "meme", "face"]
+        if any(term in visual_search for term in forbidden_terms):
+            visual_search = random.choice(safe_visual_categories)
+            print(f"  [VISUAL OVERRIDE] Using safe category: {visual_search}")
+        else:
+            # Enhance with safe modifiers
+            visual_search = f"abstract {visual_keyword} background"
+        
+        bg_file = download_background_video(visual_search, pexels_key, "temp_bg_curiosity.mp4")
+        clip = None
+        
+        if bg_file:
+            try:
+                clip = VideoFileClip(bg_file)
+                if clip.duration < duration:
+                    clip = clip.loop(duration=duration)
+                else:
+                    clip = clip.subclip(0, duration)
+            except:
+                clip = None
+        
+        if not clip:
+            clip = ColorClip(size=(1080, 1920), color=(10, 10, 25), duration=duration)
+
+        # Resize to 9:16
+        w, h = clip.size
+        target_ratio = 9/16
+        if w/h > target_ratio:
+            new_w = h * target_ratio
+            clip = crop(clip, x1=(w/2 - new_w/2), width=new_w, height=h)
+        else:
+            new_h = w / target_ratio
+            clip = crop(clip, y1=(h/2 - new_h/2), width=w, height=new_h)
+        clip = clip.resize(newsize=(1080, 1920))
+
+        # 4. Text Overlay (Clean, Glassmorphism style)
+        words = text.split()
+        # Group into larger chunks for faster reading flow
+        chunks = []
+        chunk_size = 7
+        for i in range(0, len(words), chunk_size):
+            chunks.append(" ".join(words[i:i+chunk_size]))
+            
+        txt_clips = []
+        chunk_duration = duration / len(chunks)
+        
+        for i, chunk in enumerate(chunks):
+            # Glassmorphism Box
+            box_w, box_h = 900, 250
+            box = ColorClip(size=(box_w, box_h), color=(0,0,0), duration=chunk_duration)
+            box = box.set_opacity(0.5).set_position('center').set_start(i * chunk_duration)
+            
+            # Text
+            try:
+                txt = (TextClip(chunk, fontsize=65, color='white', font='Arial', 
+                            method='caption', size=(850, None), align='center', stroke_color='black', stroke_width=1)
+                    .set_position('center')
+                    .set_duration(chunk_duration)
+                    .set_start(i * chunk_duration))
+                
+                txt_clips.append(box)
+                txt_clips.append(txt)
+            except Exception as e:
+                print(f"  [WARN] TextClip failed (ImageMagick missing?): {e}")
+                # Skip text, just show video
+                continue
+
+        # 5. Branding (Subtle)
+        try:
+            brand = (TextClip("@DailyCuriosities", fontsize=30, color='white', font='Arial', opacity=0.7)
+                    .set_position(('center', 1600))
+                    .set_duration(duration))
+            txt_clips.append(brand)
+        except:
+            pass
+
+        # Compile
+        final_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
+        final_clip.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
+
+        # Cleanup
+        final_clip.close()
+        if clip: clip.close()
+        try: 
+            os.remove("temp_curiosity.mp3")
+            if bg_file: os.remove(bg_file)
+        except: pass
+        
+        return output_path
+
     elif mode == 'long' and 'segments' in metadata:
         # --- NEW LONG-FORM DOCUMENTARY LOGIC ---
         segments = metadata['segments']

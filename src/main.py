@@ -1,13 +1,14 @@
 import argparse
 import os
 from content_enhanced import get_video_metadata, get_meme_metadata, get_long_video_metadata
+from content import get_curiosity_metadata
 from generator import create_video
 from thumbnail_generator import create_thumbnail
 from telegram_bot import upload_to_telegram
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
+    parser.add_argument("--category", default="fact", help="Video Category: fact, meme, long, or curiosity")
     args = parser.parse_args()
     
     print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
@@ -17,10 +18,15 @@ def main():
         metadata = get_meme_metadata()
     elif args.category == "long":
         metadata = get_long_video_metadata()
+    elif args.category == "curiosity":
+        metadata = get_curiosity_metadata()
     else:
         metadata = get_video_metadata()
         
-    print(f"Topic: {metadata['title']}")
+    try:
+        print(f"Topic: {metadata['title'].encode('cp1252', 'ignore').decode('cp1252')}")
+    except:
+        print(f"Topic: {metadata['title'].encode('ascii', 'ignore').decode('ascii')}")
     
     # 2. Generate Video
     # Get Pexels Key from Environment (Secrets)

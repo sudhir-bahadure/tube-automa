@@ -643,6 +643,275 @@ def fetch_wikipedia_content(topic):
         print(f"Wikipedia fetch error: {e}")
         return None
 
+# ============================================================================
+# NEW CURIOSITY/FACTS WORKFLOW
+# ============================================================================
+
+def get_curiosity_metadata():
+    """
+    4-Pillar Shorts Content Generator
+    Pillars: Fact Shock, Internet Curiosity, Clean Meme Logic, Comparison Curiosity
+    Structure: [0-2s Hook] [3-15s Build] [16-28s Reveal] [Last 3s Loop]
+    Duration: 22-35 seconds
+    """
+    print("\n[*] Generating structured curiosity content...")
+    
+    # Select ONE pillar randomly
+    pillars = [
+        {
+            "name": "Fact Shock",
+            "sources": ["TodayILearned", "Damnthatsinteresting", "science"],
+            "hook_templates": [
+                "This sounds impossible.",
+                "Most people get this wrong.",
+                "This breaks common sense.",
+                "Scientists were shocked."
+            ],
+            "build_prefix": "Here is what happened.",
+            "reveal_prefix": "The truth is",
+            "close_templates": [
+                "Nature is fascinating.",
+                "Reality is stranger.",
+                "Science explains everything."
+            ]
+        },
+        {
+            "name": "Internet Curiosity",
+            "sources": ["Showerthoughts", "explainlikeimfive"],
+            "hook_templates": [
+                "Think about this.",
+                "This will change your view.",
+                "Nobody notices this.",
+                "This is everywhere."
+            ],
+            "build_prefix": "Consider the following.",
+            "reveal_prefix": "When you realize",
+            "close_templates": [
+                "Mind expanded.",
+                "Now you see it.",
+                "Perspective shifted."
+            ]
+        },
+        {
+            "name": "Clean Meme Logic",
+            "sources": ["Showerthoughts", "funny"],
+            "hook_templates": [
+                "This makes no sense.",
+                "Wait for it.",
+                "The irony is real.",
+                "Logic has left."
+            ],
+            "build_prefix": "Think about it.",
+            "reveal_prefix": "The funny part is",
+            "close_templates": [
+                "Makes you think.",
+                "Life is weird.",
+                "Perfectly illogical."
+            ]
+        },
+        {
+            "name": "Comparison Curiosity",
+            "sources": ["todayilearned", "science"],
+            "hook_templates": [
+                "Compare these two things.",
+                "One is bigger.",
+                "The difference is massive.",
+                "Size is deceiving."
+            ],
+            "build_prefix": "First item.",
+            "reveal_prefix": "Second item is",
+            "close_templates": [
+                "Scale is everything.",
+                "Perspective matters.",
+                "Numbers tell stories."
+            ]
+        }
+    ]
+    
+    selected_pillar = random.choice(pillars)
+    print(f"  [PILLAR] {selected_pillar['name']}")
+    
+    # Fetch content from Reddit
+    facts = []
+    for subreddit in selected_pillar['sources']:
+        try:
+            url = f"https://www.reddit.com/r/{subreddit}/top.json?t=week&limit=15"
+            headers = {'User-Agent': 'TubeAutoma/1.0'}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                posts = response.json()['data']['children']
+                for post in posts:
+                    data = post['data']
+                    title = data.get('title', '')
+                    
+                    # Strict filtering
+                    if len(title) < 40 or len(title) > 200:
+                        continue
+                    
+                    blacklist = [
+                        "police", "murder", "kill", "died", "death", "war", "abuse", "drug",
+                        "sex", "assault", "racist", "politics", "trump", "biden", "religion",
+                        "nsfw", "gore", "blood", "shoot", "attack", "victim", "hate"
+                    ]
+                    if any(bad in title.lower() for bad in blacklist):
+                        continue
+                    
+                    # Clean prefixes
+                    clean_title = title
+                    for prefix in ["TIL ", "TIL that ", "TIL: ", "ELI5: ", "ELI5 "]:
+                        if clean_title.startswith(prefix):
+                            clean_title = clean_title[len(prefix):]
+                    
+                    if is_joke_used(clean_title):
+                        continue
+                    
+                    facts.append(clean_title)
+                    
+        except Exception as e:
+            print(f"  [WARN] Fetch error for r/{subreddit}: {e}")
+    
+    # Fallback content by pillar (Expanded for reliability)
+    if not facts:
+        print("  [FALLBACK] Using curated content")
+        fallbacks = {
+            "Fact Shock": [
+                "A day on Venus is longer than a year on Venus. It takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun.",
+                "Honey never spoils. Archaeologists found 3000 year old honey in Egyptian tombs that was still edible.",
+                "Octopuses have three hearts and blue blood. Two hearts pump blood to the gills while one pumps to the body.",
+                "The Eiffel Tower can be 15 cm taller during the summer. Thermal expansion causes the iron to expand when temperatures rise.",
+                "Bananas are berries, but strawberries are not. Botanically, a berry has seeds inside the flesh.",
+                "Wombat poop is cube-shaped. This prevents it from rolling away and marks their territory.",
+                "Sharks existed before trees. Sharks are 400 million years old, while trees appeared 350 million years ago.",
+                "Water can boil and freeze at the same time. It's called the triple point.",
+                "A cloud can weigh more than a million pounds. The water droplets are just spread out.",
+                "Your bones are four times stronger than concrete. A cubic inch of bone can bear a load of 19,000 lbs."
+            ],
+            "Internet Curiosity": [
+                "You have never seen your face in person. Only reflections and photographs.",
+                "Every photo of you is from the past. You have never seen yourself in real time.",
+                "Your brain named itself. Then it got curious about how it works.",
+                "You can't hum while holding your nose. Try it and look silly.",
+                "The oldest person was born with a completely different set of humans. Everyone else has been replaced.",
+                "You ignore your nose every second. Your brain just edits it out of your vision.",
+                "Clapping is just hitting yourself because you like something. It is a weird human habit.",
+                "Your future self is watching you right now through memories. Act accordingly.",
+                "Reading is just staring at dead wood and hallucinating. A vivid hallucination shared by millions.",
+                "Sleep is just a free trial of death. And we love it."
+            ],
+            "Clean Meme Logic": [
+                "Whoever invented the knock knock joke deserves a no bell prize.",
+                "Fireflies are the only creatures that can make light without heat. They are literally the coolest.",
+                "The word bed actually looks like a bed.",
+                "If you clean a vacuum cleaner, you become the vacuum cleaner. Think about it.",
+                "Laziness is just resting before you get tired. It is efficient energy management.",
+                "A dentist makes money from your bad teeth. Why trust the toothpaste they recommend?",
+                "If two mind readers read each other's minds, whose mind are they reading?",
+                "Nothing starts with N and ends with G. Nothing does.",
+                "Maybe oxygen makes you live for 80 years but kills you slowly. It is a slow oxidation process.",
+                "Why do we press harder on the remote when the batteries are dead? We hope determination powers it."
+            ],
+            "Comparison Curiosity": [
+                "There are more trees on Earth than stars in the Milky Way galaxy. Three trillion trees versus 400 billion stars.",
+                "The Pacific Ocean is larger than all land on Earth combined. It covers more area than all continents.",
+                "A single teaspoon of neutron star weighs six billion tons. More than Mount Everest.",
+                "Humans share 50% of their DNA with bananas. We are half fruit.",
+                "Cleopatra lived closer to the iPhone than the Pyramids. Time is distorted in our minds.",
+                "There are more fake flamingos in the world than real ones. Plastic birds are winning.",
+                "Russia has a larger surface area than Pluto. A country bigger than a dwarf planet.",
+                "A million seconds is 11 days. A billion seconds is 31 years.",
+                "If you fold a paper 42 times, it would reach the moon. Exponential growth is scary.",
+                "All the gold ever mined fits in a cube of 21 meters. It would fit under the Eiffel Tower."
+            ]
+        }
+        facts = fallbacks.get(selected_pillar['name'], fallbacks["Fact Shock"])
+    
+    # Select content
+    selected_fact = random.choice(facts)
+    save_used_joke(selected_fact)
+    
+    # Build structured script (22-35 seconds target)
+    hook = random.choice(selected_pillar['hook_templates'])
+    build = f"{selected_pillar['build_prefix']} {selected_fact.split('.')[0]}."
+    
+    # Reveal (rest of fact or elaboration)
+    fact_parts = selected_fact.split('.')
+    if len(fact_parts) > 1:
+        reveal = f"{selected_pillar['reveal_prefix']} {'. '.join(fact_parts[1:]).strip()}."
+    else:
+        reveal = f"{selected_pillar['reveal_prefix']} this is completely true."
+    
+    close = random.choice(selected_pillar['close_templates'])
+    
+    # Combine (NO questions, NO CTAs)
+    script = f"{hook} {build} {reveal} {close}"
+    
+    # Clean up
+    script = script.replace('..', '.').replace('  ', ' ').strip()
+    if not script.endswith('.'):
+        script += '.'
+    
+    print(f"  [SCRIPT] {script[:60]}...")
+    
+    # Generate on-screen text cues (max 6 words per line)
+    text_cues = []
+    words = script.split()
+    for i in range(0, len(words), 6):
+        chunk = ' '.join(words[i:i+6])
+        if chunk:
+            text_cues.append(chunk)
+    
+    # Visual keyword extraction
+    visual_keyword = "abstract background"
+    fact_words = selected_fact.split()
+    if len(fact_words) > 2:
+        # Extract subject (first 2-3 meaningful words)
+        potential = ' '.join(fact_words[:3])
+        if not potential.lower().startswith(('the ', 'a ', 'an ', 'this ', 'that ')):
+            visual_keyword = potential
+        elif len(fact_words) > 3:
+            visual_keyword = ' '.join(fact_words[1:4])
+    
+    
+    # Generate visual instructions (copyright-safe)
+    visual_instructions = []
+    segments = [
+        {"timing": "0-2s", "type": "Hook", "visual": "Abstract particle effects or geometric patterns"},
+        {"timing": "3-15s", "type": "Build", "visual": f"Stock footage: {visual_keyword} (nature/tech/abstract only)"},
+        {"timing": "16-28s", "type": "Reveal", "visual": "Flowing motion graphics or light rays"},
+        {"timing": "Last 3s", "type": "Close", "visual": "Minimal gradient fade"}
+    ]
+    visual_instructions = segments
+    
+    # Thumbnail specification
+    thumbnail_spec = {
+        "text": thumb_text[:25] if len(words) <= 4 else random.choice([
+            "IMPOSSIBLE", "WAIT", "MIND BLOWN", "TRUTH"
+        ]),
+        "style": "High contrast, dark background, bright yellow/white text",
+        "forbidden": "NO emojis, NO arrows, NO faces, NO copyrighted imagery",
+        "background": "Abstract gradient or geometric patterns only"
+    }
+    
+    print(f"  [VISUAL] {visual_keyword}")
+    print(f"  [TEXT CUES] {len(text_cues)} segments")
+    print(f"  [THUMB] {thumbnail_spec['text']}")
+    
+    return {
+        "mode": "curiosity",
+        "pillar": selected_pillar['name'],
+        "text": script,
+        "text_cues": text_cues,
+        "visual_instructions": visual_instructions,
+        "thumbnail_spec": thumbnail_spec,
+        "keyword": visual_keyword,
+        "topic": visual_keyword,
+        "title": f"{selected_pillar['name']} - Shorts",
+        "description": f"{selected_fact}\n\n#Shorts #Facts #Curiosity #Learning",
+        "tags": "#Shorts #Facts #Curiosity #Learning #Education",
+        "youtube_category": "27"
+    }
+
 def get_long_video_metadata():
     """TECH SOLUTIONS TUTORIAL (8+ Minutes)"""
     print(f"\n[*] Generating LONG FORM Tech Solution Tutorial...")
