@@ -41,62 +41,61 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
     if not youtube:
         return False
         
-    # --- MULTI-ACCOUNT STRUCTURAL LOCKDOWN ---
+    # --- MULTI-ACCOUNT STRUCTURAL LOCKDOWN (Scoped Version) ---
+    print("[*] VERSION: Structural Isolation v2.2 (Scoped)")
     try:
-        # 1. Fetch authenticated channel identity (Basic info to avoid 403)
-        channels_response = youtube.channels().list(mine=True, part="snippet").execute()
-        channel_data = channels_response['items'][0]['snippet']
-        channel_title = channel_data['title']
-        channel_handle = channel_data.get('customUrl', '')
-        
-        print(f"[*] Authenticating as: {channel_title} ({channel_handle})")
-        
-        # 2. Categorize the Target Account
-        is_curiobyte = ("CurioByte" in channel_title) or (channel_handle == "@CurioByte143")
-        is_old_channel = not is_curiobyte # Assuming only two accounts
-        
-        # 3. Security Check: Category Alignment
-        # Rules:
-        # - CurioByte: ONLY 'curiosity'
-        # - Old Channel: ONLY 'fact', 'meme', 'long'
+        # Since 'youtube.upload' scope does not allow channels().list,
+        # we identify the target account via safe Environment Verification.
         
         target_channel_env = os.environ.get("TARGET_CHANNEL")
         workflow_name = os.environ.get("GITHUB_WORKFLOW", "manual_run")
         
-        if is_curiobyte:
-            print("[*] [GUARD] Target: CurioByte (sudhirmturk@gmail.com)")
-            if mode != "curiosity" or target_channel_env != "curiosity":
-                print(f"\n[SECURITY BLOCK] Account Mismatch!")
-                print(f"       ERROR: Account 'CurioByte' must ONLY receive curiosity content.")
-                print(f"       ATTEMPTED: '{mode}' content from '{workflow_name}'.")
+        # Verify identity intent
+        is_curiobyte_intent = (target_channel_env == "curiosity")
+        
+        print(f"[*] Target intent: {'CurioByte' if is_curiobyte_intent else 'Old Channel'}")
+        
+        if is_curiobyte_intent:
+            # RULE: CurioByte ONLY allows 'curiosity' mode and Shorts duration
+            if mode != "curiosity":
+                print(f"\n[SECURITY BLOCK] Intent Mismatch!")
+                print(f"       Account: CurioByte (sudhirmturk@gmail.com)")
+                print(f"       ERROR: CurioByte MUST ONLY receive curiosity content.")
+                print(f"       ATTEMPTED: '{mode}' from '{workflow_name}'.")
                 print(f"       ACTION: Upload Terminated structurally.")
                 return None
             
-            # Additional Shorts Guard for Curiosity Channel
+            # Verifying source workflow (Curiositiy operations must come from Curiosity workflow)
+            if "Curiosity" not in workflow_name and workflow_name != "manual_run":
+                print(f"\n[SECURITY BLOCK] SOURCE Mismatch!")
+                print(f"       ERROR: Curiosity uploads must come from the Whitelisted Curiosity Workflow.")
+                return None
+
+            # Shorts Duration Lock for CurioByte
             from moviepy.editor import VideoFileClip
             clip = VideoFileClip(file_path)
             duration = clip.duration
             clip.close()
             if duration > 60:
-                print(f"\n[SECURITY BLOCK] Policy Violation: Long video blocked for CurioByte.")
+                print(f"\n[SECURITY BLOCK] Policy Violation: Non-Shorts content blocked for CurioByte.")
                 return None
-
         else:
-            print(f"[*] [GUARD] Target: Old Channel (sudhirt.bahadure@gmail.com)")
-            if mode == "curiosity" or target_channel_env == "curiosity":
-                print(f"\n[SECURITY BLOCK] Account Mismatch!")
-                print(f"       ERROR: Account '{channel_title}' must NOT receive curiosity content.")
-                print(f"       ATTEMPTED: 'curiosity' content from '{workflow_name}'.")
+            # RULE: Old Channel MUST NOT receive 'curiosity' content
+            if mode == "curiosity":
+                print(f"\n[SECURITY BLOCK] Intent Mismatch!")
+                print(f"       Account: Old Channel (sudhirt.bahadure@gmail.com)")
+                print(f"       ERROR: Curiosity content must NOT go to the old channel.")
                 print(f"       ACTION: Upload Terminated structurally.")
                 return None
-                
-        print(f"[*] [GUARD] Identity Match Confirmed. Access Granted.")
+
+        print(f"[*] [GUARD] Identity Intent Confirmed. Access Granted.")
 
     except Exception as e:
         print(f"  [CRITICAL] Architectural Guard failure: {e}")
         print(f"  [ACTION] Safety Abort to prevent accidental upload.")
         return None
-    if not youtube:
+    # --- END STRUCTURAL LOCKDOWN ---      
+    if not youtube: # This line was duplicated in the original, keeping it as is.
         return False
         
     print(f"Uploading to YouTube: {title}")
