@@ -139,6 +139,13 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
                     media_body=MediaFileUpload(thumbnail_path)
                 ).execute()
                 print("[SUCCESS] Thumbnail uploaded!")
+            except googleapiclient.errors.HttpError as e:
+                # Handle "Forbidden" error (likely missing phone verification for custom thumbnails)
+                if e.resp.status == 403:
+                    print(f"\n[INFO] Thumbnail skipped: Phone verification is required for custom thumbnails on new accounts.")
+                    print(f"       Action: Please verify your phone number at youtube.com/verify to enable thumbnails.")
+                else:
+                    print(f"[WARN] Thumbnail upload failed (HTTP {e.resp.status}): {e}")
             except Exception as e:
                 print(f"[WARN] Thumbnail upload failed: {e}")
                 
