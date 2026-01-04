@@ -565,6 +565,7 @@ def get_video_metadata():
     description = f"{fact_text}\n\n{hashtags}"
     
     return {
+        "mode": "fact",
         "text": fact_text,
         "keyword": keyword,
         "title": title,

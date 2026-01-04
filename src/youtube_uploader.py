@@ -41,66 +41,61 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
     if not youtube:
         return False
         
-    # --- IDENTITY-BASED ISOLATION GUARD: CurioByte Structural Lockdown ---
+    # --- MULTI-ACCOUNT STRUCTURAL LOCKDOWN ---
     try:
-        # 1. Fetch authenticated channel identity (Name and Handle)
-        channels_response = youtube.channels().list(mine=True, part="snippet,contentDetails").execute()
+        # 1. Fetch authenticated channel identity (Basic info to avoid 403)
+        channels_response = youtube.channels().list(mine=True, part="snippet").execute()
         channel_data = channels_response['items'][0]['snippet']
         channel_title = channel_data['title']
-        channel_handle = channel_data.get('customUrl', '') # handle is usually in customUrl
+        channel_handle = channel_data.get('customUrl', '')
         
-        print(f"[*] Authenticating for: {channel_title} ({channel_handle})")
+        print(f"[*] Authenticating as: {channel_title} ({channel_handle})")
         
-        # 2. Identify if target is CurioByte
-        is_curiobyte = (channel_title == "CurioByte") or (channel_handle == "@CurioByte143")
+        # 2. Categorize the Target Account
+        is_curiobyte = ("CurioByte" in channel_title) or (channel_handle == "@CurioByte143")
+        is_old_channel = not is_curiobyte # Assuming only two accounts
+        
+        # 3. Security Check: Category Alignment
+        # Rules:
+        # - CurioByte: ONLY 'curiosity'
+        # - Old Channel: ONLY 'fact', 'meme', 'long'
+        
+        target_channel_env = os.environ.get("TARGET_CHANNEL")
+        workflow_name = os.environ.get("GITHUB_WORKFLOW", "manual_run")
         
         if is_curiobyte:
-            # 3. Security Check: Environment Variable Whitelist
-            target_channel_env = os.environ.get("TARGET_CHANNEL")
-            channel_mode_env = os.environ.get("CHANNEL_MODE")
-            workflow_name = os.environ.get("GITHUB_WORKFLOW", "unknown_manual_run")
-            
-            print(f"[*] [GUARD] Lockdown Active for CurioByte. Validating source...")
-            
-            # Whitelist Criteria:
-            # - Must be Curiosity Shorts Workflow
-            # - TARGET_CHANNEL must be 'curiosity'
-            # - CHANNEL_MODE must be 'shorts'
-            
-            is_authorized = (
-                target_channel_env == "curiosity" 
-                and channel_mode_env == "shorts"
-                and "Curiosity" in workflow_name
-            )
-            
-            if not is_authorized:
-                print(f"\n[SECURITY BLOCK] Unauthorized upload attempted to CurioByte!")
-                print(f"       Workflow: {workflow_name}")
-                print(f"       TARGET_CHANNEL: {target_channel_env}")
-                print(f"       CHANNEL_MODE: {channel_mode_env}")
+            print("[*] [GUARD] Target: CurioByte (sudhirmturk@gmail.com)")
+            if mode != "curiosity" or target_channel_env != "curiosity":
+                print(f"\n[SECURITY BLOCK] Account Mismatch!")
+                print(f"       ERROR: Account 'CurioByte' must ONLY receive curiosity content.")
+                print(f"       ATTEMPTED: '{mode}' content from '{workflow_name}'.")
                 print(f"       ACTION: Upload Terminated structurally.")
                 return None
-
-            # 4. Content Type Check (Post-Authorization)
+            
+            # Additional Shorts Guard for Curiosity Channel
             from moviepy.editor import VideoFileClip
             clip = VideoFileClip(file_path)
             duration = clip.duration
             clip.close()
-            
-            if mode == "long" or duration > 60:
-                print(f"\n[SECURITY BLOCK] Policy Violation: Non-Shorts content blocked for CurioByte.")
-                print(f"       Detected Mode: {mode}")
-                print(f"       Duration: {duration:.1f}s (Limit: 60s)")
+            if duration > 60:
+                print(f"\n[SECURITY BLOCK] Policy Violation: Long video blocked for CurioByte.")
+                return None
+
+        else:
+            print(f"[*] [GUARD] Target: Old Channel (sudhirt.bahadure@gmail.com)")
+            if mode == "curiosity" or target_channel_env == "curiosity":
+                print(f"\n[SECURITY BLOCK] Account Mismatch!")
+                print(f"       ERROR: Account '{channel_title}' must NOT receive curiosity content.")
+                print(f"       ATTEMPTED: 'curiosity' content from '{workflow_name}'.")
                 print(f"       ACTION: Upload Terminated structurally.")
                 return None
                 
-            print(f"[*] [GUARD] Access Granted. Uploading curiosity Short...")
+        print(f"[*] [GUARD] Identity Match Confirmed. Access Granted.")
 
     except Exception as e:
         print(f"  [CRITICAL] Architectural Guard failure: {e}")
         print(f"  [ACTION] Safety Abort to prevent accidental upload.")
         return None
-    # --- END STRUCTURAL LOCKDOWN ---
     if not youtube:
         return False
         
