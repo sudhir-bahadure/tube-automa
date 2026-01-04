@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
-  "generated_at": "2026-01-03T12:13:54.067807",
-  "today_topic": "Generative AI",
-=======
-  "generated_at": "2026-01-03T01:14:02.304158",
-  "today_topic": "Internet Culture",
->>>>>>> 2273df8010883becffcb356124a9569338162dda
+  "generated_at": "2026-01-04T01:25:46.275916",
+  "today_topic": "Claude AI",
   "is_analyst_boosted": false,
   "is_part_2": false,
   "all_trends_snapshot": [
@@ -19,20 +14,20 @@
   ],
   "meme": {
     "theme_mode": "trending_or_random",
-    "forced_topic": "Generative AI",
+    "forced_topic": "Claude AI",
     "is_analyst_pick": false,
     "backup_theme": {
       "subreddit": "memes",
-      "hashtags": "#GenerativeAI #Trending #Viral #Funny"
+      "hashtags": "#ClaudeAI #Trending #Viral #Funny"
     }
   },
   "fact": {
-    "topic": "Generative AI",
-    "search_query": "interesting facts about Generative AI"
+    "topic": "Claude AI",
+    "search_query": "interesting facts about Claude AI"
   },
   "long": {
-    "topic": "Generative AI",
-    "title_concept": "Why Everyone is Talking About Generative AI",
-    "search_query": "Generative AI"
+    "topic": "Claude AI",
+    "title_concept": "Why Everyone is Talking About Claude AI",
+    "search_query": "Claude AI"
   }
 }
