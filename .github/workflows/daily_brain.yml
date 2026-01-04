@@ -27,6 +27,8 @@ jobs:
         pip install feedparser
 
     - name: Run The Brain
+      env:
+        TARGET_CHANNEL: old_channel
       run: |
         python src/brain.py
 

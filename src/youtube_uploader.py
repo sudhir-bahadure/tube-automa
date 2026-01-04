@@ -41,34 +41,66 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
     if not youtube:
         return False
         
-    # --- IDENTITY-BASED ISOLATION GUARD: CurioByte Shorts-Only Channel ---
-    # Fetch actual channel identity to ensure enforcement even if secrets are swapped
+    # --- IDENTITY-BASED ISOLATION GUARD: CurioByte Structural Lockdown ---
     try:
-        channels_response = youtube.channels().list(mine=True, part="snippet").execute()
-        channel_title = channels_response['items'][0]['snippet']['title']
-        print(f"[*] Target Channel Identity: {channel_title}")
+        # 1. Fetch authenticated channel identity (Name and Handle)
+        channels_response = youtube.channels().list(mine=True, part="snippet,contentDetails").execute()
+        channel_data = channels_response['items'][0]['snippet']
+        channel_title = channel_data['title']
+        channel_handle = channel_data.get('customUrl', '') # handle is usually in customUrl
         
-        # Determine if this is a CurioByte lockdown
-        force_shorts = (os.environ.get("CHANNEL_MODE") == "shorts") or ("CurioByte" in channel_title)
+        print(f"[*] Authenticating for: {channel_title} ({channel_handle})")
         
-        if force_shorts:
-            print(f"[*] Guard checking: mode={mode}")
+        # 2. Identify if target is CurioByte
+        is_curiobyte = (channel_title == "CurioByte") or (channel_handle == "@CurioByte143")
+        
+        if is_curiobyte:
+            # 3. Security Check: Environment Variable Whitelist
+            target_channel_env = os.environ.get("TARGET_CHANNEL")
+            channel_mode_env = os.environ.get("CHANNEL_MODE")
+            workflow_name = os.environ.get("GITHUB_WORKFLOW", "unknown_manual_run")
+            
+            print(f"[*] [GUARD] Lockdown Active for CurioByte. Validating source...")
+            
+            # Whitelist Criteria:
+            # - Must be Curiosity Shorts Workflow
+            # - TARGET_CHANNEL must be 'curiosity'
+            # - CHANNEL_MODE must be 'shorts'
+            
+            is_authorized = (
+                target_channel_env == "curiosity" 
+                and channel_mode_env == "shorts"
+                and "Curiosity" in workflow_name
+            )
+            
+            if not is_authorized:
+                print(f"\n[SECURITY BLOCK] Unauthorized upload attempted to CurioByte!")
+                print(f"       Workflow: {workflow_name}")
+                print(f"       TARGET_CHANNEL: {target_channel_env}")
+                print(f"       CHANNEL_MODE: {channel_mode_env}")
+                print(f"       ACTION: Upload Terminated structurally.")
+                return None
+
+            # 4. Content Type Check (Post-Authorization)
             from moviepy.editor import VideoFileClip
             clip = VideoFileClip(file_path)
             duration = clip.duration
             clip.close()
             
-            # Hard Block Logic:
-            # 1. Block if mode is explicitly 'long'
-            # 2. Block if duration exceeds 60s (Shorts limit)
             if mode == "long" or duration > 60:
-                print(f"\n[ARCHITECTURAL ENFORCEMENT] Upload blocked for CurioByte.")
-                print(f"       Reason: Long-form content/Documentaries are disabled for this channel.")
-                print(f"       (Detected Mode: {mode}, Duration: {duration:.1f}s)")
-                return None # Graceful exit without error
+                print(f"\n[SECURITY BLOCK] Policy Violation: Non-Shorts content blocked for CurioByte.")
+                print(f"       Detected Mode: {mode}")
+                print(f"       Duration: {duration:.1f}s (Limit: 60s)")
+                print(f"       ACTION: Upload Terminated structurally.")
+                return None
+                
+            print(f"[*] [GUARD] Access Granted. Uploading curiosity Short...")
+
     except Exception as e:
-        print(f"  [WARN] Architectural Guard check failed: {e}. Proceeding with caution.")
-    # -------------------------------------------------------------------
+        print(f"  [CRITICAL] Architectural Guard failure: {e}")
+        print(f"  [ACTION] Safety Abort to prevent accidental upload.")
+        return None
+    # --- END STRUCTURAL LOCKDOWN ---
     if not youtube:
         return False
         
