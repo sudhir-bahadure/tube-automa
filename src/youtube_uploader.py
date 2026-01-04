@@ -31,11 +31,33 @@ def get_authenticated_service():
     
     return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
-def upload_video(file_path, title, description, tags, category_id="27", thumbnail_path=None):
+def upload_video(file_path, title, description, tags, category_id="27", thumbnail_path=None, mode="unknown"):
     """
     Uploads a video to YouTube.
     category_id "27" is Education. "28" is Science & Tech.
     """
+    
+    # --- ISOLATION GUARD: CurioByte Shorts-Only Channel ---
+    channel_mode = os.environ.get("CHANNEL_MODE")
+    if channel_mode == "shorts":
+        print(f"[*] Guard checking: mode={mode}")
+        try:
+            from moviepy.editor import VideoFileClip
+            clip = VideoFileClip(file_path)
+            duration = clip.duration
+            clip.close()
+            
+            # Hard Block Logic:
+            # 1. Block if mode is explicitly 'long'
+            # 2. Block if duration exceeds 60s (Shorts limit)
+            if mode == "long" or duration > 60:
+                print(f"\n[SECURITY] Upload blocked: Long-form content is disabled for CurioByte.")
+                print(f"           (Content Mode: {mode}, Duration: {duration:.1f}s)")
+                return None # Graceful exit without error
+        except Exception as e:
+            print(f"  [WARN] Guard check failed: {e}. Proceeding with caution.")
+    # ---------------------------------------------------
+
     youtube = get_authenticated_service()
     if not youtube:
         return False

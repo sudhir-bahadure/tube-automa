@@ -72,8 +72,9 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         
-        # YouTube API credentials (for automated upload)
-        # YouTube API credentials (for automated upload)
+        # Isolation Guard: Lock this channel to Shorts-only
+        CHANNEL_MODE: shorts
+        
         # YouTube API credentials (for automated upload)
         YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
         YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}

@@ -58,7 +58,8 @@ def main():
             metadata['description'], 
             metadata['tags'],
             metadata.get('youtube_category', '27'),
-            thumbnail_path=final_thumb_path
+            thumbnail_path=final_thumb_path,
+            mode=metadata.get('mode', 'fact')
         )
     except Exception as e:
         print(f"YouTube Upload Module Error: {e}")
