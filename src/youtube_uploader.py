@@ -37,11 +37,22 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
     category_id "27" is Education. "28" is Science & Tech.
     """
     
-    # --- ISOLATION GUARD: CurioByte Shorts-Only Channel ---
-    channel_mode = os.environ.get("CHANNEL_MODE")
-    if channel_mode == "shorts":
-        print(f"[*] Guard checking: mode={mode}")
-        try:
+    youtube = get_authenticated_service()
+    if not youtube:
+        return False
+        
+    # --- IDENTITY-BASED ISOLATION GUARD: CurioByte Shorts-Only Channel ---
+    # Fetch actual channel identity to ensure enforcement even if secrets are swapped
+    try:
+        channels_response = youtube.channels().list(mine=True, part="snippet").execute()
+        channel_title = channels_response['items'][0]['snippet']['title']
+        print(f"[*] Target Channel Identity: {channel_title}")
+        
+        # Determine if this is a CurioByte lockdown
+        force_shorts = (os.environ.get("CHANNEL_MODE") == "shorts") or ("CurioByte" in channel_title)
+        
+        if force_shorts:
+            print(f"[*] Guard checking: mode={mode}")
             from moviepy.editor import VideoFileClip
             clip = VideoFileClip(file_path)
             duration = clip.duration
@@ -51,14 +62,13 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
             # 1. Block if mode is explicitly 'long'
             # 2. Block if duration exceeds 60s (Shorts limit)
             if mode == "long" or duration > 60:
-                print(f"\n[SECURITY] Upload blocked: Long-form content is disabled for CurioByte.")
-                print(f"           (Content Mode: {mode}, Duration: {duration:.1f}s)")
+                print(f"\n[ARCHITECTURAL ENFORCEMENT] Upload blocked for CurioByte.")
+                print(f"       Reason: Long-form content/Documentaries are disabled for this channel.")
+                print(f"       (Detected Mode: {mode}, Duration: {duration:.1f}s)")
                 return None # Graceful exit without error
-        except Exception as e:
-            print(f"  [WARN] Guard check failed: {e}. Proceeding with caution.")
-    # ---------------------------------------------------
-
-    youtube = get_authenticated_service()
+    except Exception as e:
+        print(f"  [WARN] Architectural Guard check failed: {e}. Proceeding with caution.")
+    # -------------------------------------------------------------------
     if not youtube:
         return False
         
