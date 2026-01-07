@@ -1061,6 +1061,19 @@ def get_curiosity_metadata():
             if chunk:
                 text_cues.append(chunk)
 
+    # --- UNIFIED VARIABLE SCOPE FIX ---
+    # Ensure 'words' and 'thumb_text' are defined regardless of path
+    if is_viral_script:
+        thumb_text = script_obj.get('keyword', 'MIND BLOWN')
+    else:
+        # Path B defined 'subject' locally, let's use it or fallback
+        thumb_text = locals().get('subject', 'WAIT FOR IT')
+
+    # Generate word count for thumbnail logic if not already done
+    # Clean script for counting
+    clean_script_text = full_script.replace("[PAUSE 0.5s]", " ").replace("[PAUSE 0.3s]", " ")
+    words = clean_script_text.split()
+
     # Visual keyword extraction (fallback if not set)
     if not keyword or keyword == "abstract background":
         fact_words = selected_text.split()
@@ -1079,7 +1092,7 @@ def get_curiosity_metadata():
     
     # Thumbnail specification
     thumbnail_spec = {
-        "text": thumb_text[:25] if len(words) <= 4 else random.choice([
+        "text": thumb_text[:25] if len(words) <= 50 else random.choice([
             "IMPOSSIBLE", "WAIT", "MIND BLOWN", "TRUTH"
         ]),
         "style": "High contrast, dark background, bright yellow/white text",
