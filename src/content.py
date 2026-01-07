@@ -882,148 +882,198 @@ def get_curiosity_metadata():
         except Exception as e:
             print(f"  [WARN] Fetch error for r/{subreddit}: {e}")
 
-    # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
-    fallbacks = {
-        "SPACE & ASTRONOMY": [
-            "Neutron stars are so dense that a teaspoon of them would weigh 6 billion tons.",
-            "There is a planet made of burning ice called Gliese 436 b.",
-            "The sunset on Mars looks blue to the human eye.",
-            "One day on Venus is longer than one year on Venus.",
-            "Space is completely silent because there is no atmosphere to carry sound."
-        ],
-        "DEEP OCEAN & NATURE": [
-            "We have explored less than 5% of our oceans.",
-            "The blue whale's heart is so big a human could swim through its arteries.",
-            "There are underwater lakes and rivers at the bottom of the ocean.",
-            "Some jellyfish are biologically immortal and can revert to their polyp stage.",
-            "The loudest sound ever recorded underwater was called The Bloop."
-        ],
-        "ANCIENT HISTORY": [
-            "Woolly mammoths were still alive when the Pyramids were being built.",
-            "Cleopatra lived closer in time to the Moon landing than the Great Pyramid.",
-            "The Great Wall of China is not visible from space with the naked eye.",
-            "Vikings used specific crystals to navigate on cloudy days.",
-            "Hero of Alexandria invented a steam engine 2,000 years before the industrial revolution."
-        ],
-        "BRAIN & PSYCHOLOGY": [
-            "You can't hum while holding your nose.",
-            "Your brain treats rejection like physical pain.",
-            "It takes only 4 seconds to form a silence that feels awkward.",
-            "Music can repair brain damage and return lost memories.",
-            "Your brain makes decisions 7 seconds before you are consciously aware of them."
-        ],
-        "QUANTUM & PHYSICS": [
-            "If you remove all empty space from atoms, humanity would fit in a sugar cube.",
-            "Time passes slower near a massive object like a pyramid or mountain.",
-            "Light behaves as both a particle and a wave depending on if you watch it.",
-            "Quantum entanglement means particles communicate instantly across the universe.",
-            "You are technically never touching anything due to electron repulsion."
-        ],
-        "BIOLOGY EXTREMES": [
-            "Tardigrades can survive in the vacuum of space.",
-            "Wombat poop is cube-shaped to stop it from rolling away.",
-            "A shrimp's heart is located in its head.",
-            "Sloths can hold their breath longer than dolphins can.",
-            "Cows have best friends and get stressed when separated."
-        ]
-    }
+    # =========================================================================
+    # VIRAL SCRIPT DATABASE (Guaranteed Coherence)
+    # Replaces random assembly with pre-written high-retention concepts
+    # =========================================================================
+    viral_scripts = [
+        # --- SPACE ---
+        {
+            "category": "SPACE & ASTRONOMY",
+            "hook": "This star is so dense, one teaspoon weighs MORE than Mount Everest!",
+            "concept": "Neutron stars are the collapsed cores of giant stars.",
+            "script": "Neutron stars are so dense that just a single teaspoon of their material would weigh 6 billion tons on Earth. That is the same as the entire human population condensed into a sugar cube. It sounds impossible, but physics says it's real.",
+            "keyword": "neutron star space",
+            "cta": "Follow for daily mind-blowing space facts!"
+        },
+        {
+            "category": "SPACE & ASTRONOMY",
+            "hook": "What if I told you time moves SLOWER for you than astronauts?",
+            "concept": "Time dilation near massive objects.",
+            "script": "According to Einstein's theory of relativity, time slows down as gravity increases. If you stood near the Pyramids, time would technically move slower for you than for someone in space. It is a tiny difference, but it proves time is not constant.",
+            "keyword": "time lapse space",
+            "cta": "Share if your brain hurts!"
+        },
+        {
+            "category": "SPACE & ASTRONOMY",
+            "hook": "There is a place in space where it rains DIAMONDS!",
+            "concept": "Diamond rain on Neptune and Uranus.",
+            "script": "On planets like Neptune and Uranus, extreme pressure turns carbon into crystal. That means it literally rains diamonds on these ice giants. Imagine a storm where the raindrops are worth trillions of dollars.",
+            "keyword": "diamond gemstone",
+            "cta": "Follow for more rich facts!"
+        },
+        
+        # --- OCEAN ---
+        {
+            "category": "DEEP OCEAN & NATURE",
+            "hook": "Scientists found a creature that's been alive for 11,000 YEARS!",
+            "concept": "Glass sponges in the deep ocean.",
+            "script": "In the deep ocean, scientists discovered Glass Sponges that are estimated to be over 11,000 years old. That means they were alive before the Pyramids were built and before human civilization began. They just sit there, filtering water, forever.",
+            "keyword": "sponge ocean underwater",
+            "cta": "Tag someone who loves the ocean!"
+        },
+        {
+            "category": "DEEP OCEAN & NATURE",
+            "hook": "Your phone is dirtier than a TOILET seat!",
+            "concept": "Bacteria on mobile devices.",
+            "script": "Studies show that the average smartphone carries 10 times more bacteria than a public toilet seat. You touch it all day, then put it on your face. Think about that next time you verify your screen time.",
+            "keyword": "bacteria microscope",
+            "cta": "Share this to warn a friend!"
+        },
+        
+        # --- HISTORY ---
+        {
+            "category": "ANCIENT HISTORY",
+            "hook": "Everything you learned about the Pyramids is WRONG!",
+            "concept": "Pyramids were white and gold.",
+            "script": "The Great Pyramids of Giza didn't look like dusty ruins. Initially, they were covered in polished white limestone and topped with solid gold. They would shine so bright in the sun you could see them from miles away.",
+            "keyword": "pyramid egypt ancient",
+            "cta": "Subscribe to uncover the past!"
+        },
+        
+        # --- BRAIN ---
+        {
+             "category": "BRAIN & PSYCHOLOGY",
+             "hook": "Wait... Your brain is eating itself RIGHT NOW!",
+             "concept": "Phagocytosis during sleep.",
+             "script": "When you don't get enough sleep, your brain starts a process called phagocytosis. It literally starts eating its own neurons and connections to clear out clutter. So sleep deprivation is basically your brain cannibalizing itself.",
+             "keyword": "brain neurons",
+             "cta": "Follow to save your brain!"
+        },
+
+         # --- QUANTUM ---
+        {
+            "category": "QUANTUM & PHYSICS",
+            "hook": "You are made of 99.999% EMPTY SPACE!",
+            "concept": "Atomic structure emptiness.",
+            "script": "If you removed the empty space from the atoms that make up all humans on Earth, the entire population would fit into the size of a sugar cube. Everything you touch and see is mostly just empty void held together by forces.",
+            "keyword": "atoms molecular abstract",
+```
+            "cta": "Drop a 🤯 if this blew your mind!"
+        }
+    ]
     
     # Select content
+    # Select content
+    is_viral_script = False
+    script_obj = None # Initialize script_obj for viral scripts
+    full_script = ""
+    keyword = ""
+    text_cues = []
+    
     if facts:
+        # 1. Reddit Content (Dynamic)
         selected_text = random.choice(facts)
         save_used_topic(selected_text)
         save_used_joke(selected_text)
     else:
-        # Fallback content by pillar (Refinement 3 applied here too)
-        print("  [FALLBACK] Using curated content")
-        available_fallbacks = [f for f in fallbacks.get(selected_pillar['name'], []) 
-                              if not is_topic_duplicate(f)]
+        # 2. Viral Script Database (Fallback/Primary High Quality)
+        print("  [FALLBACK] Using Viral Script Database")
         
-        if not available_fallbacks:
-            # Emergency reset if all fallbacks used in 7 days
-            available_fallbacks = fallbacks.get(selected_pillar['name'], [])
+        # Filter by selected provider category if possible, or just pick random valid one
+        available_scripts = [s for s in viral_scripts if s['category'] == selected_pillar['name'] and not is_topic_duplicate(s['concept'])]
         
-        # FAILSAFE: If still empty (e.g. missing pillar key), use Space as ultimate backup
-        if not available_fallbacks:
-             print("  [WARN] Pillar fallback empty. Switching to SPACE & ASTRONOMY backup.")
-             available_fallbacks = fallbacks["SPACE & ASTRONOMY"]
-            
-        selected_text = random.choice(available_fallbacks)
+        if not available_scripts:
+             # Emergency: Pick ANY viral script not used, ignoring category
+             available_scripts = [s for s in viral_scripts if not is_topic_duplicate(s['concept'])]
+        
+        if not available_scripts:
+            # Absolute failsafe: Reset tracking or pick random
+             available_scripts = viral_scripts
+             
+        script_obj = random.choice(available_scripts)
+        selected_text = script_obj['concept'] # Used for tracking
         save_used_topic(selected_text)
+        is_viral_script = True
 
-    # Refinement 5: Anchor Entity Extraction
+    # Refinement 5: Anchor Entity Extraction (still useful for visuals)
     anchor_entities = detect_anchor_entities(selected_text)
 
     # Build structured script (22-35 seconds target)
-    hook_template = random.choice(selected_pillar['hook_templates'])
-    
-    # Clean subject for hook (remove generic words to make it punchy)
-    raw_subject = selected_text.split('.')[0]
-    subject_words = raw_subject.split()
-    if len(subject_words) > 8:
-        subject = " ".join(subject_words[:8]) + "..." # Keep it short
-    else:
-        subject = raw_subject
-
-    # Remove leading "The" for cleaner template fit if needed
-    if subject.lower().startswith("the ") and not hook_template.endswith("about"):
-         # e.g. "Stop scrolling if you think you know The Eiffel Tower" -> "Stop scrolling if you think you know the Eiffel Tower"
-         # heavily context dependent, but simple lowercasing helps
-         subject = subject[0].lower() + subject[1:]
-         
-    hook = f"{hook_template} {subject}."
-    
-    # Build - Avoid repeating subject immediately
-    build_text = selected_pillar['build_prefix'] 
-    
-    # Reveal (rest of fact or elaboration)
-    fact_parts = selected_text.split('.')
-    if len(fact_parts) > 1:
-        # Use the rest of the fact
-        reveal_body = '. '.join(fact_parts[1:]).strip()
-    else:
-        reveal_body = "it is completely true."
+    if is_viral_script and script_obj:
+        # --- PATH A: PRE-WRITTEN VIRAL SCRIPT (High Coherence) ---
+        print(f"  [SCRIPT] Using pre-written viral concept: {script_obj['concept']}")
+        hook = script_obj['hook']
+        script_body = script_obj['script']
+        keyword = script_obj['keyword']
         
-    reveal = f"{selected_pillar['reveal_prefix']} {reveal_body}."
-    
-    close = random.choice(selected_pillar['close_templates'])
-    
-    # Combine (Professional Flow)
-    # Hook -> Build -> Reveal -> Close
-    script = f"{hook} {build_text} {reveal} {close}"
-    
-    # Clean up
-    script = script.replace('..', '.').replace('  ', ' ').strip()
-    if not script.endswith('.'):
-        script += '.'
-    
-    print(f"  [SCRIPT] {script[:60]}...")
-    
-    # Generate on-screen text cues (max 6 words per line)
-    text_cues = []
-    words = script.split()
-    for i in range(0, len(words), 6):
-        chunk = ' '.join(words[i:i+6])
-        if chunk:
-            text_cues.append(chunk)
+        # Construct full text for TTS
+        # [Hook] [Pause] [Body] [Pause] [CTA]
+        full_script = f"{hook} [PAUSE 0.5s] {script_body} [PAUSE 0.5s] {script_obj['cta']}"
+        
+        # Split body into chunks for text overlay
+        # Simple varied splitting by sentences
+        body_parts = script_body.replace("!", ".").replace("?", ".").split(".")
+        text_cues = [part.strip() for part in body_parts if len(part.strip()) > 5]
+        # Insert Hook at start
+        text_cues.insert(0, hook)
+        
+    else:
+        # --- PATH B: DYNAMIC REDDIT CONTENT (Template Construction) ---
+        print(f"  [SCRIPT] Constructing from Reddit: {selected_text}")
+        hook_template = random.choice(selected_pillar['hook_templates'])
+        
+        # Clean subject for hook
+        raw_subject = selected_text.split('.')[0]
+        subject_words = raw_subject.split()
+        if len(subject_words) > 8:
+            subject = " ".join(subject_words[:8]) + "..."
+        else:
+            subject = raw_subject
 
-    thumb_text = subject
-    
-    # Visual keyword extraction
-    visual_keyword = "abstract background"
-    fact_words = selected_text.split()
-    if len(fact_words) > 2:
-        # Extract subject (first 2-3 meaningful words)
-        potential = ' '.join(fact_words[:3])
-        if not potential.lower().startswith(('the ', 'a ', 'an ', 'this ', 'that ')):
-            visual_keyword = potential
-        elif len(fact_words) > 3:
-            visual_keyword = ' '.join(fact_words[1:4])
+        if subject.lower().startswith("the ") and not hook_template.endswith("about"):
+             subject = subject[4:]
+
+        hook = f"{hook_template} {subject}"
+        
+        # Build Body
+        build_prefix = selected_pillar.get('build_prefix', "Here is the interesting part.")
+        reveal_prefix = selected_pillar.get('reveal_prefix', "Actually,")
+        
+        # Split text into build/reveal logic
+        # If text has multiple sentences, split them.
+        sentences = selected_text.split('. ')
+        if len(sentences) > 1:
+            build = sentences[0]
+            reveal = ". ".join(sentences[1:])
+        else:
+            build = selected_text
+            reveal = "It sounds crazy, but it is true."
+
+        close_template = random.choice(selected_pillar['close_templates'])
+        
+        full_script = f"{hook}? [PAUSE 0.3s] {build_prefix} {build}. [PAUSE 0.5s] {reveal_prefix} {reveal}. [PAUSE 0.5s] {close_template}"
+        keyword = "abstract background" # Default for Reddit
+        
+        # Generate on-screen text cues (max 6 words per line)
+        words = full_script.replace("[PAUSE 0.3s]", "").replace("[PAUSE 0.5s]", "").split()
+        for i in range(0, len(words), 6):
+            chunk = ' '.join(words[i:i+6])
+            if chunk:
+                text_cues.append(chunk)
+
+    # Visual keyword extraction (fallback if not set)
+    if not keyword or keyword == "abstract background":
+        fact_words = selected_text.split()
+        if len(fact_words) > 2:
+            potential = ' '.join(fact_words[:3])
+            if not potential.lower().startswith(('the ', 'a ', 'an ', 'this ')):
+                keyword = potential
     
     # Generate visual instructions (copyright-safe)
     visual_instructions = [
         {"timing": "0-2s", "type": "Hook", "visual": "Abstract particle effects or geometric patterns"},
-        {"timing": "3-15s", "type": "Build", "visual": f"Stock footage: {visual_keyword} (nature/tech/abstract only)"},
+        {"timing": "3-15s", "type": "Build", "visual": f"Stock footage: {keyword} (nature/tech/abstract only)"},
         {"timing": "16-28s", "type": "Reveal", "visual": "Flowing motion graphics or light rays"},
         {"timing": "Last 3s", "type": "Close", "visual": "Minimal gradient fade"}
     ]

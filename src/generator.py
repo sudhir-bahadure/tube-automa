@@ -100,9 +100,9 @@ def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
             
     return CompositeAudioClip(audio_clips).set_duration(voice_clip.duration)
 
-async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
+async def generate_audio(text, output_file="audio.mp3", voice="en-US-AndrewMultilingualNeural", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-ChristopherNeural" # Natural, Human-like, Conversational 
+    # Default: Andrew (Natural, Conversational)
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
     max_retries = 3
@@ -455,8 +455,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         print(f"Generating CURIOSITY video: {visual_keyword}...")
 
         # 1. Generate Audio (Neutral, Calm)
-        # Using a slightly faster rate for facts
-        asyncio.run(generate_audio(text, "temp_curiosity.mp3", rate="+5%"))
+        # Using normal rate for natural flow
+        asyncio.run(generate_audio(text, "temp_curiosity.mp3", voice="en-US-AndrewMultilingualNeural", rate="+0%"))
         audio_clip = AudioFileClip("temp_curiosity.mp3")
         duration = audio_clip.duration + 1.0 # Pause at end
 
@@ -471,8 +471,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                      music_file = os.path.join(music_dir, random.choice(mp3s))
         except: pass
         
-        # Mix Audio
-        audio = mix_audio(audio_clip, music_path=music_file, music_vol=0.15)
+        # Mix Audio (Subtle background)
+        audio = mix_audio(audio_clip, music_path=music_file, music_vol=0.08)
 
         # 3. Visuals (STRICT COPYRIGHT-SAFE ONLY)
         anchor_entities = metadata.get('anchor_entities', [])
