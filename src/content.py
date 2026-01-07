@@ -728,74 +728,77 @@ def get_curiosity_metadata():
             "name": "Fact Shock",
             "sources": ["TodayILearned", "Damnthatsinteresting", "science"],
             "hook_templates": [
-                "This sounds impossible.",
-                "Most people get this wrong.",
-                "This breaks common sense.",
-                "Scientists were shocked."
+                "Stop scrolling if you think you know",
+                "You have been lied to about",
+                "This fact about",
+                "I bet you didn't know that"
             ],
-            "build_prefix": "Here is what happened.",
-            "reveal_prefix": "The truth is",
+            "build_prefix": "It sounds fake, but",
+            "reveal_prefix": "The reality is",
             "close_templates": [
-                "Nature is fascinating.",
-                "Reality is stranger.",
-                "Science explains everything."
+                "Follow for your daily dose of curiosity.",
+                "Subscribe to get smarter every day.",
+                "Stay curious and follow for more."
             ]
         },
         {
             "name": "Internet Curiosity",
             "sources": ["Showerthoughts", "explainlikeimfive"],
             "hook_templates": [
-                "Think about this.",
-                "This will change your view.",
-                "Nobody notices this.",
-                "This is everywhere."
+                "Here is a thought that will keep you up at night about",
+                "You will never look at",
+                "Have you ever realized that",
+                "This is going to break your brain about"
             ],
-            "build_prefix": "Consider the following.",
-            "reveal_prefix": "When you realize",
+            "build_prefix": "Think about it.",
+            "reveal_prefix": "When you actually analyze it,",
             "close_templates": [
-                "Mind expanded.",
-                "Now you see it.",
-                "Perspective shifted."
+                "Follow for more daily mind blowers.",
+                "Share this with a friend who needs to know.",
+                "Subscribe for daily epiphany moments."
             ]
         },
         {
             "name": "Clean Meme Logic",
             "sources": ["Showerthoughts", "funny"],
             "hook_templates": [
-                "This makes no sense.",
-                "Wait for it.",
-                "The irony is real.",
-                "Logic has left."
+                "Why does nobody talk about",
+                "I can't unsee this detail about",
+                "This paradox about",
+                "My entire life was a lie regarding"
             ],
-            "build_prefix": "Think about it.",
-            "reveal_prefix": "The funny part is",
+            "build_prefix": "It makes zero sense, but",
+            "reveal_prefix": "The irony is that",
             "close_templates": [
-                "Makes you think.",
-                "Life is weird.",
-                "Perfectly illogical."
+                "Follow if this hurt your brain.",
+                "Subscribe for daily logic breaks.",
+                "Send this to confuse a friend."
             ]
         },
         {
             "name": "Comparison Curiosity",
             "sources": ["todayilearned", "science"],
             "hook_templates": [
-                "Compare these two things.",
-                "One is bigger.",
-                "The difference is massive.",
-                "Size is deceiving."
+                "Your brain cannot comprehend the size of",
+                "Compare these two mind-blowing things about",
+                "You won't believe the scale of",
+                "This comparison changes everything about"
             ],
-            "build_prefix": "First item.",
-            "reveal_prefix": "Second item is",
+            "build_prefix": "First, consider",
+            "reveal_prefix": "But when you compare it,",
             "close_templates": [
-                "Scale is everything.",
-                "Perspective matters.",
-                "Numbers tell stories."
+                "Follow for more scale comparisons.",
+                "Subscribe to expand your perspective.",
+                "Stay curious, follow for more."
             ]
         }
     ]
     
     selected_pillar = random.choice(pillars)
     print(f"  [PILLAR] {selected_pillar['name']}")
+    
+    # Fetch content from Reddit
+    facts = []
     
     # Fetch content from Reddit
     facts = []
@@ -837,88 +840,47 @@ def get_curiosity_metadata():
                     
         except Exception as e:
             print(f"  [WARN] Fetch error for r/{subreddit}: {e}")
-    
-    # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
-    # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
-    fallbacks = {
-        "Fact Shock": [
-            "A day on Venus is longer than a year on Venus. It takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun.",
-            "Honey never spoils. Archaeologists found 3000 year old honey in Egyptian tombs that was still edible.",
-            "Octopuses have three hearts and blue blood. Two hearts pump blood to the gills while one pumps to the body.",
-            "The Eiffel Tower can be 15 cm taller during the summer. Thermal expansion causes the iron to expand when temperatures rise.",
-            "Bananas are berries, but strawberries are not. Botanically, a berry has seeds inside the flesh.",
-            "Wombat poop is cube-shaped. This prevents it from rolling away and marks their territory.",
-            "Sharks existed before trees. Sharks are 400 million years old, while trees appeared 350 million years ago.",
-            "Water can boil and freeze at the same time. It's called the triple point.",
-            "A cloud can weigh more than a million pounds. The water droplets are just spread out.",
-            "Your bones are four times stronger than concrete. A cubic inch of bone can bear a load of 19,000 lbs."
-        ],
-        "Internet Curiosity": [
-            "You have never seen your face in person. Only reflections and photographs.",
-            "Every photo of you is from the past. You have never seen yourself in real time.",
-            "Your brain named itself. Then it got curious about how it works.",
-            "The person you think of before sleeping is either the reason for your happiness or your pain.",
-            "If you're reading this, you're breathing. Now you're thinking about your breathing."
-        ],
-        "Clean Meme Logic": [
-            "The objective of Golf is to play the least amount of Golf.",
-            "If you clean a vacuum cleaner, you become a vacuum cleaner.",
-            "Clapping is just hitting yourself because you like something.",
-            "Revenge is a dish best served cold, which effectively makes it cold cuts.",
-            "Nothing is on fire, fire is on things."
-        ],
-        "Comparison Curiosity": [
-            "You are closer in size to the entire universe than you are to a generic atom.",
-            "If you drove a car upwards at 60mph, you would be in space in less than an hour.",
-            "Australia is wider than the moon. The moon is 3400km wide, Australia is 4000km wide.",
-            "Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.",
-            "There are more trees on Earth than stars in the Milky Way galaxy."
-        ]
-    }
-    
-    # Select content
-    if facts:
-        selected_text = random.choice(facts)
-        save_used_topic(selected_text)
-        save_used_joke(selected_text)
-    else:
-        # Fallback content by pillar (Refinement 3 applied here too)
-        print("  [FALLBACK] Using curated content")
-        available_fallbacks = [f for f in fallbacks.get(selected_pillar['name'], []) 
-                              if not is_topic_duplicate(f)]
-        
-        if not available_fallbacks:
-            # Emergency reset if all fallbacks used in 7 days
-            available_fallbacks = fallbacks.get(selected_pillar['name'], [])
-        
-        # FAILSAFE: If still empty (e.g. missing pillar key), use Fact Shock as ultimate backup
-        if not available_fallbacks:
-             print("  [WARN] Pillar fallback empty. Switching to Fact Shock backup.")
-             available_fallbacks = fallbacks["Fact Shock"]
-            
-        selected_text = random.choice(available_fallbacks)
-        save_used_topic(selected_text)
 
     # Refinement 5: Anchor Entity Extraction
     anchor_entities = detect_anchor_entities(selected_text)
 
     # Build structured script (22-35 seconds target)
     hook_template = random.choice(selected_pillar['hook_templates'])
-    subject = selected_text.split('.')[0][:60]
+    
+    # Clean subject for hook (remove generic words to make it punchy)
+    raw_subject = selected_text.split('.')[0]
+    subject_words = raw_subject.split()
+    if len(subject_words) > 8:
+        subject = " ".join(subject_words[:8]) + "..." # Keep it short
+    else:
+        subject = raw_subject
+
+    # Remove leading "The" for cleaner template fit if needed
+    if subject.lower().startswith("the ") and not hook_template.endswith("about"):
+         # e.g. "Stop scrolling if you think you know The Eiffel Tower" -> "Stop scrolling if you think you know the Eiffel Tower"
+         # heavily context dependent, but simple lowercasing helps
+         subject = subject[0].lower() + subject[1:]
+         
     hook = f"{hook_template} {subject}."
-    build = f"{selected_pillar['build_prefix']} {selected_text.split('.')[0]}."
+    
+    # Build - Avoid repeating subject immediately
+    build_text = selected_pillar['build_prefix'] 
     
     # Reveal (rest of fact or elaboration)
     fact_parts = selected_text.split('.')
     if len(fact_parts) > 1:
-        reveal = f"{selected_pillar['reveal_prefix']} {'. '.join(fact_parts[1:]).strip()}."
+        # Use the rest of the fact
+        reveal_body = '. '.join(fact_parts[1:]).strip()
     else:
-        reveal = f"{selected_pillar['reveal_prefix']} this is completely true."
+        reveal_body = "it is completely true."
+        
+    reveal = f"{selected_pillar['reveal_prefix']} {reveal_body}."
     
     close = random.choice(selected_pillar['close_templates'])
     
-    # Combine (NO questions, NO CTAs)
-    script = f"{hook} {build} {reveal} {close}"
+    # Combine (Professional Flow)
+    # Hook -> Build -> Reveal -> Close
+    script = f"{hook} {build_text} {reveal} {close}"
     
     # Clean up
     script = script.replace('..', '.').replace('  ', ' ').strip()
