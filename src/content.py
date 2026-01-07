@@ -841,6 +841,66 @@ def get_curiosity_metadata():
         except Exception as e:
             print(f"  [WARN] Fetch error for r/{subreddit}: {e}")
 
+    # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
+    fallbacks = {
+        "Fact Shock": [
+            "A day on Venus is longer than a year on Venus. It takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun.",
+            "Honey never spoils. Archaeologists found 3000 year old honey in Egyptian tombs that was still edible.",
+            "Octopuses have three hearts and blue blood. Two hearts pump blood to the gills while one pumps to the body.",
+            "The Eiffel Tower can be 15 cm taller during the summer. Thermal expansion causes the iron to expand when temperatures rise.",
+            "Bananas are berries, but strawberries are not. Botanically, a berry has seeds inside the flesh.",
+            "Wombat poop is cube-shaped. This prevents it from rolling away and marks their territory.",
+            "Sharks existed before trees. Sharks are 400 million years old, while trees appeared 350 million years ago.",
+            "Water can boil and freeze at the same time. It's called the triple point.",
+            "A cloud can weigh more than a million pounds. The water droplets are just spread out.",
+            "Your bones are four times stronger than concrete. A cubic inch of bone can bear a load of 19,000 lbs."
+        ],
+        "Internet Curiosity": [
+            "You have never seen your face in person. Only reflections and photographs.",
+            "Every photo of you is from the past. You have never seen yourself in real time.",
+            "Your brain named itself. Then it got curious about how it works.",
+            "The person you think of before sleeping is either the reason for your happiness or your pain.",
+            "If you're reading this, you're breathing. Now you're thinking about your breathing."
+        ],
+        "Clean Meme Logic": [
+            "The objective of Golf is to play the least amount of Golf.",
+            "If you clean a vacuum cleaner, you become a vacuum cleaner.",
+            "Clapping is just hitting yourself because you like something.",
+            "Revenge is a dish best served cold, which effectively makes it cold cuts.",
+            "Nothing is on fire, fire is on things."
+        ],
+        "Comparison Curiosity": [
+            "You are closer in size to the entire universe than you are to a generic atom.",
+            "If you drove a car upwards at 60mph, you would be in space in less than an hour.",
+            "Australia is wider than the moon. The moon is 3400km wide, Australia is 4000km wide.",
+            "Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.",
+            "There are more trees on Earth than stars in the Milky Way galaxy."
+        ]
+    }
+    
+    # Select content
+    if facts:
+        selected_text = random.choice(facts)
+        save_used_topic(selected_text)
+        save_used_joke(selected_text)
+    else:
+        # Fallback content by pillar (Refinement 3 applied here too)
+        print("  [FALLBACK] Using curated content")
+        available_fallbacks = [f for f in fallbacks.get(selected_pillar['name'], []) 
+                              if not is_topic_duplicate(f)]
+        
+        if not available_fallbacks:
+            # Emergency reset if all fallbacks used in 7 days
+            available_fallbacks = fallbacks.get(selected_pillar['name'], [])
+        
+        # FAILSAFE: If still empty (e.g. missing pillar key), use Fact Shock as ultimate backup
+        if not available_fallbacks:
+             print("  [WARN] Pillar fallback empty. Switching to Fact Shock backup.")
+             available_fallbacks = fallbacks["Fact Shock"]
+            
+        selected_text = random.choice(available_fallbacks)
+        save_used_topic(selected_text)
+
     # Refinement 5: Anchor Entity Extraction
     anchor_entities = detect_anchor_entities(selected_text)
 
