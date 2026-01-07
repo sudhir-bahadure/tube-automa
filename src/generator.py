@@ -102,7 +102,7 @@ def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-AndrewMultilingualNeural" # Natural, Human-like, Conversational 
+    voice = "en-US-ChristopherNeural" # Natural, Human-like, Conversational 
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
     max_retries = 3
@@ -611,25 +611,32 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         sub_segment = CompositeVideoClip([sub_clip, sub_box, sub_txt, sub_cta]).set_audio(sub_audio)
         curiosity_clips.append(sub_segment)
         
-        # Compile
-        curiosity_video = concatenate_videoclips(curiosity_clips, method="compose")
+        # --- COMPILE LOGIC FIX ---
+        # 1. Separate Main Content vs Subscribe Segment
+        main_visual_clips = curiosity_clips[:-1] # All except last (which is Subscribe)
+        subscribe_segment = curiosity_clips[-1] 
         
-        # Branding only on main content
+        # 2. Concatenate Main Visuals
+        main_video_visuals = concatenate_videoclips(main_visual_clips, method="compose")
+        
+        # 3. Attach Main Audio (Narration + Music) to Main Visuals
+        # Ensure duration match (Audio drives the duration)
+        if main_video_visuals.duration > duration:
+            main_video_visuals = main_video_visuals.subclip(0, duration)
+        elif main_video_visuals.duration < duration:
+             # Extend last frame if needed? Or just let audio cut?
+             # Better to loop or hold last frame? For now, we trust chunk calculation.
+             pass
+             
+        main_video_with_audio = main_video_visuals.set_audio(audio)
+        
+        # 4. Apply Branding to Main Video ONLY
         if brand_overlay:
-            # Re-assemble with branding on the main parts
-            # Iterate and add branding to all except last (Subscribe)
-            final_clips = []
-            for i, clip in enumerate(curiosity_clips):
-                 if i == len(curiosity_clips) - 1: # Last one is subscribe
-                     final_clips.append(clip)
-                 else:
-                     # Add branding
-                     brand_overlay_clip = brand_overlay.set_duration(clip.duration)
-                     final_clips.append(CompositeVideoClip([clip, brand_overlay_clip]))
-
-            final_video = concatenate_videoclips(final_clips, method="compose")
-        else:
-            final_video = curiosity_video
+             brand_overlay = brand_overlay.set_duration(main_video_with_audio.duration)
+             main_video_with_audio = CompositeVideoClip([main_video_with_audio, brand_overlay])
+             
+        # 5. Final Concatenation: Main (with Audio) + Final Subscribe (with its own Audio)
+        final_video = concatenate_videoclips([main_video_with_audio, subscribe_segment], method="compose")
 
 
             
