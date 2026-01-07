@@ -1,0 +1,21 @@
+### 🤖 ANTIGRAVITY PROJECT HINT ###
+Project: TubeAutoma (Daily YouTube Automation)
+Niche: Meme/Internet Culture & Curiosity Shorts
+Root: D:\YT\youtube automation backup
+
+**HOW TO RESUME:**
+1. Open this folder in VS Code.
+2. Ensure Python environment is active (.\venv\Scripts\activate).
+3. Type /resume to start the automated checks.
+
+**IMPORTANT STATE FILES:**
+- used_jokes.json (Tracks posted memes)
+- used_videos.json (Tracks used background clips)
+- RESTORE.md (Complete setup guide)
+
+**IDENTITY SHIFT:**
+This project is currently isolated for "CurioByte" (Shorts) and legal "Old Channel" (Long videos). 
+Structural identity guards are active in youtube_uploader.py.
+
+**VERSION:** Structural Isolation v2.2 (Synced)
+###################################
