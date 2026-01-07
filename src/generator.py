@@ -552,23 +552,82 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         except:
             brand_overlay = None
             
+        # 6. VIRAL SUBSCRIBE HOOK (Re-enabled for Engagement)
+        # Generate Audio
+        sub_audio_path = "temp_curio_sub.mp3"
+        # High-Engagement Viral CTAs
+        sub_scripts = [
+            "I will reveal an even crazier fact tomorrow. Follow now.",
+            "Drop a mind blown in the comments if this shocked you.",
+            "Share this with someone who needs to see this."
+        ]
+        sub_script = random.choice(sub_scripts)
+        asyncio.run(generate_audio(sub_script, sub_audio_path))
+        sub_audio_clip = AudioFileClip(sub_audio_path)
+        
+        sub_duration = sub_audio_clip.duration + 1.0
+        sub_audio = CompositeAudioClip([sub_audio_clip]).set_duration(sub_duration)
+        
+        # Subscribe Visuals (High Contrast)
+        sub_bg_file = download_background_video("nebula space abstract", pexels_key, "temp_curio_sub_bg.mp4", segment_index=99)
+        sub_clip = None
+        if sub_bg_file:
+             try:
+                 sub_clip = VideoFileClip(sub_bg_file)
+                 # Resize logic
+                 w, h = sub_clip.size
+                 target_ratio = 9/16
+                 if w/h > target_ratio:
+                     new_w = h * target_ratio
+                     sub_clip = crop(sub_clip, x1=(w/2 - new_w/2), width=new_w, height=h)
+                 else:
+                     new_h = w / target_ratio
+                     sub_clip = crop(sub_clip, y1=(h/2 - new_h/2), width=w, height=new_h)
+                 sub_clip = sub_clip.resize(newsize=(1080, 1920))
+                 
+                 if sub_clip.duration < sub_duration:
+                     sub_clip = sub_clip.loop(duration=sub_duration)
+                 else:
+                      sub_clip = sub_clip.subclip(0, sub_duration)
+             except:
+                 sub_clip = None
+        
+        if not sub_clip:
+            sub_clip = ColorClip(size=(1080, 1920), color=(0, 0, 0), duration=sub_duration)
+
+        # Viral Text Overlay (YELLOW + BOLD)
+        sub_box = ColorClip(size=(900, 300), color=(0,0,0), duration=sub_duration).set_opacity(0.8).set_position('center')
+        
+        sub_txt = (TextClip("FOLLOW FOR MORE", fontsize=90, color='#FFDC00', font='Impact', # Viral Yellow
+                            method='caption', size=(850, None), align='center', stroke_color='black', stroke_width=4)
+                       .set_position(('center', 800)) 
+                       .set_duration(sub_duration))
+                       
+        sub_cta = (TextClip("DAILY MIND BLOWING FACTS", fontsize=45, color='white', font='Arial',
+                            method='caption', size=(850, None), align='center')
+                       .set_position(('center', 1100))
+                       .set_duration(sub_duration))
+        
+        sub_segment = CompositeVideoClip([sub_clip, sub_box, sub_txt, sub_cta]).set_audio(sub_audio)
+        curiosity_clips.append(sub_segment)
+        
         # Compile
         curiosity_video = concatenate_videoclips(curiosity_clips, method="compose")
-        # Note: Audio is already set on segments, but concatenate should handle it. 
-        # However, to be safe with crossfades or simple cuts, we might need to composite audio. 
-        # MoviePy's concatenate_videoclips usually handles audio if method='compose'.
         
+        # Branding only on main content
         if brand_overlay:
-            # Branding only on the main content part? Or whole thing? 
-            # Ideally whole thing, but the subscribe segment has its own text.
-            # Let's limit branding to the main duration (before subscribe)
-            brand_overlay = brand_overlay.set_duration(duration) 
-            # We need to composite branding ONLY onto the main content timeline, NOT the subscribe part
-            # But the 'curiosity_clips' list is already mixed. 
-            # Actually, simpler: Apply branding only to the main content parts BEFORE concatenating the sub segment?
-            # Complexity: High. 
-            # Easiest: Just let Branding overlay sit on top of everything for the first X seconds.
-            final_video = CompositeVideoClip([curiosity_video, brand_overlay])
+            # Re-assemble with branding on the main parts
+            # Iterate and add branding to all except last (Subscribe)
+            final_clips = []
+            for i, clip in enumerate(curiosity_clips):
+                 if i == len(curiosity_clips) - 1: # Last one is subscribe
+                     final_clips.append(clip)
+                 else:
+                     # Add branding
+                     brand_overlay_clip = brand_overlay.set_duration(clip.duration)
+                     final_clips.append(CompositeVideoClip([clip, brand_overlay_clip]))
+
+            final_video = concatenate_videoclips(final_clips, method="compose")
         else:
             final_video = curiosity_video
 

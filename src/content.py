@@ -722,74 +722,115 @@ def get_curiosity_metadata():
     """
     print("\n[*] Generating structured curiosity content...")
     
-    # Select ONE pillar randomly
+    # Select ONE pillar randomly (Weighted as per prompt)
+    # Weights: Space (20), Ocean (25), History (20), Brain (15), Quantum (10), Biology (10)
     pillars = [
         {
-            "name": "Fact Shock",
-            "sources": ["TodayILearned", "Damnthatsinteresting", "science"],
+            "name": "SPACE & ASTRONOMY",
+            "sources": ["space", "astronomy", "Cosmos", "blackholes"],
             "hook_templates": [
-                "Most people misunderstand",
-                "Here is a simple way to understand",
-                "This fact about",
-                "It is easy to miss this detail about"
+                "This star is so dense, one teaspoon weighs MORE than Mount Everest!",
+                "What if I told you time moves SLOWER for you than astronauts?",
+                "There is a place in space where it rains DIAMONDS!",
+                "Scientists found a planet that shouldn't EXIST!",
+                "You won't believe what's at the center of our galaxy!"
             ],
-            "build_prefix": "At first glance, it seems different, but",
-            "reveal_prefix": "The real explanation is that",
+            "build_prefix": "You know space is big, right?",
+            "reveal_prefix": "But here is the crazy part.",
             "close_templates": [
-                "Nature is fascinating.",
-                "It makes more sense now.",
-                "Science explains everything."
+                "I'll reveal an even crazier fact tomorrow - follow now!",
+                "Follow for daily mind-blowing space facts!",
+                "Drop a 🤯 if this blew your mind!"
             ]
         },
         {
-            "name": "Internet Curiosity",
-            "sources": ["Showerthoughts", "explainlikeimfive"],
+            "name": "DEEP OCEAN & NATURE",
+            "sources": ["TheDepthsBelow", "ocean", "Thalassophobia", "seacreatures"],
             "hook_templates": [
-                "Have you ever noticed this about",
-                "Here is an interesting thought about",
-                "Once you see this, it changes how you view",
-                "This is a fresh perspective on"
+                "Scientists found a creature that's been alive for 11,000 YEARS!",
+                "We know more about the Moon than the bottom of our own OCEAN!",
+                "Something massive just woke up in the deep sea!",
+                "Your phone is dirtier than a TOILET seat!", 
+                "This underwater sound was louder than a NUCLEAR BOMB!"
             ],
-            "build_prefix": "Think about it simply.",
-            "reveal_prefix": "When you look closer,",
+            "build_prefix": "It sounds impossible, but",
+            "reveal_prefix": "The terrifying truth is",
             "close_templates": [
-                "That is a new way to see it.",
-                "It connects everything.",
-                "A fresh perspective."
+                "Share this with someone who hates the ocean!",
+                "Comment what scares you more: Space or Ocean?",
+                "Follow for daily deep sea mysteries!"
             ]
         },
         {
-            "name": "Clean Meme Logic",
-            "sources": ["Showerthoughts", "funny"],
+            "name": "ANCIENT HISTORY",
+            "sources": ["Archaeology", "AncientCivilizations", "history"],
             "hook_templates": [
-                "This seems strange, but it is true about",
-                "Here is a funny detail about",
-                "This logic actually checks out regarding",
-                "I never realized this simple truth about"
+                "Everything you learned about the Pyramids is WRONG!",
+                "This ancient technology shouldn't exist 2,000 years ago!",
+                "We still don't know how they built THIS!",
+                "Archaeologists just found a lost city hidden in the JUNGLE!",
+                "This map shows lands that don't exist anymore!"
             ],
-            "build_prefix": "It sounds odd, but",
-            "reveal_prefix": "The funny part is",
+            "build_prefix": "History books won't tell you this.",
+            "reveal_prefix": "But new evidence shows",
             "close_templates": [
-                "Life is full of surprises.",
-                "It is strangely accurate.",
-                "Logic can be funny."
+                "Follow for forbidden history facts!",
+                "Tag a friend who loves history!",
+                "Subscribe to uncover the past!"
             ]
         },
         {
-            "name": "Comparison Curiosity",
-            "sources": ["todayilearned", "science"],
+            "name": "BRAIN & PSYCHOLOGY",
+            "sources": ["psychology", "CognitiveScience", "socialpsychology"],
             "hook_templates": [
-                "It is hard to imagine the true size of",
-                "Here is a comparison to help you visualize",
-                "Most people don't realize the scale of",
-                "This helps put things in perspective about"
+                "Wait... Your brain is eating itself RIGHT NOW!",
+                "You can't read this sentence without hearing a voice in your head!",
+                "Your memories are LYING to you right now!",
+                "This psychological trick works on everyone!",
+                "You make decisions 7 seconds BEFORE you realize it!"
             ],
-            "build_prefix": "First, look at",
-            "reveal_prefix": "But compared to this,",
+            "build_prefix": "It feels real, doesn't it?",
+            "reveal_prefix": "But your brain is actually",
             "close_templates": [
-                "Scale changes everything.",
-                "Perspective is powerful.",
-                "Numbers tell a story."
+                "Follow to hack your own brain!",
+                "Send this to someone who needs to know!",
+                "Comment if this worked on you!"
+            ]
+        },
+        {
+            "name": "QUANTUM & PHYSICS",
+            "sources": ["Physics", "QuantumPhysics", "science"],
+            "hook_templates": [
+                "If you travel fast enough, you can go BACK in time!",
+                "Two particles can communicate INSTANTLY across the universe!",
+                "Reality doesn't exist until you LOOK at it!",
+                "You are made of 99.999% EMPTY SPACE!",
+                "Time is an ILLUSION created by your brain!"
+            ],
+            "build_prefix": "This breaks all the rules of logic.",
+            "reveal_prefix": "But quantum physics proves",
+            "close_templates": [
+                "Follow for daily mind-bending physics!",
+                "Share if your brain hurts!",
+                "Subscribe for more reality-breaking facts!"
+            ]
+        },
+        {
+            "name": "BIOLOGY EXTREMES",
+            "sources": ["NatureIsFuckingLit", "biology", "Awwducational"],
+            "hook_templates": [
+                "This animal can survive in SPACE without a suit!",
+                "Octopuses have THREE hearts and BLUE blood!",
+                "There is a jellyfish that is IMMORTAL!",
+                "You share 50% of your DNA with a BANANA!",
+                "Sharks existed BEFORE trees!"
+            ],
+            "build_prefix": "Nature is weirder than you think.",
+            "reveal_prefix": "The biological fact is",
+            "close_templates": [
+                "Follow for daily animal superpowers!",
+                "Tag an animal lover!",
+                "Subscribe for more nature shockers!"
             ]
         }
     ]
@@ -843,38 +884,47 @@ def get_curiosity_metadata():
 
     # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
     fallbacks = {
-        "Fact Shock": [
-            "A day on Venus is longer than a year on Venus. It takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun.",
-            "Honey never spoils. Archaeologists found 3000 year old honey in Egyptian tombs that was still edible.",
-            "Octopuses have three hearts and blue blood. Two hearts pump blood to the gills while one pumps to the body.",
-            "The Eiffel Tower can be 15 cm taller during the summer. Thermal expansion causes the iron to expand when temperatures rise.",
-            "Bananas are berries, but strawberries are not. Botanically, a berry has seeds inside the flesh.",
-            "Wombat poop is cube-shaped. This prevents it from rolling away and marks their territory.",
-            "Sharks existed before trees. Sharks are 400 million years old, while trees appeared 350 million years ago.",
-            "Water can boil and freeze at the same time. It's called the triple point.",
-            "A cloud can weigh more than a million pounds. The water droplets are just spread out.",
-            "Your bones are four times stronger than concrete. A cubic inch of bone can bear a load of 19,000 lbs."
+        "SPACE & ASTRONOMY": [
+            "Neutron stars are so dense that a teaspoon of them would weigh 6 billion tons.",
+            "There is a planet made of burning ice called Gliese 436 b.",
+            "The sunset on Mars looks blue to the human eye.",
+            "One day on Venus is longer than one year on Venus.",
+            "Space is completely silent because there is no atmosphere to carry sound."
         ],
-        "Internet Curiosity": [
-            "You have never seen your face in person. Only reflections and photographs.",
-            "Every photo of you is from the past. You have never seen yourself in real time.",
-            "Your brain named itself. Then it got curious about how it works.",
-            "The person you think of before sleeping is either the reason for your happiness or your pain.",
-            "If you're reading this, you're breathing. Now you're thinking about your breathing."
+        "DEEP OCEAN & NATURE": [
+            "We have explored less than 5% of our oceans.",
+            "The blue whale's heart is so big a human could swim through its arteries.",
+            "There are underwater lakes and rivers at the bottom of the ocean.",
+            "Some jellyfish are biologically immortal and can revert to their polyp stage.",
+            "The loudest sound ever recorded underwater was called The Bloop."
         ],
-        "Clean Meme Logic": [
-            "The objective of Golf is to play the least amount of Golf.",
-            "If you clean a vacuum cleaner, you become a vacuum cleaner.",
-            "Clapping is just hitting yourself because you like something.",
-            "Revenge is a dish best served cold, which effectively makes it cold cuts.",
-            "Nothing is on fire, fire is on things."
+        "ANCIENT HISTORY": [
+            "Woolly mammoths were still alive when the Pyramids were being built.",
+            "Cleopatra lived closer in time to the Moon landing than the Great Pyramid.",
+            "The Great Wall of China is not visible from space with the naked eye.",
+            "Vikings used specific crystals to navigate on cloudy days.",
+            "Hero of Alexandria invented a steam engine 2,000 years before the industrial revolution."
         ],
-        "Comparison Curiosity": [
-            "You are closer in size to the entire universe than you are to a generic atom.",
-            "If you drove a car upwards at 60mph, you would be in space in less than an hour.",
-            "Australia is wider than the moon. The moon is 3400km wide, Australia is 4000km wide.",
-            "Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.",
-            "There are more trees on Earth than stars in the Milky Way galaxy."
+        "BRAIN & PSYCHOLOGY": [
+            "You can't hum while holding your nose.",
+            "Your brain treats rejection like physical pain.",
+            "It takes only 4 seconds to form a silence that feels awkward.",
+            "Music can repair brain damage and return lost memories.",
+            "Your brain makes decisions 7 seconds before you are consciously aware of them."
+        ],
+        "QUANTUM & PHYSICS": [
+            "If you remove all empty space from atoms, humanity would fit in a sugar cube.",
+            "Time passes slower near a massive object like a pyramid or mountain.",
+            "Light behaves as both a particle and a wave depending on if you watch it.",
+            "Quantum entanglement means particles communicate instantly across the universe.",
+            "You are technically never touching anything due to electron repulsion."
+        ],
+        "BIOLOGY EXTREMES": [
+            "Tardigrades can survive in the vacuum of space.",
+            "Wombat poop is cube-shaped to stop it from rolling away.",
+            "A shrimp's heart is located in its head.",
+            "Sloths can hold their breath longer than dolphins can.",
+            "Cows have best friends and get stressed when separated."
         ]
     }
     
@@ -893,10 +943,10 @@ def get_curiosity_metadata():
             # Emergency reset if all fallbacks used in 7 days
             available_fallbacks = fallbacks.get(selected_pillar['name'], [])
         
-        # FAILSAFE: If still empty (e.g. missing pillar key), use Fact Shock as ultimate backup
+        # FAILSAFE: If still empty (e.g. missing pillar key), use Space as ultimate backup
         if not available_fallbacks:
-             print("  [WARN] Pillar fallback empty. Switching to Fact Shock backup.")
-             available_fallbacks = fallbacks["Fact Shock"]
+             print("  [WARN] Pillar fallback empty. Switching to SPACE & ASTRONOMY backup.")
+             available_fallbacks = fallbacks["SPACE & ASTRONOMY"]
             
         selected_text = random.choice(available_fallbacks)
         save_used_topic(selected_text)
