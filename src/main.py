@@ -19,10 +19,20 @@ def main():
     print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
     
     # 1. Fetch Content
-    if args.category == "meme":
-        metadata = get_meme_metadata()
-    elif args.category == "long":
+    if args.category == "long":
+        # Refinement 7: Long-form activation logic
+        from datetime import datetime
+        current_date = datetime.now()
+        activation_date = datetime(2026, 1, 11)
+        target_channel = os.environ.get("TARGET_CHANNEL")
+        
+        if target_channel == "curiosity" and current_date < activation_date:
+            print(f"\n[BLOCKED] Long-form content for CurioByte is DISABLED until Jan 11, 2026.")
+            print(f"Current Date: {current_date.strftime('%Y-%m-%d')}")
+            return
+            
         metadata = get_long_video_metadata()
+    elif args.category == "meme":
     elif args.category == "curiosity":
         metadata = get_curiosity_metadata()
     else:

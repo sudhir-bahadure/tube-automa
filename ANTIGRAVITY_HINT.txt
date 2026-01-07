@@ -8,6 +8,12 @@ Root: D:\YT\youtube automation backup
 2. Ensure Python environment is active (.\venv\Scripts\activate).
 3. Type /resume to start the automated checks.
 
+**🔑 SECRETS (RESTORE TO .env):**
+PEXELS_API_KEY=SmUKWDhc7wCEZ5BicQlC70nILvfsrwuYx4TRVm16DxBcFXZO4TIVsHLL
+YOUTUBE_CLIENT_ID=[Run src/setup_youtube_auth.py to regenerate if not saved]
+YOUTUBE_CLIENT_SECRET=[Run src/setup_youtube_auth.py to regenerate if not saved]
+YOUTUBE_REFRESH_TOKEN=[Run src/setup_youtube_auth.py to regenerate if not saved]
+
 **IMPORTANT STATE FILES:**
 - used_jokes.json (Tracks posted memes)
 - used_videos.json (Tracks used background clips)

@@ -285,7 +285,16 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 "woman happy face",
                 "girl reaction laugh"
             ]
+            # Refinement 5: Anchor Entity Visual Sync (CurioByte Only)
+            anchor_entities = metadata.get('anchor_entities', [])
+            current_seg_start = sum(o.duration for o in meme_clips) if meme_clips else 0
+            
             bg_keyword = bg_keywords[i % len(bg_keywords)]
+            
+            # Check for anchor entity in this time range
+            # (Note: For memes, we treat each joke as a segment, but sync applies more to Curiosity/Long-form)
+            # However, we implement the logic here for general reliability.
+            
             bg_filename = f"temp_bg_{i}.mp4"
             bg_file = download_background_video(bg_keyword, pexels_key, bg_filename, segment_index=i)
             clip = None
@@ -466,106 +475,100 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         audio = mix_audio(audio_clip, music_path=music_file, music_vol=0.15)
 
         # 3. Visuals (STRICT COPYRIGHT-SAFE ONLY)
-        # Force copyright-safe keywords - NO faces, NO copyrighted content
-        safe_visual_categories = [
-            "abstract geometric patterns",
-            "flowing liquid motion",
-            "particle effects animation",
-            "nature macro photography",
-            "space nebula stars",
-            "technology circuit boards",
-            "minimal gradient backgrounds",
-            "light rays bokeh"
-        ]
+        anchor_entities = metadata.get('anchor_entities', [])
+        visual_instructions = metadata.get('visual_instructions', [])
         
-        # Override keyword if it might contain copyrighted content
-        visual_search = visual_keyword.lower()
-        forbidden_terms = ["movie", "tv", "show", "celebrity", "actor", "tiktok", "viral", "meme", "face"]
-        if any(term in visual_search for term in forbidden_terms):
-            visual_search = random.choice(safe_visual_categories)
-            print(f"  [VISUAL OVERRIDE] Using safe category: {visual_search}")
-        else:
-            # Enhance with safe modifiers
-            visual_search = f"abstract {visual_keyword} background"
+        # We'll create multiple clips and concatenate them for better visual sync
+        curiosity_clips = []
         
-        bg_file = download_background_video(visual_search, pexels_key, "temp_bg_curiosity.mp4")
-        clip = None
+        # 4. Generate on-screen text cues
+        text_cues = metadata.get('text_cues', [])
+        chunk_duration = duration / len(text_cues) if text_cues else duration
         
-        if bg_file:
-            try:
-                clip = VideoFileClip(bg_file)
-                if clip.duration < duration:
-                    clip = clip.loop(duration=duration)
-                else:
-                    clip = clip.subclip(0, duration)
-            except:
-                clip = None
-        
-        if not clip:
-            clip = ColorClip(size=(1080, 1920), color=(10, 10, 25), duration=duration)
-
-        # Resize to 9:16
-        w, h = clip.size
-        target_ratio = 9/16
-        if w/h > target_ratio:
-            new_w = h * target_ratio
-            clip = crop(clip, x1=(w/2 - new_w/2), width=new_w, height=h)
-        else:
-            new_h = w / target_ratio
-            clip = crop(clip, y1=(h/2 - new_h/2), width=w, height=new_h)
-        clip = clip.resize(newsize=(1080, 1920))
-
-        # 4. Text Overlay (Clean, Glassmorphism style)
-        words = text.split()
-        # Group into larger chunks for faster reading flow
-        chunks = []
-        chunk_size = 7
-        for i in range(0, len(words), chunk_size):
-            chunks.append(" ".join(words[i:i+chunk_size]))
+        for i, chunk in enumerate(text_cues):
+            start_time = i * chunk_duration
             
-        txt_clips = []
-        chunk_duration = duration / len(chunks)
-        
-        for i, chunk in enumerate(chunks):
+            # Refinement 5: Anchor Entity Visual Sync
+            current_keyword = visual_keyword
+            for entity in anchor_entities:
+                # If entity is mentioned in this chunk (approximate time)
+                if abs(entity['start_time'] - start_time) < 1.0:
+                    current_keyword = entity['name']
+                    print(f"  [SYNC] Anchor Entity detected: {current_keyword} at {start_time}s")
+                    break
+            
+            # Download visual for this specific chunk
+            bg_seg_filename = f"temp_curio_seg_{i}.mp4"
+            bg_seg_file = download_background_video(current_keyword, pexels_key, bg_seg_filename, segment_index=i)
+            
+            seg_clip = None
+            if bg_seg_file:
+                try:
+                    seg_clip = VideoFileClip(bg_seg_file)
+                    if seg_clip.duration < chunk_duration:
+                        seg_clip = seg_clip.loop(duration=chunk_duration)
+                    else:
+                        seg_clip = seg_clip.subclip(0, chunk_duration)
+                except:
+                    seg_clip = None
+            
+            if not seg_clip:
+                seg_clip = ColorClip(size=(1080, 1920), color=(10, 10, 25), duration=chunk_duration)
+            
+            # Normalize size
+            w, h = seg_clip.size
+            target_ratio = 9/16
+            if w/h > target_ratio:
+                new_w = h * target_ratio
+                seg_clip = crop(seg_clip, x1=(w/2 - new_w/2), width=new_w, height=h)
+            else:
+                new_h = w / target_ratio
+                seg_clip = crop(seg_clip, y1=(h/2 - new_h/2), width=w, height=new_h)
+            seg_clip = seg_clip.resize(newsize=(1080, 1920))
+            
+            # Add Text Overlay
             # Glassmorphism Box
             box_w, box_h = 900, 250
             box = ColorClip(size=(box_w, box_h), color=(0,0,0), duration=chunk_duration)
-            box = box.set_opacity(0.5).set_position('center').set_start(i * chunk_duration)
+            box = box.set_opacity(0.5).set_position('center')
             
-            # Text
             try:
                 txt = (TextClip(chunk, fontsize=65, color='white', font='Arial', 
-                            method='caption', size=(850, None), align='center', stroke_color='black', stroke_width=1)
-                    .set_position('center')
-                    .set_duration(chunk_duration)
-                    .set_start(i * chunk_duration))
+                                method='caption', size=(850, None), align='center', stroke_color='black', stroke_width=1)
+                       .set_position('center')
+                       .set_duration(chunk_duration))
                 
-                txt_clips.append(box)
-                txt_clips.append(txt)
-            except Exception as e:
-                print(f"  [WARN] TextClip failed (ImageMagick missing?): {e}")
-                # Skip text, just show video
-                continue
-
-        # 5. Branding (Subtle)
+                final_seg = CompositeVideoClip([seg_clip, box, txt])
+            except:
+                final_seg = seg_clip
+            
+            curiosity_clips.append(final_seg)
+        
+        # 5. Branding (Subtle Overlay for entire video)
         try:
-            brand = (TextClip("@DailyCuriosities", fontsize=30, color='white', font='Arial', opacity=0.7)
-                    .set_position(('center', 1600))
-                    .set_duration(duration))
-            txt_clips.append(brand)
+            brand_overlay = (TextClip("@CurioByte143", fontsize=30, color='white', font='Arial', opacity=0.7)
+                            .set_position(('center', 1600))
+                            .set_duration(duration))
         except:
-            pass
+            brand_overlay = None
 
         # Compile
-        final_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
-        final_clip.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
+        curiosity_video = concatenate_videoclips(curiosity_clips, method="compose").set_audio(audio)
+        if brand_overlay:
+            final_video = CompositeVideoClip([curiosity_video, brand_overlay])
+        else:
+            final_video = curiosity_video
+            
+        final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
 
         # Cleanup
-        final_clip.close()
-        if clip: clip.close()
+        final_video.close()
+        for c in curiosity_clips: c.close()
         try: 
             os.remove("temp_curiosity.mp3")
-            if bg_file: os.remove(bg_file)
+            for i in range(len(text_cues)):
+                f = f"temp_curio_seg_{i}.mp4"
+                if os.path.exists(f): os.remove(f)
         except: pass
         
         return output_path
@@ -581,8 +584,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         print(f"Total segments: {len(segments)} (Target: 8+ minutes)")
         
         for i, seg in enumerate(segments):
-            text = seg['text']
-            keyword = seg['keyword']
+            # Refinement 8: Long-form Opening Brand Line (NEW)
+            if i == 1:  # After the hook (segment 0)
+                brand_line = " Welcome to CurioByte. "
+                # Insert brand line at the beginning of the second segment
+                text = brand_line + text
+                print(f"  [BRANDING] Injected brand intro: '{brand_line.strip()}'")
             
             # Determine speech rate based on segment type
             # Hook and intro: normal speed

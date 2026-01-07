@@ -42,10 +42,11 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         return False
         
     # --- MULTI-ACCOUNT STRUCTURAL LOCKDOWN (Scoped Version) ---
-    print("[*] VERSION: Structural Isolation v2.2 (Scoped)")
+    print("[*] VERSION: Structural Isolation v3.0 (Locked Refinement)")
     try:
-        # Since 'youtube.upload' scope does not allow channels().list,
-        # we identify the target account via safe Environment Verification.
+        from datetime import datetime
+        current_date = datetime.now()
+        activation_date = datetime(2026, 1, 11)
         
         target_channel_env = os.environ.get("TARGET_CHANNEL")
         workflow_name = os.environ.get("GITHUB_WORKFLOW", "manual_run")
@@ -53,42 +54,48 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         # Verify identity intent
         is_curiobyte_intent = (target_channel_env == "curiosity")
         
-        print(f"[*] Target intent: {'CurioByte' if is_curiobyte_intent else 'Old Channel'}")
+        print(f"[*] Target intent: {'CurioByte (@CurioByte143)' if is_curiobyte_intent else 'Old Channel'}")
         
         if is_curiobyte_intent:
-            # RULE: CurioByte ONLY allows 'curiosity' mode and Shorts duration
+            # RULE: CurioByte ONLY allows 'curiosity' mode
             if mode != "curiosity":
                 print(f"\n[SECURITY BLOCK] Intent Mismatch!")
-                print(f"       Account: CurioByte (sudhirmturk@gmail.com)")
+                print(f"       Account: CurioByte (@CurioByte143)")
                 print(f"       ERROR: CurioByte MUST ONLY receive curiosity content.")
-                print(f"       ATTEMPTED: '{mode}' from '{workflow_name}'.")
+                print(f"       ATTEMPTED: '{mode}' mode.")
                 print(f"       ACTION: Upload Terminated structurally.")
                 return None
             
-            # Verifying source workflow (Curiositiy operations must come from Curiosity workflow)
-            if "Curiosity" not in workflow_name and workflow_name != "manual_run":
-                print(f"\n[SECURITY BLOCK] SOURCE Mismatch!")
-                print(f"       ERROR: Curiosity uploads must come from the Whitelisted Curiosity Workflow.")
-                return None
+            # Whitelist: Only "Daily Curiosity Shorts Uploader" before activation
+            if current_date < activation_date:
+                if "Curiosity" not in workflow_name and workflow_name != "manual_run":
+                    print(f"\n[SECURITY BLOCK] SOURCE Whitelist Failure!")
+                    print(f"       ERROR: Only 'Daily Curiosity Shorts Uploader' permitted before Jan 11, 2026.")
+                    return None
 
             # Shorts Duration Lock for CurioByte
             from moviepy.editor import VideoFileClip
             clip = VideoFileClip(file_path)
             duration = clip.duration
             clip.close()
+            
+            # Refinement 7: Long-form activation check
             if duration > 60:
-                print(f"\n[SECURITY BLOCK] Policy Violation: Non-Shorts content blocked for CurioByte.")
-                return None
+                if current_date < activation_date:
+                    print(f"\n[SECURITY BLOCK] Policy Violation: Long-form content DISABLED for CurioByte until Jan 11, 2026.")
+                    return None
+                else:
+                    print(f"[*] [POLICY] Long-form content enabled for CurioByte (Active since Jan 11, 2026).")
         else:
             # RULE: Old Channel MUST NOT receive 'curiosity' content
             if mode == "curiosity":
-                print(f"\n[SECURITY BLOCK] Intent Mismatch!")
-                print(f"       Account: Old Channel (sudhirt.bahadure@gmail.com)")
-                print(f"       ERROR: Curiosity content must NOT go to the old channel.")
+                print(f"\n[SECURITY BLOCK] Isolation Breach!")
+                print(f"       Account: Old Channel (Non-CurioByte)")
+                print(f"       ERROR: Curiosity content is structurally isolated to CurioByte.")
                 print(f"       ACTION: Upload Terminated structurally.")
                 return None
 
-        print(f"[*] [GUARD] Identity Intent Confirmed. Access Granted.")
+        print(f"[*] [GUARD] Identity Intent & Refinement Compliance Confirmed. Access Granted.")
 
     except Exception as e:
         print(f"  [CRITICAL] Architectural Guard failure: {e}")
