@@ -7,9 +7,13 @@ name: Daily Curiosity Shorts Uploader
 
 on:
   schedule:
-    # Cron: minute hour day month dayofweek (UTC)
-    # 14:00 UTC = 7:30 PM IST
-    - cron: '0 14 * * *'
+    # Cron Triggers (EST to UTC Conversion):
+    # Mon-Thu: 1:10 PM EST -> 18:10 UTC
+    - cron: '10 18 * * 1-4'
+    # Friday: 2:40 PM EST -> 19:40 UTC
+    - cron: '40 19 * * 5'
+    # Weekend: 11:40 AM EST -> 16:40 UTC (Sat, Sun)
+    - cron: '40 16 * * 0,6'
   
   # Manual trigger option (for testing or immediate runs)
   workflow_dispatch:
