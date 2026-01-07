@@ -839,6 +839,7 @@ def get_curiosity_metadata():
             print(f"  [WARN] Fetch error for r/{subreddit}: {e}")
     
     # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
+    # Curated fallbacks for quality (Used if Reddit fetch fails or provides low quality)
     fallbacks = {
         "Fact Shock": [
             "A day on Venus is longer than a year on Venus. It takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun.",
@@ -858,6 +859,20 @@ def get_curiosity_metadata():
             "Your brain named itself. Then it got curious about how it works.",
             "The person you think of before sleeping is either the reason for your happiness or your pain.",
             "If you're reading this, you're breathing. Now you're thinking about your breathing."
+        ],
+        "Clean Meme Logic": [
+            "The objective of Golf is to play the least amount of Golf.",
+            "If you clean a vacuum cleaner, you become a vacuum cleaner.",
+            "Clapping is just hitting yourself because you like something.",
+            "Revenge is a dish best served cold, which effectively makes it cold cuts.",
+            "Nothing is on fire, fire is on things."
+        ],
+        "Comparison Curiosity": [
+            "You are closer in size to the entire universe than you are to a generic atom.",
+            "If you drove a car upwards at 60mph, you would be in space in less than an hour.",
+            "Australia is wider than the moon. The moon is 3400km wide, Australia is 4000km wide.",
+            "Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.",
+            "There are more trees on Earth than stars in the Milky Way galaxy."
         ]
     }
     
@@ -875,6 +890,11 @@ def get_curiosity_metadata():
         if not available_fallbacks:
             # Emergency reset if all fallbacks used in 7 days
             available_fallbacks = fallbacks.get(selected_pillar['name'], [])
+        
+        # FAILSAFE: If still empty (e.g. missing pillar key), use Fact Shock as ultimate backup
+        if not available_fallbacks:
+             print("  [WARN] Pillar fallback empty. Switching to Fact Shock backup.")
+             available_fallbacks = fallbacks["Fact Shock"]
             
         selected_text = random.choice(available_fallbacks)
         save_used_topic(selected_text)
