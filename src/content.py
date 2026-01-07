@@ -958,7 +958,6 @@ def get_curiosity_metadata():
             "concept": "Atomic structure emptiness.",
             "script": "If you removed the empty space from the atoms that make up all humans on Earth, the entire population would fit into the size of a sugar cube. Everything you touch and see is mostly just empty void held together by forces.",
             "keyword": "atoms molecular abstract",
-```
             "cta": "Drop a 🤯 if this blew your mind!"
         }
     ]
