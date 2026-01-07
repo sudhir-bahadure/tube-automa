@@ -1100,6 +1100,10 @@ def get_curiosity_metadata():
         "background": "Abstract gradient or geometric patterns only"
     }
     
+    
+    # Final cleanup of variables for return
+    visual_keyword = keyword
+    
     print(f"  [VISUAL] {visual_keyword}")
     print(f"  [TEXT CUES] {len(text_cues)} segments")
     print(f"  [THUMB] {thumbnail_spec['text']}")
@@ -1107,7 +1111,7 @@ def get_curiosity_metadata():
     return {
         "mode": "curiosity",
         "pillar": selected_pillar['name'],
-        "text": script,
+        "text": full_script,
         "anchor_entities": anchor_entities,
         "text_cues": text_cues,
         "visual_instructions": visual_instructions,
