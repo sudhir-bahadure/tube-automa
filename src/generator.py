@@ -568,7 +568,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Actually, simpler: Apply branding only to the main content parts BEFORE concatenating the sub segment?
             # Complexity: High. 
             # Easiest: Just let Branding overlay sit on top of everything for the first X seconds.
-             final_video = CompositeVideoClip([curiosity_video, brand_overlay])
+            final_video = CompositeVideoClip([curiosity_video, brand_overlay])
         else:
             final_video = curiosity_video
 
