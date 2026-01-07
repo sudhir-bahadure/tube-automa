@@ -33,6 +33,7 @@ def main():
             
         metadata = get_long_video_metadata()
     elif args.category == "meme":
+        metadata = get_meme_metadata()
     elif args.category == "curiosity":
         metadata = get_curiosity_metadata()
     else:
