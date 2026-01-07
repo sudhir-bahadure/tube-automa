@@ -728,68 +728,68 @@ def get_curiosity_metadata():
             "name": "Fact Shock",
             "sources": ["TodayILearned", "Damnthatsinteresting", "science"],
             "hook_templates": [
-                "Stop scrolling if you think you know",
-                "You have been lied to about",
+                "Most people misunderstand",
+                "Here is a simple way to understand",
                 "This fact about",
-                "I bet you didn't know that"
+                "It is easy to miss this detail about"
             ],
-            "build_prefix": "It sounds fake, but",
-            "reveal_prefix": "The reality is",
+            "build_prefix": "At first glance, it seems different, but",
+            "reveal_prefix": "The real explanation is that",
             "close_templates": [
-                "Follow for your daily dose of curiosity.",
-                "Subscribe to get smarter every day.",
-                "Stay curious and follow for more."
+                "Nature is fascinating.",
+                "It makes more sense now.",
+                "Science explains everything."
             ]
         },
         {
             "name": "Internet Curiosity",
             "sources": ["Showerthoughts", "explainlikeimfive"],
             "hook_templates": [
-                "Here is a thought that will keep you up at night about",
-                "You will never look at",
-                "Have you ever realized that",
-                "This is going to break your brain about"
+                "Have you ever noticed this about",
+                "Here is an interesting thought about",
+                "Once you see this, it changes how you view",
+                "This is a fresh perspective on"
             ],
-            "build_prefix": "Think about it.",
-            "reveal_prefix": "When you actually analyze it,",
+            "build_prefix": "Think about it simply.",
+            "reveal_prefix": "When you look closer,",
             "close_templates": [
-                "Follow for more daily mind blowers.",
-                "Share this with a friend who needs to know.",
-                "Subscribe for daily epiphany moments."
+                "That is a new way to see it.",
+                "It connects everything.",
+                "A fresh perspective."
             ]
         },
         {
             "name": "Clean Meme Logic",
             "sources": ["Showerthoughts", "funny"],
             "hook_templates": [
-                "Why does nobody talk about",
-                "I can't unsee this detail about",
-                "This paradox about",
-                "My entire life was a lie regarding"
+                "This seems strange, but it is true about",
+                "Here is a funny detail about",
+                "This logic actually checks out regarding",
+                "I never realized this simple truth about"
             ],
-            "build_prefix": "It makes zero sense, but",
-            "reveal_prefix": "The irony is that",
+            "build_prefix": "It sounds odd, but",
+            "reveal_prefix": "The funny part is",
             "close_templates": [
-                "Follow if this hurt your brain.",
-                "Subscribe for daily logic breaks.",
-                "Send this to confuse a friend."
+                "Life is full of surprises.",
+                "It is strangely accurate.",
+                "Logic can be funny."
             ]
         },
         {
             "name": "Comparison Curiosity",
             "sources": ["todayilearned", "science"],
             "hook_templates": [
-                "Your brain cannot comprehend the size of",
-                "Compare these two mind-blowing things about",
-                "You won't believe the scale of",
-                "This comparison changes everything about"
+                "It is hard to imagine the true size of",
+                "Here is a comparison to help you visualize",
+                "Most people don't realize the scale of",
+                "This helps put things in perspective about"
             ],
-            "build_prefix": "First, consider",
-            "reveal_prefix": "But when you compare it,",
+            "build_prefix": "First, look at",
+            "reveal_prefix": "But compared to this,",
             "close_templates": [
-                "Follow for more scale comparisons.",
-                "Subscribe to expand your perspective.",
-                "Stay curious, follow for more."
+                "Scale changes everything.",
+                "Perspective is powerful.",
+                "Numbers tell a story."
             ]
         }
     ]
