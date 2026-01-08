@@ -80,11 +80,13 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                 raise e
 
 def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
-    # Fallback to a solid color if no API key or download fails
+    """Download a unique background video from Pexels"""
     if not api_key:
         return None
     
-    # Add variation to query to get different results
+    # Clean query
+    query = query.replace("#", "").strip()
+    # Add variation to query
     varied_query = get_varied_keyword(query, segment_index)
     
     headers = {'Authorization': api_key}
@@ -106,42 +108,33 @@ def download_background_video(query="abstract", api_key=None, output_file="bg_ra
                             unused_videos.append(video)
                 
                 # If all videos are used, try with base query
-                if not unused_videos and query != varied_query:
-                    print(f"  [INFO] All videos used for '{varied_query}', trying base query...")
-                    return download_background_video(query, api_key, output_file, orientation, segment_index + 1)
-                
-                # If still no unused videos, expand search
                 if not unused_videos:
-                    print(f"  [INFO] All videos used, expanding search...")
-                    return download_background_video(f"{query} cinematic", api_key, output_file, orientation, segment_index + 2)
+                    print(f"  [INFO] No unused videos for '{varied_query}', using any available.")
+                    unused_videos = videos # Fallback to reused if absolutely necessary
                 
                 # Select random unused video
                 video_data = random.choice(unused_videos)
                 video_files = video_data.get('video_files', [])
-                # Prefer HD/Full HD but keep it manageable
-                video_files = [v for v in video_files if v['width'] >= 720]
+                # Prefer HD but keep it manageable
+                video_files = [v for v in video_files if v['width'] >= 720 and v['width'] <= 1920]
                 if not video_files:
                     video_files = video_data.get('video_files', [])
                 
                 best_file = min(video_files, key=lambda x: abs(x['width'] - 1080))
                 link = best_file['link']
                 
-                print(f"  [NEW] Downloading fresh background: {link[:60]}...")
+                print(f"  [NEW] Downloading background for '{query}': {link[:40]}...")
                 with requests.get(link, stream=True, timeout=15) as res:
                     if res.status_code == 200:
                         with open(output_file, "wb") as f:
                             for chunk in res.iter_content(chunk_size=8192):
                                 f.write(chunk)
                         
-                        # Verify file size (at least 100KB)
-                        if os.path.exists(output_file) and os.path.getsize(output_file) > 102400:
-                            save_used_video(link, query)  # Track this video
+                        if os.path.exists(output_file) and os.path.getsize(output_file) > 50000:
+                            save_used_video(link, query)
                             return output_file
-                        else:
-                            print("  [WARN] Downloaded video too small, likely corrupted.")
-                            if os.path.exists(output_file): os.remove(output_file)
     except Exception as e:
-        print(f"  [ERROR] Pexels download error: {e}")
+        print(f"  [ERROR] Pexels error: {e}")
         
     return None
 
@@ -436,95 +429,90 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         return output_path
 
     else:
-        # --- FACT STYLE (OR SINGLE JOKE FALLBACK) ---
-        text = metadata['text']
-        # Default mode: fact video (short vertical)
-        print(f"Generating single video: {text[:30]}...")
-        
-        # Generate audio
-        asyncio.run(generate_audio(text, "temp_audio.mp3"))
-        audio_raw = AudioFileClip("temp_audio.mp3")
-        duration = audio_raw.duration + 0.5 # Adjusted duration
-        from moviepy.audio.AudioClip import CompositeAudioClip
-        audio = CompositeAudioClip([audio_raw]).set_duration(duration)
-        
-        # Get Background - Use varied keywords for diversity
-        bg_keywords = [
-            "science laboratory",
-            "space cosmos",
-            "nature wildlife",
-            "technology innovation",
-            "ocean underwater",
-            "microscope research"
-        ]
-        # Rotate through keywords based on time/random
-        import hashlib
-        keyword_index = int(hashlib.md5(text.encode()).hexdigest(), 16) % len(bg_keywords)
-        bg_keyword = bg_keywords[keyword_index]
-        
-        bg_file = download_background_video(bg_keyword, pexels_key, segment_index=keyword_index)
-        
-        if bg_file:
-            try:
-                clip = VideoFileClip(bg_file)
-                # Explicitly check if we can read the first frame
-                _ = clip.get_frame(0)
-                
-                if clip.duration < duration:
-                    clip = clip.loop(duration=duration)
-                else:
-                    clip = clip.subclip(0, duration)
-            except Exception as e:
-                print(f"Corrupted fact background skip: {e}")
-                if clip: clip.close()
-                clip = None
-        
-        if not clip:
-            clip = ColorClip(size=(1080, 1920), color=(20, 20, 20), duration=duration)
-        
-        w, h = clip.size
-        target_ratio = 9/16
-        if w/h > target_ratio:
-            new_w = h * target_ratio
-            clip = crop(clip, x1=(w/2 - new_w/2), width=new_w, height=h)
-        else:
-            new_h = w / target_ratio
-            clip = crop(clip, y1=(h/2 - new_h/2), width=w, height=new_h)
-        clip = clip.resize(newsize=(1080, 1920))
-        
-        words = text.split()
-        chunks = []
-        chunk_size = 5
-        for i in range(0, len(words), chunk_size):
-            chunks.append(" ".join(words[i:i+chunk_size]))
+        # --- ENHANCED SHORTS/FACTS LOGIC WITH MULTI-CLIP SYNC ---
+        script_segments = metadata.get('script', [])
+        if not script_segments:
+            # Fallback for old single-text format
+            script_segments = [{"text": metadata.get('text', ''), "keyword": metadata.get('topic', 'abstract')}]
             
-        font_list = ['Liberation-Sans-Bold', 'Arial', 'Impact', 'Verdana']
-        txt_clips = []
-        chunk_duration = duration / len(chunks)
-        for i, chunk in enumerate(chunks):
-            txt = None
-            for font in font_list:
+        final_clips = []
+        temp_files = []
+        
+        print(f"Generating enhanced sync video with {len(script_segments)} segments...")
+        
+        for i, seg in enumerate(script_segments):
+            text = seg['text']
+            keyword = seg.get('keyword', metadata.get('topic', 'abstract'))
+            
+            # 1. Voice
+            audio_path = f"temp_voc_{i}.mp3"
+            asyncio.run(generate_audio(text, audio_path))
+            audio_raw = AudioFileClip(audio_path)
+            duration = audio_raw.duration + 0.2
+            from moviepy.audio.AudioClip import CompositeAudioClip
+            audio = CompositeAudioClip([audio_raw]).set_duration(duration)
+            temp_files.append(audio_path)
+            
+            # 2. Visual
+            bg_path = f"temp_bg_{i}.mp4"
+            bg_file = download_background_video(keyword, pexels_key, bg_path, segment_index=i)
+            clip = None
+            if bg_file:
                 try:
-                    txt = (TextClip(chunk, fontsize=70, color='white', font=font, 
-                                   method='caption', size=(900, None), stroke_color='black', stroke_width=2)
+                    clip = VideoFileClip(bg_file)
+                    _ = clip.get_frame(0)
+                    if clip.duration < duration:
+                        clip = clip.loop(duration=duration)
+                    else:
+                        clip = clip.subclip(0, duration)
+                    temp_files.append(bg_path)
+                except:
+                    if clip: clip.close()
+                    clip = None
+            
+            if not clip:
+                clip = ColorClip(size=(1080, 1920), color=(20, 20, 20), duration=duration)
+            
+            # Crop to Vertical
+            w, h = clip.size
+            tr = 9/16
+            if w/h > tr:
+                nw = h * tr
+                clip = crop(clip, x1=(w/2 - nw/2), width=nw, height=h)
+            else:
+                nh = w / tr
+                clip = crop(clip, y1=(h/2 - nh/2), width=w, height=nh)
+            clip = clip.resize(newsize=(1080, 1920))
+            
+            # 3. Text Overlays (Subtitles)
+            words = text.split()
+            chunks = [" ".join(words[j:j+5]) for j in range(0, len(words), 5)]
+            txt_clips = []
+            chunk_dur = duration / len(chunks)
+            for j, chunk in enumerate(chunks):
+                try:
+                    txt = (TextClip(chunk, fontsize=75, color='white', font='Liberation-Sans-Bold',
+                                    method='caption', size=(950, None), stroke_color='black', stroke_width=3)
                            .set_position('center')
-                           .set_duration(chunk_duration)
-                           .set_start(i * chunk_duration))
-                    break
+                           .set_duration(chunk_dur)
+                           .set_start(j * chunk_dur))
+                    txt_clips.append(txt)
                 except:
                     continue
-            if txt:
-                txt_clips.append(txt)
             
-        final_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
-        final_clip.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
+            seg_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
+            final_clips.append(seg_clip)
+            
+        final_video = concatenate_videoclips(final_clips, method="compose")
+        final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
         
-        try:
-            os.remove("temp_audio.mp3")
-            if bg_file: os.remove(bg_file)
-        except:
-            pass
-            
+        # Cleanup
+        for f in temp_files:
+            try:
+                if os.path.exists(f): os.remove(f)
+            except:
+                pass
+                
         return output_path
 
 if __name__ == "__main__":

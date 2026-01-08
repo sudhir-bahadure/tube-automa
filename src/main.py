@@ -21,6 +21,13 @@ def main():
         
     print(f"Topic: {metadata['title']}")
     
+    # Ensure description and tags exist
+    if 'description' not in metadata:
+        metadata['description'] = f"{metadata['title']}\n\n#shorts #facts #trending"
+    
+    if 'tags' not in metadata:
+        metadata['tags'] = "#shorts #facts #trending"
+    
     # 2. Generate Video
     # Get Pexels Key from Environment (Secrets)
     pexels_key = os.environ.get("PEXELS_API_KEY") 

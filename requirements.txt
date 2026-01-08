@@ -14,3 +14,5 @@ google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
 pytrends==4.9.2
 feedparser==6.0.10
+google-generativeai==0.7.2
+wikipedia==1.4.0

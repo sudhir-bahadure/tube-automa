@@ -4,6 +4,10 @@ import re
 import feedparser
 from datetime import datetime
 from ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
+from llm_wrapper import llm
+import json
+import os
+
 try:
     from pytrends.request import TrendReq
     PYTRENDS_AVAILABLE = True
@@ -22,8 +26,43 @@ NICHE_KEYWORDS = {
     "Nature & Deep Sea": ["ocean", "sea", "nature", "wildlife", "volcano", "earth", "animal", "marine", "rainforest"]
 }
 
-# Tracking for used jokes to prevent repetition
-USED_JOKES_FILE = "used_jokes.json"
+# Tracking for used assets to prevent repetition
+INVENTORY_FILE = "assets/used_inventory.json"
+
+def track_inventory(item_id, category):
+    """Save used item to inventory"""
+    if not os.path.exists("assets"):
+        os.makedirs("assets")
+        
+    try:
+        if os.path.exists(INVENTORY_FILE):
+            with open(INVENTORY_FILE, 'r') as f:
+                inventory = json.load(f)
+        else:
+            inventory = {}
+            
+        if category not in inventory:
+            inventory[category] = []
+            
+        if item_id not in inventory[category]:
+            inventory[category].append(item_id)
+            with open(INVENTORY_FILE, 'w') as f:
+                json.dump(inventory, f, indent=4)
+            return True
+    except Exception as e:
+        print(f"Error tracking inventory: {e}")
+    return False
+
+def is_in_inventory(item_id, category):
+    """Check if item is already in inventory"""
+    if not os.path.exists(INVENTORY_FILE):
+        return False
+    try:
+        with open(INVENTORY_FILE, 'r') as f:
+            inventory = json.load(f)
+            return item_id in inventory.get(category, [])
+    except:
+        return False
 
 def load_used_jokes():
     """Load used jokes to prevent repetition"""
@@ -350,46 +389,97 @@ def get_meme_metadata():
     }
 
 
-def get_hashtags(category="facts"):
-    # Viral hashtags for Shorts/Reels
-    tags = [
-        "#Shorts", "#DidYouKnow", "#Facts", "#MindBlown", "#Interesting", 
-        "#Knowledge", "#Trivia", "#DailyFacts", "#Viral", "#Trending",
-        "#Science", "#History", "#LifeHacks", "#LearnSomethingNew"
-    ]
-    recommended = random.sample(tags, 8)
-    return " ".join(recommended)
-
 def get_video_metadata():
-    print("\n[*] Fetching trending facts from Reddit...")
-    
-    # Try to get trending facts from Reddit
-    trending_facts = get_trending_facts_reddit()
-    
-    if trending_facts and len(trending_facts) > 0:
-        # Use trending fact
-        print(f"  [OK] Found {len(trending_facts)} trending facts from Reddit")
-        fact = random.choice(trending_facts)
-        
-        # Track used fact
-        save_used_joke(fact)  # Reuse joke tracking for facts
-        
-        print(f"  [SELECTED] {fact[:80]}...")
+    """Get high-quality video metadata using AI (Shorts)"""
+    print("\n[*] Generating high-quality metadata using AI...")
+    topic_result = get_trending_video_topic()
+    if isinstance(topic_result, tuple):
+        topic, category = topic_result
     else:
-        # Fallback to curated facts
-        print(f"  [WARN] Using curated facts (trending not available)")
-        fact = get_fact()
-    hashtags = get_hashtags()
-    title = f"Did you know this? 🤯 {hashtags.split()[1]}" # Catchy title
-    description = f"{fact}\n\nSubscribe for more daily facts! 🧠\n\n{hashtags}"
+        topic, category = topic_result, "curiosity"
     
-    return {
-        "text": fact,
-        "title": title,
-        "description": description,
-        "tags": hashtags,
-        "youtube_category": "27" # Education
-    }
+    if not topic:
+        topic = "the mystery of time"
+    
+    # Check if we already used this exact topic recently
+    if is_in_inventory(topic, "topics"):
+        # Try once more for a fresh topic
+        topic_result = get_trending_video_topic()
+        if isinstance(topic_result, tuple):
+            topic, category = topic_result
+            
+    ai_script = llm.generate_script(topic, video_type="short", niche=category)
+    
+    if ai_script:
+        track_inventory(topic, "topics")
+        return {
+            "title": ai_script.get("title", f"The Truth About {topic}"),
+            "topic": topic,
+            "script": [
+                {
+                    "text": seg["text"],
+                    "type": "context",
+                    "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic
+                } for seg in ai_script.get("script_segments", [])
+            ],
+            "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["facts", topic])]),
+            "keywords": [seg.get("visual_keywords", [topic]) for seg in ai_script.get("script_segments", [])]
+        }
+    
+    # Fallback if AI fails
+    print("  [WARN] AI generation failed, using fallback templates")
+    import wikipedia
+    try:
+        page = wikipedia.page(topic, auto_suggest=False)
+        sentences = page.summary.split('.')
+        script = generate_ypp_safe_script(topic, sentences)
+        return {
+            "title": f"The Untold Story of {topic}",
+            "topic": topic,
+            "script": script,
+            "tags": f"#facts #{topic.replace(' ', '')} #education"
+        }
+    except:
+        return None
+
+def get_long_video_metadata():
+    """Get high-retention long-form video metadata using AI"""
+    print("\n[*] Generating high-retention long-form metadata using AI...")
+    topic_result = get_trending_video_topic()
+    if isinstance(topic_result, tuple):
+        topic, category = topic_result
+    else:
+        topic, category = topic_result, "documentary"
+
+    if not topic:
+        topic = "the evolution of intelligence"
+
+    ai_script = llm.generate_script(topic, video_type="long", niche=category)
+    
+    if ai_script:
+        track_inventory(topic, "topics")
+        segments = [
+            {
+                "text": seg["text"],
+                "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic
+            } for seg in ai_script.get("script_segments", [])
+        ]
+        
+        title = ai_script.get("title", f"{topic}: The Complete Story")
+        hashtags = " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["documentary", topic])])
+        
+        return {
+            "mode": "long",
+            "topic": topic,
+            "segments": segments,
+            "title": f"{title} 🎥",
+            "description": f"{title}\n\n{hashtags}\n\nJoin us as we deep dive into {topic}.",
+            "tags": hashtags,
+            "youtube_category": "27" if "Space" in str(category) or "Tech" in str(category) else "28"
+        }
+
+    # Fallback is handled by legacy logic if needed (already in file)
+    return None
 
 def fetch_wikipedia_content(topic):
     """
