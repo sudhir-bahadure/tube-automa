@@ -14,6 +14,8 @@ class LLMWrapper:
             logger.warning("GEMINI_API_KEY not found in environment variables.")
         else:
             genai.configure(api_key=self.api_key)
+            # Use the model name directly; the SDK handles the 'models/' prefix.
+            # v1beta 404 often happens if the SDK is old or the string is malformed.
             self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def generate_script(self, topic, video_type="short", niche="curiosity"):
@@ -59,12 +61,21 @@ class LLMWrapper:
         return prompt
 
     def _parse_response(self, text):
-        # Clean markdown if present
-        text = text.replace("```json", "").replace("```", "").strip()
+        # Clean markdown if present and handle potential "thought" blocks
+        text = text.strip()
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+        
+        # Remove any leading/trailing garbage
+        text = text.strip()
+        
         try:
             return json.loads(text)
         except Exception as e:
             logger.error(f"Failed to parse JSON response: {e}")
+            logger.error(f"Raw response: {text[:200]}...")
             return None
 
 llm = LLMWrapper()

@@ -19,6 +19,10 @@ def main():
     else:
         metadata = get_video_metadata()
         
+    if metadata is None:
+        print("[!] Error: No metadata generated. Exiting...")
+        return
+        
     print(f"Topic: {metadata['title']}")
     
     # Ensure description and tags exist
