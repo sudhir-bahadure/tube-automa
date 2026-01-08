@@ -158,9 +158,17 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
                 
         return video_id
         
-    except googleapiclient.errors.HttpError as e:
-        print(f"An HTTP error occurred: {e.resp.status} {e.content}")
-        return None
     except Exception as e:
-        print(f"Upload Failed: {e}")
-        return None
+        # HUMAN FRIENDLY ERROR HANDLING
+        error_str = str(e)
+        if "uploadLimitExceeded" in error_str:
+            print(f"\n[!] YOUTUBE LIMIT REACHED: The channel has hit its daily upload limit.")
+            print(f"    ACTION: Video generated but NOT uploaded. Try again in 24 hours.")
+            return False
+        elif "quotaExceeded" in error_str:
+            print(f"\n[!] API QUOTA EXCEEDED: The project has used all 10,000 units.")
+            print(f"    ACTION: Quota resets at Midnight Pacific Time.")
+            return False
+            
+        print(f"  [ERROR] Upload failed: {e}")
+        return False
