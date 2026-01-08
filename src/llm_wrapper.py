@@ -14,9 +14,8 @@ class LLMWrapper:
             logger.warning("GEMINI_API_KEY not found in environment variables.")
         else:
             genai.configure(api_key=self.api_key)
-            # Use the model name directly; the SDK handles the 'models/' prefix.
-            # v1beta 404 often happens if the SDK is old or the string is malformed.
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            # Using gemini-flash-latest as it's the verified working version for this API key
+            self.model = genai.GenerativeModel('gemini-flash-latest')
 
     def generate_script(self, topic, video_type="short", niche="curiosity"):
         if not self.api_key:
