@@ -31,6 +31,23 @@ def get_authenticated_service():
     
     return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
+def get_channel_handle(youtube):
+    """Fetches the handle (@name) of the authenticated channel."""
+    try:
+        request = youtube.channels().list(
+            part="snippet",
+            mine=True
+        )
+        response = request.execute()
+        if "items" in response and len(response["items"]) > 0:
+            snippet = response["items"][0]["snippet"]
+            # Handle can be in customUrl or title
+            handle = snippet.get("customUrl") or snippet.get("title")
+            return handle.lower()
+    except Exception as e:
+        print(f"[WARN] Could not fetch channel identity: {e}")
+    return "unknown"
+
 def upload_video(file_path, title, description, tags, category_id="27", thumbnail_path=None, mode="unknown"):
     """
     Uploads a video to YouTube.
@@ -48,13 +65,27 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         current_date = datetime.now()
         activation_date = datetime(2026, 1, 11)
         
+        # Identity Investigation
+        current_handle = get_channel_handle(youtube)
+        expected_handle = os.environ.get("EXPECTED_HANDLE", "").lower()
+        
         target_channel_env = os.environ.get("TARGET_CHANNEL")
         workflow_name = os.environ.get("GITHUB_WORKFLOW", "manual_run")
         
-        # Verify identity intent
-        is_curiobyte_intent = (target_channel_env == "curiosity")
+        print(f"[*] Identity Investigation:")
+        print(f"    Authenticated as: {current_handle}")
+        print(f"    Expected Handle:  {expected_handle if expected_handle else 'No restriction'}")
         
-        print(f"[*] Target intent: {'CurioByte (@CurioByte143)' if is_curiobyte_intent else 'Old Channel'}")
+        # IDENTITY GUARD: Hard Block if handles don't match
+        if expected_handle and expected_handle not in current_handle:
+            print(f"\n[SECURITY BLOCK] IDENTITY MISMATCH DETECTED!")
+            print(f"       ERROR: The provided credentials belong to '{current_handle}'.")
+            print(f"       REQUIRED: '{expected_handle}'.")
+            print(f"       ACTION: Upload Terminated to prevent cross-channel leak.")
+            return None
+        
+        # Verify identity intent (Logical separation)
+        is_curiobyte_intent = (target_channel_env == "curiosity")
         
         if is_curiobyte_intent:
             # RULE: CurioByte ONLY allows 'curiosity' mode

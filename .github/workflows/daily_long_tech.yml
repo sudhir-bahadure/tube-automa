@@ -45,6 +45,7 @@ jobs:
         # TARGET: CURIOBYTE (New Channel)
         CHANNEL_MODE: long
         TARGET_CHANNEL: curiosity
+        EXPECTED_HANDLE: "@CurioByte143"
         
         # CREDENTIALS: CURIOBYTE
         YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
@@ -55,11 +56,14 @@ jobs:
         # Note: Long form generation is complex, handled by src/main.py --category long
         python src/main.py --category long
         
-    - name: Upload Generated Assets (For Review)
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: long-form-video
-        path: |
-            output/*.mp4
-            output/*.jpg
+    - name: Commit Memory (No Repetition)
+      run: |
+        git config --global user.name 'TubeAutoma Bot'
+        git config --global user.email 'bot@tubeautoma.com'
+        git add src/assets/*.json
+        if git diff --staged --quiet; then
+          echo "No changes to memory."
+        else
+          git commit -m "chore: update long-tech memory [skip ci]"
+          git push
+        fi

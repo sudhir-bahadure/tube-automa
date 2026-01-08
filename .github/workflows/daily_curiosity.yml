@@ -82,6 +82,7 @@ jobs:
         # Isolation Guard: Lock this channel to Shorts-only
         CHANNEL_MODE: shorts
         TARGET_CHANNEL: curiosity
+        EXPECTED_HANDLE: "@CurioByte143"
         
         # YouTube API credentials (for automated upload)
         YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}

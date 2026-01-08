@@ -45,6 +45,7 @@ jobs:
         # TARGET: OLD CHANNEL
         CHANNEL_MODE: meme
         TARGET_CHANNEL: meme
+        EXPECTED_HANDLE: "@yoDailyMemeDose"
         
         # CREDENTIALS: OLD CHANNEL (Original Secret)
         YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
