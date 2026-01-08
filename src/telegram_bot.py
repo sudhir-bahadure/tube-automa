@@ -6,6 +6,12 @@ def upload_to_telegram(video_path, caption="", bot_token=None, chat_id=None):
         print("Missing Telegram Credentials. Video saved locally but not uploaded.")
         return False
 
+    # Check file size (Telegram Bot API limit is 50MB)
+    file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+    if file_size_mb > 50:
+        print(f"⚠️ Video size ({file_size_mb:.2f} MB) exceeds Telegram limit (50 MB). Skipping upload.")
+        return False
+
     url = f"https://api.telegram.org/bot{bot_token}/sendVideo"
     
     try:

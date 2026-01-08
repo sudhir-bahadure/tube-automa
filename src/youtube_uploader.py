@@ -28,6 +28,7 @@ def get_authenticated_service():
         scopes=SCOPES
     )
     
+    print(f"Authenticating with Client ID: {client_id[:5]}...*****")
     return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
 def upload_video(file_path, title, description, tags, category_id="27"):
