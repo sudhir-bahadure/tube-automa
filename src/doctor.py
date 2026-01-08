@@ -64,6 +64,55 @@ def cleanup_temp_files():
                 pass
     print(f"  [OK] Removed {count} temporary files.")
 
+def check_youtube_connectivity(prefix="YOUTUBE"):
+    """Checks if the YouTube API is reachable with the current credentials."""
+    print(f"[*] Doctor: Checking {prefix} Connectivity...")
+    
+    # Temporarily set environment variables for the check
+    client_id = os.environ.get(f"{prefix}_CLIENT_ID")
+    client_secret = os.environ.get(f"{prefix}_CLIENT_SECRET")
+    refresh_token = os.environ.get(f"{prefix}_REFRESH_TOKEN")
+    
+    if not all([client_id, client_secret, refresh_token]):
+        print(f"  [!] Missing credentials for {prefix}. Skipping connectivity check.")
+        return False
+
+    # Import uploader logic to reuse auth
+    try:
+        from src.youtube_uploader import get_authenticated_service, get_channel_handle
+        
+        # Override env for the service creation
+        original_env = {
+            "YOUTUBE_CLIENT_ID": os.environ.get("YOUTUBE_CLIENT_ID"),
+            "YOUTUBE_CLIENT_SECRET": os.environ.get("YOUTUBE_CLIENT_SECRET"),
+            "YOUTUBE_REFRESH_TOKEN": os.environ.get("YOUTUBE_REFRESH_TOKEN")
+        }
+        
+        os.environ["YOUTUBE_CLIENT_ID"] = client_id
+        os.environ["YOUTUBE_CLIENT_SECRET"] = client_secret
+        os.environ["YOUTUBE_REFRESH_TOKEN"] = refresh_token
+        
+        youtube = get_authenticated_service()
+        if not youtube:
+            print(f"  [ERROR] Failed to build YouTube service for {prefix}.")
+            return False
+            
+        handle = get_channel_handle(youtube)
+        if handle == "unknown":
+            print(f"  [ERROR] Could not verify identity for {prefix}. Likely invalid/expired tokens.")
+            return False
+            
+        print(f"  [SUCCESS] {prefix} is connected to channel: {handle}")
+        return True
+    except Exception as e:
+        print(f"  [ERROR] Connectivity check failed for {prefix}: {e}")
+        return False
+    finally:
+        # Restore original env
+        for key, val in original_env.items():
+            if val is not None: os.environ[key] = val
+            elif key in os.environ: del os.environ[key]
+
 def main():
     print(f"\n--- TubeAutoma Doctor: Health Check {datetime.datetime.now().isoformat()} ---")
     
@@ -79,10 +128,14 @@ def main():
         if not is_ok:
             repair_file(file_path, status)
 
-    # 3. Cleanup temp files
+    # 3. Connectivity Checks
+    check_youtube_connectivity("YOUTUBE")     # Main/Old Channel
+    check_youtube_connectivity("CURIOSITY")   # CurioByte
+    
+    # 4. Cleanup temp files
     cleanup_temp_files()
 
-    # 4. Success Signature
+    # 5. Success Signature
     print("\n--- Health Check Complete: System is Operational ---")
 
 if __name__ == "__main__":

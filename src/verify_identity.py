@@ -36,11 +36,11 @@ def main():
     print(f"    Detected Handle: @{handle}")
     
     if handle == "unknown":
-        print("    STATUS: ❌ FAILED (Authentication or Scopes issue)")
+        print("    STATUS: [FAILED] (Authentication or Scopes issue)")
     elif expected and expected.lower() not in handle.lower():
-        print(f"    STATUS: ❌ MISMATCH (Expected: {expected})")
+        print(f"    STATUS: [MISMATCH] (Expected: {expected})")
     else:
-        print("    STATUS: ✅ MATCH (Ready to Upload)")
+        print("    STATUS: [MATCH] (Ready to Upload)")
         
     print("\n=====================================")
 

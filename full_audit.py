@@ -13,7 +13,7 @@ os.environ["TELEGRAM_BOT_TOKEN"] = "mock_token"
 os.environ["TELEGRAM_CHAT_ID"] = "mock_id"
 
 sys.path.append(os.path.join(os.getcwd(), 'src'))
-from content_enhanced import get_video_metadata, get_meme_metadata, get_long_video_metadata
+from content import get_video_metadata, get_meme_metadata, get_long_video_metadata
 
 def test_category(name, func):
     print(f"\n[RUNNING] Category: {name.upper()}")
