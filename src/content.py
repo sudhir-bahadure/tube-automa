@@ -455,98 +455,93 @@ def get_fact():
     return final_script
 
 def get_meme_metadata():
-    print("\n[*] Selecting Daily Theme...")
+    """Daily Meme Content Generator (Enhanced with AI)"""
+    print(f"\n[*] Generating MEME content...")
     
-    # --- BRAIN INTEGRATION ---
-    plan = load_daily_plan()
-    theme = None
+    theme_obj = get_meme_theme()
+    print(f"  [THEME] Today's Meme Theme: {theme_obj.get('title_template', 'Funny')}")
     
-    if plan and 'meme' in plan:
-        meme_strat = plan['meme']
-        print(f"  [BRAIN] Executing Meme Strategy: {meme_strat.get('forced_topic', 'Random')}")
-        
-        # Construct theme object from brain data
-        if meme_strat.get('backup_theme'):
-            theme = {
-                "id": "trending",
-                "subreddit": meme_strat['backup_theme']['subreddit'],
-                "title_template": f"Trending: {meme_strat.get('forced_topic')} Memes 🤣",
-                "hashtags": meme_strat['backup_theme']['hashtags']
-            }
-            # Add specific search term instructions for the reddit fetcher if needed
-            # (Assuming get_trending_memes_reddit can take a search term or we modify it)
-            # For now, we rely on the subreddit or if we modify get_trending_memes_reddit to search
-            theme['search_term'] = meme_strat.get('forced_topic')
+    script_obj = None
+    is_ai_script = False
     
-    if not theme:
-        theme = get_meme_theme()
-    # -------------------------
-    
-    print(f"\n[*] Fetching trending content from r/{theme['subreddit']}...")
-    
-    # Try to get trending jokes from Reddit with theme
-    # Pass search_term if present (requires update to get_trending_memes_reddit, or we just trust the subreddit)
-    trending_jokes = get_trending_memes_reddit(theme)
-    
-    if trending_jokes and len(trending_jokes) >= 5:
-        # Use trending jokes
-        print(f"  [OK] Found {len(trending_jokes)} trending items")
-        # Select 5 random jokes from trending
-        import random
-        selected_jokes = random.sample(trending_jokes, min(5, len(trending_jokes)))
-        
-        # Track used jokes
-        for joke in selected_jokes:
-            save_used_joke(joke['setup'])
-        
-        memes_list = selected_jokes
-    else:
-        # Fallback to local database (avoiding the 5-joke repetition)
-        print(f"  [WARN] Reddit fetch failed/low. Using backup database.")
-        try:
-            db_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'jokes_db.json')
-            with open(db_path, 'r', encoding='utf-8') as f:
-                all_backup_jokes = json.load(f)
+    # 1. Try Gemini AI for Original Jokes (High Quality)
+    try:
+        from llm_wrapper import GeminiWrapper
+        llm = GeminiWrapper()
+        if llm.is_active:
+            print(f"  [AI] Generating unique meme for: {theme_obj.get('title_template')}")
+            # Use theme title as inspiration
+            script_obj = llm.generate_script(theme_obj.get('title_template'), mood="meme")
             
-            # Filter used jokes
-            available_jokes = [j for j in all_backup_jokes if not is_joke_used(j['setup'])]
-            
-            if len(available_jokes) < 5:
-                print("  [WARN] Running low on backup jokes! Resetting or re-using...")
-                available_jokes = all_backup_jokes # Emergency reset
-            
-            # Select 5 random
-            import random
-            memes_list = random.sample(available_jokes, min(5, len(available_jokes)))
-            
-            # Track them
-            for joke in memes_list:
-                save_used_joke(joke['setup'])
-                
-        except Exception as e:
-            print(f"  [ERROR] Could not load backup jokes: {e}")
-            # Ultimate fail-safe (should rarely happen)
-            memes_list = [
-                {"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"}
-            ]
+            if script_obj:
+                is_ai_script = True
+                print("  [AI] Success! Generated unique AI meme.")
+    except Exception as e:
+        print(f"  [AI] Generation skipped: {e}")
 
-        theme = { # Generic theme for backup
-            "title_template": "Daily Meme Therapy! 😂",
-            "hashtags": "#Memes #Funny #DailyMemes #Humor #Shorts #Jokes #Compilation"
-        }
-    
-    # Combine scripts for description/tts if needed, but generator will handle individual clips
-    full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
-    
-    # Dynamic Hashtags
-    hashtags = f"{theme['hashtags']} #DailyMemeDose"
-    
+    if is_ai_script and script_obj:
+        # Build AI Meme Structure (Compatible with generator)
+        # Generator handles 'memes' list for meme mode
+        memes_list = [{
+            "setup": script_obj['hook'],
+            "punchline": script_obj['script']
+        }]
+        full_script = f"{script_obj['hook']} [PAUSE 1.0s] {script_obj['script']} [PAUSE 0.5s] {script_obj['cta']}"
+        visual_keyword = script_obj['image_keyword']
+        title = f"{script_obj['hook']} 😂"
+        description = f"{script_obj['hook']}\n\n{script_obj['script']}\n\n{script_obj['cta']}"
+        hashtags = f"#Memes #Funny #DailyMeme #Shorts"
+    else:
+        # 2. Reddit/Local Fallback (Legacy Multi-Joke Logic)
+        print("  [FALLBACK] Using Trending/Database Archive")
+        
+        # --- ORIGINAL LOGIC ---
+        plan = load_daily_plan()
+        theme = None
+        if plan and 'meme' in plan:
+            meme_strat = plan['meme']
+            if meme_strat.get('backup_theme'):
+                theme = {
+                    "id": "trending",
+                    "subreddit": meme_strat['backup_theme']['subreddit'],
+                    "title_template": f"Trending: {meme_strat.get('forced_topic')} Memes 🤣",
+                    "hashtags": meme_strat['backup_theme']['hashtags']
+                }
+        if not theme: theme = theme_obj
+        
+        trending_jokes = get_trending_memes_reddit(theme)
+        if trending_jokes and len(trending_jokes) >= 5:
+            selected_jokes = random.sample(trending_jokes, min(5, len(trending_jokes)))
+            for joke in selected_jokes: save_used_joke(joke['setup'])
+            memes_list = selected_jokes
+        else:
+            try:
+                db_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'jokes_db.json')
+                with open(db_path, 'r', encoding='utf-8') as f:
+                    all_backup_jokes = json.load(f)
+                available_jokes = [j for j in all_backup_jokes if not is_joke_used(j['setup'])]
+                if len(available_jokes) < 5: available_jokes = all_backup_jokes 
+                memes_list = random.sample(available_jokes, min(5, len(available_jokes)))
+                for joke in memes_list: save_used_joke(joke['setup'])
+            except:
+                memes_list = [{"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"}]
+
+            theme = {"title_template": "Daily Meme Therapy! 😂", "hashtags": "#Memes #Funny #Jokes #Compilation"}
+        
+        full_script = " ".join([f"{m['setup']} [PAUSE 1.0s] {m['punchline']} [PAUSE 0.5s]" for m in memes_list])
+        visual_keyword = theme.get('subreddit', 'meme') + " funny"
+        title = f"{theme['title_template']} ({len(memes_list)} Jokes)"
+        hashtags = f"{theme['hashtags']} #DailyMemeDose"
+        description = f"Enjoy these funny moments!\n\nSubscribe for more!\n\n{hashtags}"
+
     return {
         "mode": "meme",
-        "memes": memes_list,  # List of {setup, punchline}
-        "text": full_script_text, # Legacy support
-        "title": f"{theme['title_template']} ({len(memes_list)} Jokes)",
-        "description": f"Enjoy these funny moments!\n\nSubscribe to Daily Meme Dose for more!\n\n{hashtags}",
+        "memes": memes_list,
+        "script": full_script, # High quality with pauses
+        "text": full_script,   # Legacy support
+        "visual_keyword": visual_keyword,
+        "title": title,
+        "description": description,
         "tags": hashtags,
         "youtube_category": "23" # Comedy
     }

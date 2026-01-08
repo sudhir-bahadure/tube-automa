@@ -255,14 +255,26 @@ def generate_ypp_safe_script(topic, wikipedia_sentences=None, is_part_2=False):
     
     segments = []
     
+    # AI INTEGRATION: Try to get unique insights from Gemini
+    ai_insights = None
+    try:
+        from llm_wrapper import GeminiWrapper
+        llm = GeminiWrapper()
+        if llm.is_active:
+             print(f"  [AI] Generating unique documentary storyboard for: {topic}")
+             ai_insights = llm.generate_script(topic, mood="tech_tutorial")
+    except Exception as e:
+        print(f"  [AI-LONG] Storyboard failed: {e}")
+
     # 1. OPENING - Analytical framing (WHY, not WHAT)
-    hook = generate_hook(topic, is_part_2)
+    hook = ai_insights['hook'] if ai_insights else generate_hook(topic, is_part_2)
+    
     opening_template = random.choice(YPP_TEMPLATES["opening"])
     opening_base = opening_template.format(
         topic=topic,
         aspect="its historical significance",
         significance=generate_significance(topic),
-        core_insight=generate_core_insight(topic),
+        core_insight=ai_insights['cta'] if ai_insights else generate_core_insight(topic),
         common_fact="being an ancient artifact",
         deeper_meaning=generate_significance(topic),
         focus=generate_core_insight(topic),
@@ -299,14 +311,18 @@ def generate_ypp_safe_script(topic, wikipedia_sentences=None, is_part_2=False):
         interp_template = random.choice(YPP_TEMPLATES["interpretation"])
         reasoning_phrase = random.choice(REASONING_PHRASES)
         
-        interpretation = interp_template.format(
-            insight=generate_interpretation(""),
-            implication=generate_implication(""),
-            discovery=generate_interpretation(""),
-            importance=generate_implication(""),
-            analysis=generate_interpretation(""),
-            conclusion=generate_final_insight(topic)
-        )
+        # QUALITY REFINEMENT: Use AI script for one of the interpretations
+        if ai_insights and i == 0:
+            interpretation = ai_insights['script']
+        else:
+            interpretation = interp_template.format(
+                insight=generate_interpretation(""),
+                implication=generate_implication(""),
+                discovery=generate_interpretation(""),
+                importance=generate_implication(""),
+                analysis=generate_interpretation(""),
+                conclusion=generate_final_insight(topic)
+            )
         
         # Ensure reasoning phrase is included
         if not any(phrase.lower() in interpretation.lower() for phrase in REASONING_PHRASES):

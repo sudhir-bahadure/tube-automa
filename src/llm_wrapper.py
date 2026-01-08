@@ -68,6 +68,45 @@ class GeminiWrapper:
             CTA: [Insert Comment Question + Subscribe]
             Keyword: [Single Visual Keyword]
             """
+        elif mood == "meme":
+            return f"""
+            Write a FUNNY/MEME YouTube Short script (30-40s) about: "{topic}".
+            
+            STRICT RULES:
+            1.  **Tone**: HILARIOUS, Relatable, Casual, "Gen Z" humor allowed.
+            2.  **Structure**: 
+                - Setup (Relatable situation)
+                - Punchline (The twist/joke)
+                - "Comment Bait": Ask "Who else does this?" or "Tag a friend who..."
+            3.  **Context**: Topic is "{topic}". Make it a joke or funny observation.
+            4.  **Formatting**: Return raw text with [PAUSE Xs] tags.
+            
+            OUTPUT FORMAT ONLY:
+            Hook: [Funny One-Liner]
+            Body: [The Joke/Story with Pauses]
+            CTA: [Funny CTA]
+            Keyword: [Visual Vibe]
+            """
+        elif mood == "tech_tutorial":
+            return f"""
+            Write a high-quality TECH EXPLAINER script (approx 60-90 seconds) about: "{topic}".
+            
+            STRICT RULES:
+            1.  **Goal**: Explain a complex tech concept or solve a specific PC/Software problem simply.
+            2.  **Tone**: Professional, Helpful, Authoritative but Accessible.
+            3.  **Structure**:
+                - Problem: "Is your PC slow?" / "What is Quantum Computing?"
+                - Solution/Explanation: Step-by-step or clear analogy.
+                - Value: Why this matters.
+                - CTA: "Save this for later."
+            4.  **Formatting**: Return raw text with [PAUSE Xs] tags.
+            
+            OUTPUT FORMAT ONLY:
+            Hook: [Problem Statement]
+            Body: [The Solution/Explanation]
+            CTA: [Helpful CTA]
+            Keyword: [Technical Keyword]
+            """
         return ""
 
     def _parse_response(self, text):

@@ -1,0 +1,65 @@
+name: Weekly Tech Tutorial (Long Form)
+
+# ============================================================================
+# SCHEDULE: Weekly on Saturday at 11:00 AM EST (16:00 UTC)
+# PURPOSE: High-Quality Tech Tutorials for CurioByte (Monetization Boost)
+# ============================================================================
+
+on:
+  schedule:
+    - cron: '0 16 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-upload-long:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg imagemagick
+        sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"\/>/<policy domain="path" rights="read|write" pattern="@*" \/>/g' /etc/ImageMagick-6/policy.xml || echo "Policy file not found"
+    
+    - name: Install Python Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generate Long Form Video
+      env:
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        
+        # TARGET: CURIOBYTE (New Channel)
+        CHANNEL_MODE: long
+        TARGET_CHANNEL: curiosity
+        
+        # CREDENTIALS: CURIOBYTE
+        YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}
+      run: |
+        echo "Starting Long Form Tech Generation..."
+        # Note: Long form generation is complex, handled by src/main.py --category long
+        python src/main.py --category long
+        
+    - name: Upload Generated Assets (For Review)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: long-form-video
+        path: |
+            output/*.mp4
+            output/*.jpg
