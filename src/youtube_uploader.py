@@ -6,7 +6,8 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaFileUpload
 
 SCOPES = [
-    "https://www.googleapis.com/auth/youtube.upload"
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly"  # Required for channel identity verification
 ]
 
 def get_authenticated_service():
