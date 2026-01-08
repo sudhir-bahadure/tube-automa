@@ -63,7 +63,8 @@ def get_varied_keyword(base_keyword, segment_index):
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-AriaNeural" # Female, Natural, Professional 
+    # Using a professional male voice for authority and consistency
+    voice = "en-US-ChristopherNeural" 
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
     max_retries = 3
