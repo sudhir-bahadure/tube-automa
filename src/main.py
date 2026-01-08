@@ -1,12 +1,6 @@
 import argparse
 import os
-try:
-    from content_enhanced import get_video_metadata, get_meme_metadata, get_long_video_metadata
-except ImportError:
-    get_video_metadata = None
-    get_meme_metadata = None
-    get_long_video_metadata = None
-from content import get_curiosity_metadata
+from content import get_video_metadata, get_meme_metadata, get_long_video_metadata, get_curiosity_metadata
 from generator import create_video
 from thumbnail_generator import create_thumbnail
 from telegram_bot import upload_to_telegram
