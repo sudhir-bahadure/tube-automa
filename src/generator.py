@@ -63,13 +63,13 @@ def get_varied_keyword(base_keyword, segment_index):
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    # Using a professional male voice for authority and consistency
     voice = "en-US-ChristopherNeural" 
-    communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
     max_retries = 5
     for attempt in range(max_retries):
         try:
+            # Recreate Communicate object on each attempt to avoid "stream can only be called once" error
+            communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
             await communicate.save(output_file)
             return
         except Exception as e:

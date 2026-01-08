@@ -153,13 +153,18 @@ def get_google_trends():
     if not PYTRENDS_AVAILABLE:
         return []
     
-    try:
-        pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25))
-        trending_df = pytrends.trending_searches(pn='united_states')
-        return trending_df[0].tolist()[:15]
-    except Exception as e:
-        print(f"Google Trends error: {e}")
-        return []
+    regions = ['united_states', 'india', 'united_kingdom']
+    for region in regions:
+        try:
+            print(f"  [*] Attempting to fetch trends for {region}...")
+            pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25))
+            trending_df = pytrends.trending_searches(pn=region)
+            if not trending_df.empty:
+                return trending_df[0].tolist()[:15]
+        except Exception as e:
+            print(f"  [WARN] Google Trends error for {region}: {e}")
+            continue
+    return []
 
 def get_youtube_trending():
     """Fetch trending topics from YouTube RSS (Free, No API Key)"""
