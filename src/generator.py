@@ -103,7 +103,24 @@ def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
 async def generate_audio(text, output_file="audio.mp3", voice="en-US-AndrewMultilingualNeural", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
     # Default: Andrew (Natural, Conversational)
-    communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+    
+    # SSML Processing for Pauses
+    final_text = text
+    import re
+    if "[PAUSE" in text:
+        # Convert [PAUSE 0.5s] -> <break time="500ms"/>
+        # Regex to find [PAUSE Xs] or [PAUSE X.Ys]
+        def replace_pause(match):
+            seconds = float(match.group(1))
+            ms = int(seconds * 1000)
+            return f'<break time="{ms}ms"/>'
+            
+        final_text = re.sub(r'\[PAUSE (\d+\.?\d*)s\]', replace_pause, text)
+        
+        # Wrap in speak tag for SSML
+        final_text = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='{voice}'>{final_text}</voice></speak>"
+        
+    communicate = edge_tts.Communicate(final_text, voice, rate=rate, pitch=pitch)
     
     max_retries = 3
     for attempt in range(max_retries):
