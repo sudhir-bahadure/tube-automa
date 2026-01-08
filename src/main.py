@@ -49,7 +49,9 @@ def main():
     # 2.1 Generate Thumbnail
     thumbnail_file = f"thumb_{args.category}.jpg"
     try:
-        final_thumb_path = create_thumbnail(metadata['topic'], thumbnail_file, pexels_key)
+        # Fix: Use visual_keyword from metadata, fallback to title
+        thumbnail_topic = metadata.get('visual_keyword', metadata.get('title', 'video'))
+        final_thumb_path = create_thumbnail(thumbnail_topic, thumbnail_file, pexels_key)
     except Exception as e:
         print(f"Thumbnail Generation Failed: {e}")
         final_thumb_path = None

@@ -40,7 +40,11 @@ def setup_youtube():
     print("THAT OWNS THE ***NEW CHANNEL*** you want to upload to.")
     print("If it's a Brand Account, select that specific Brand Account.")
     
-    SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+    # Include both upload and readonly scopes for full functionality
+    SCOPES = [
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtube.readonly"
+    ]
     
     flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
     creds = flow.run_local_server(port=0)

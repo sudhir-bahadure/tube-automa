@@ -15,7 +15,8 @@ class GeminiWrapper:
         if self.api_key:
             try:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-pro')
+                # Updated to latest model (gemini-pro is deprecated)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
                 self.is_active = True
                 print("  [AI] Gemini API configured successfully.")
             except Exception as e:
