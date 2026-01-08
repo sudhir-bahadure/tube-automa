@@ -101,39 +101,63 @@ def mix_audio(voice_clip, music_path=None, sfx_path=None, music_vol=0.1):
     return CompositeAudioClip(audio_clips).set_duration(voice_clip.duration)
 
 async def generate_audio(text, output_file="audio.mp3", voice="en-US-AndrewMultilingualNeural", rate="+0%", pitch="+0Hz"):
-    # Microsoft Edge Neural Voices (High Quality, Free)
-    # Default: Andrew (Natural, Conversational)
-    
-    # SSML Processing for Pauses
-    final_text = text
+    # Mechanical Pause Implementation (Robust)
     import re
-    if "[PAUSE" in text:
-        # Convert [PAUSE 0.5s] -> <break time="500ms"/>
-        # Regex to find [PAUSE Xs] or [PAUSE X.Ys]
-        def replace_pause(match):
-            seconds = float(match.group(1))
-            ms = int(seconds * 1000)
-            return f'<break time="{ms}ms"/>'
-            
-        final_text = re.sub(r'\[PAUSE (\d+\.?\d*)s\]', replace_pause, text)
-        
-        # Wrap in speak tag for SSML
-        final_text = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='{voice}'>{final_text}</voice></speak>"
-        
-    communicate = edge_tts.Communicate(final_text, voice, rate=rate, pitch=pitch)
+    from moviepy.editor import AudioFileClip, concatenate_audioclips, AudioClip
+    import os
+
+    # Regex to split by [PAUSE Xs]
+    # Captures the pause duration in the split
+    parts = re.split(r'(\[PAUSE \d+\.?\d*s\])', text)
     
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            await communicate.save(output_file)
-            return
-        except Exception as e:
-            print(f"Audio generation attempt {attempt+1} failed: {e}")
-            if attempt < max_retries - 1:
-                await asyncio.sleep(2) # Backoff
-            else:
-                # If all else fails, we might need a backup or silent clip, but let's try to crash early if critical
-                raise e
+    audio_segments = []
+    temp_files = []
+    
+    for i, part in enumerate(parts):
+        part = part.strip()
+        if not part:
+            continue
+            
+        # Check if it's a pause marker
+        pause_match = re.match(r'\[PAUSE (\d+\.?\d*)s\]', part)
+        if pause_match:
+            duration = float(pause_match.group(1))
+            # Create silent clip
+            # function to return 0 for silence
+            make_silence = lambda t: 0
+            silence = AudioClip(make_silence, duration=duration)
+            audio_segments.append(silence)
+        else:
+            # It's text, generate audio
+            temp_filename = f"temp_part_{i}.mp3"
+            communicate = edge_tts.Communicate(part, voice, rate=rate, pitch=pitch)
+            await communicate.save(temp_filename)
+            temp_files.append(temp_filename)
+            
+            # Load as MoviePy clip
+            clip = AudioFileClip(temp_filename)
+            audio_segments.append(clip)
+            
+    if audio_segments:
+        final_audio = concatenate_audioclips(audio_segments)
+        final_audio.write_audiofile(output_file, fps=44100, logger=None)
+        final_audio.close() # Close composite
+        
+        # Cleanup clips and temp files
+        for clip in audio_segments:
+            # Check if it has a close method (AudioFileClip does, AudioClip might not need it but safe to try)
+            if hasattr(clip, 'close'):
+                clip.close()
+                
+        for tmp in temp_files:
+            try:
+                os.remove(tmp)
+            except:
+                pass
+    else:
+        # Fallback if empty
+        communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+        await communicate.save(output_file)
 
 def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
     # Fallback to a solid color if no API key or download fails
