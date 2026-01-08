@@ -94,10 +94,31 @@ jobs:
         # Execute main script with curiosity category
         python src/main.py --category curiosity
         
+    
         echo ""
         echo "=================================================="
         echo "Pipeline completed"
         echo "=================================================="
+        
+    # ========================================================================
+    # STEP 6: Commit "Memory" (Used Topics/Visuals) back to Repo
+    # CRITICAL: This prevents repetition by saving the JSON logs
+    # ========================================================================
+    - name: Commit Memory (No Repetition)
+      run: |
+        git config --global user.name 'TubeAutoma Bot'
+        git config --global user.email 'bot@tubeautoma.com'
+        
+        # Check if assets changed
+        git add src/assets/*.json
+        
+        # Only commit if there are changes
+        if git diff --staged --quiet; then
+          echo "No changes to memory."
+        else
+          git commit -m "chore: update used topics/videos memory [skip ci]"
+          git push
+        fi
     
     # ========================================================================
     # STEP 6: Upload artifacts (optional - for debugging)
