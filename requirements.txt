@@ -13,3 +13,4 @@ google-auth-oauthlib
 google-auth-httplib2
 feedparser
 pytrends
+google-generativeai

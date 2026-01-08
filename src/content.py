@@ -976,24 +976,47 @@ def get_curiosity_metadata():
         save_used_topic(selected_text)
         save_used_joke(selected_text)
     else:
-        # 2. Viral Script Database (Fallback/Primary High Quality)
-        print("  [FALLBACK] Using Viral Script Database")
+        # 2. AI & Viral Script Database
+        print("  [CONTENT] Attempting generation...")
         
-        # Filter by selected provider category if possible, or just pick random valid one
-        available_scripts = [s for s in viral_scripts if s['category'] == selected_pillar['name'] and not is_topic_duplicate(s['concept'])]
+        # A. Try Gemini AI (Infinite Uniqueness)
+        try:
+            from llm_wrapper import GeminiWrapper
+            llm = GeminiWrapper()
+            if llm.is_active:
+                print(f"  [AI] Generating unique script for: {selected_pillar['name']}")
+                # Pick a random source topic from the pillar to inspire the AI
+                inspiration = random.choice(selected_pillar['sources'])
+                ai_script = llm.generate_script(inspiration, mood="viral_shock")
+                
+                if ai_script:
+                    script_obj = ai_script
+                    selected_text = script_obj['concept']
+                    is_viral_script = True
+                    print("  [AI] Success! Generated unique content.")
+        except Exception as e:
+            print(f"  [AI] Generation skipped: {e}")
+
+        # B. Fallback to Static Database (if AI failed or inactive)
+        if not script_obj:
+            print("  [FALLBACK] Using Viral Script Database")
+            
+            # Filter by selected provider category if possible, or just pick random valid one
+            available_scripts = [s for s in viral_scripts if s['category'] == selected_pillar['name'] and not is_topic_duplicate(s['concept'])]
+            
+            if not available_scripts:
+                 # Emergency: Pick ANY viral script not used, ignoring category
+                 available_scripts = [s for s in viral_scripts if not is_topic_duplicate(s['concept'])]
+            
+            if not available_scripts:
+                # Absolute failsafe: Reset tracking or pick random
+                 available_scripts = viral_scripts
+                 
+            script_obj = random.choice(available_scripts)
+            selected_text = script_obj['concept'] # Used for tracking
+            is_viral_script = True
         
-        if not available_scripts:
-             # Emergency: Pick ANY viral script not used, ignoring category
-             available_scripts = [s for s in viral_scripts if not is_topic_duplicate(s['concept'])]
-        
-        if not available_scripts:
-            # Absolute failsafe: Reset tracking or pick random
-             available_scripts = viral_scripts
-             
-        script_obj = random.choice(available_scripts)
-        selected_text = script_obj['concept'] # Used for tracking
         save_used_topic(selected_text)
-        is_viral_script = True
 
     # Refinement 5: Anchor Entity Extraction (still useful for visuals)
     anchor_entities = detect_anchor_entities(selected_text)
