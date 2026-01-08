@@ -1,0 +1,67 @@
+name: Sunday Meme History (Long Form)
+
+# ============================================================================
+# SCHEDULE: Every Sunday at 7:00 PM EST (00:00 UTC Monday)
+# PURPOSE: High-Quality Meme History/Analysis for the Old Channel
+# ============================================================================
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Midnight UTC Monday = 7:00 PM EST Sunday
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-upload-long-meme:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg imagemagick
+        sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"\/>/<policy domain="path" rights="read|write" pattern="@*" \/>/g' /etc/ImageMagick-6/policy.xml || echo "Policy file not found"
+    
+    - name: Install Python Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generate Long Form Meme Video
+      env:
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        
+        # TARGET: OLD CHANNEL
+        CHANNEL_MODE: long
+        TARGET_CHANNEL: meme
+        
+        # CREDENTIALS: OLD CHANNEL (Original Secret)
+        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      run: |
+        echo "Starting Long Form Meme History Generation..."
+        python src/main.py --category long
+        
+    - name: Commit Memory (No Repetition)
+      run: |
+        git config --global user.name 'TubeAutoma Bot'
+        git config --global user.email 'bot@tubeautoma.com'
+        git add src/assets/*.json
+        if git diff --staged --quiet; then
+          echo "No changes to memory."
+        else
+          git commit -m "chore: update long-meme memory [skip ci]"
+          git push
+        fi

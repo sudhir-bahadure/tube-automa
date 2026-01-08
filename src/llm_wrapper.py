@@ -107,6 +107,26 @@ class GeminiWrapper:
             CTA: [Helpful CTA]
             Keyword: [Technical Keyword]
             """
+        elif mood == "meme_history":
+            return f"""
+            Write a deep-dive INTERNET CULTURE / MEME HISTORY script (approx 90 seconds) about: "{topic}".
+            
+            STRICT RULES:
+            1.  **Goal**: Analyze why a specific meme, trend, or internet moment became iconic.
+            2.  **Tone**: Analytical, Energetic, Slightly "Insider" tone (uses internet slang correctly).
+            3.  **Structure**:
+                - Origin: Where did it start?
+                - Viral Moment: Why did it explode?
+                - Impact: How did it change the internet?
+                - CTA: "Drop a 👀 if you remember this era."
+            4.  **Formatting**: Return raw text with [PAUSE Xs] tags.
+            
+            OUTPUT FORMAT ONLY:
+            Hook: [The Hook]
+            Body: [The Analytical Breakdown]
+            CTA: [Engagement CTA]
+            Keyword: [Vibe/Nostalgia Keyword]
+            """
         return ""
 
     def _parse_response(self, text):

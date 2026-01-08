@@ -1143,8 +1143,9 @@ def get_curiosity_metadata():
     }
 
 def get_long_video_metadata():
-    """TECH SOLUTIONS TUTORIAL (8+ Minutes)"""
-    print(f"\n[*] Generating LONG FORM Tech Solution Tutorial...")
+    """LONG FORM Documentary (8+ Minutes) - Tech or Meme History"""
+    target_channel = os.environ.get("TARGET_CHANNEL", "curiosity")
+    print(f"\n[*] Generating LONG FORM Video for: {target_channel}...")
     
     plan = load_daily_plan()
     planned_topic = None
@@ -1152,24 +1153,33 @@ def get_long_video_metadata():
     if plan and 'long' in plan:
         planned_topic = plan['long'].get('topic')
         is_part_2 = plan.get('is_part_2', False)
-        print(f"  [BRAIN] Tech Solution topic: {planned_topic} (Part 2: {is_part_2})")
+        print(f"  [BRAIN] Strategy topic: {planned_topic} (Part 2: {is_part_2})")
 
-    topic = planned_topic if planned_topic else "Optimizing Your PC"
-    
+    # Default Topics based on Channel
+    if target_channel == "meme":
+        topic = planned_topic if planned_topic else "The History of Internet Memes"
+        title_prefix = "EXPLAINED: " if not is_part_2 else "PART 2: "
+        title_suffix = " (Full Documentary) 📽️"
+        hashtags = "#MemeHistory #InternetCulture #Documentary #Viral #Memes"
+        category = "23" # Comedy/Entertainment
+    else:
+        topic = planned_topic if planned_topic else "Future of AI and Automation"
+        title_prefix = "How to Fix " if not is_part_2 else "PART 2: "
+        title_suffix = " (COMPLETE 2026 GUIDE) 💻"
+        hashtags = "#TechSolutions #TechSupport #Fix #Software #Tutorial #Computer"
+        category = "28" # Science & Tech
+
     # 8-minute video needs ~1200 words. Refactored to use YPP-Safe Script Generator
-    # Fetch Wikipedia content for depth
     wiki_data = fetch_wikipedia_content(topic)
     sentences = wiki_data.get('sentences', []) if wiki_data else []
     
     from ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
+    # The template system will internally use Gemini to refine this topic
     segments = generate_ypp_safe_script(topic, sentences, is_part_2=is_part_2)
     segments = ensure_minimum_duration(segments, min_duration=480) # Ensure 8+ minutes
     
-    # Ensure duration and title
-    title_prefix = "PART 2: " if is_part_2 else "How to Fix "
-    title = f"{title_prefix}{topic} (COMPLETE 2026 GUIDE) 💻"
-    hashtags = "#TechSolutions #TechSupport #Fix #Software #Tutorial #Computer"
-    description = f"Step-by-step masterclass on resolving {topic}.\n\n{hashtags}"
+    title = f"{title_prefix}{topic}{title_suffix}"
+    description = f"A deep dive into {topic}. {hashtags}"
 
     return {
         "mode": "long",
@@ -1178,7 +1188,7 @@ def get_long_video_metadata():
         "title": title,
         "description": description,
         "tags": hashtags,
-        "youtube_category": "28"  # Science & Tech
+        "youtube_category": category
     }
 
 # (Commented out old code to prevent errors if we didn't match perfectly)

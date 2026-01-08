@@ -256,13 +256,17 @@ def generate_ypp_safe_script(topic, wikipedia_sentences=None, is_part_2=False):
     segments = []
     
     # AI INTEGRATION: Try to get unique insights from Gemini
+    import os
+    target_channel = os.environ.get("TARGET_CHANNEL", "curiosity")
+    mood = "meme_history" if target_channel == "meme" else "tech_tutorial"
+    
     ai_insights = None
     try:
         from llm_wrapper import GeminiWrapper
         llm = GeminiWrapper()
         if llm.is_active:
-             print(f"  [AI] Generating unique documentary storyboard for: {topic}")
-             ai_insights = llm.generate_script(topic, mood="tech_tutorial")
+             print(f"  [AI] Generating unique documentary storyboard ({mood}) for: {topic}")
+             ai_insights = llm.generate_script(topic, mood=mood)
     except Exception as e:
         print(f"  [AI-LONG] Storyboard failed: {e}")
 
