@@ -84,7 +84,7 @@ jobs:
         TARGET_CHANNEL: curiosity
         EXPECTED_HANDLE: "@CurioByte143"
         
-        # YouTube API credentials (for automated upload)
+        # CREDENTIALS: CURIOBYTE (@CurioByte143)
         YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
         YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}

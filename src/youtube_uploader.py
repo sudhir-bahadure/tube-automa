@@ -45,6 +45,15 @@ def get_channel_handle(youtube):
             # Handle can be in customUrl or title
             handle = snippet.get("customUrl") or snippet.get("title")
             return handle.lower()
+    except googleapiclient.errors.HttpError as e:
+        error_details = e.content.decode('utf-8') if hasattr(e, 'content') else str(e)
+        print(f"[ERROR] YouTube API Auth Failure: {error_details}")
+        if "invalid_client" in error_details:
+             print("\n[!] AUTH CRITICAL: Client ID or Client Secret is invalid/unauthorized.")
+             print("    ACTION: Verify YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET match your Google Cloud project.")
+        elif "invalid_grant" in error_details:
+             print("\n[!] AUTH CRITICAL: Refresh Token is expired or revoked.")
+             print("    ACTION: Run 'src/setup_youtube_auth.py' to generate a new Refresh Token.")
     except Exception as e:
         print(f"[WARN] Could not fetch channel identity: {e}")
     return "unknown"
@@ -60,7 +69,7 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         return False
         
     # --- MULTI-ACCOUNT STRUCTURAL LOCKDOWN (Scoped Version) ---
-    print("[*] VERSION: Structural Isolation v3.0 (Locked Refinement)")
+    print("[*] VERSION: Structural Isolation v3.1 (Refined Guards)")
     try:
         from datetime import datetime
         current_date = datetime.now()
@@ -77,7 +86,14 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         print(f"    Authenticated as: {current_handle}")
         print(f"    Expected Handle:  {expected_handle if expected_handle else 'No restriction'}")
         
-        # IDENTITY GUARD: Hard Block if handles don't match
+        # IDENTITY GUARD: Handle Auth Failures vs Mismatches
+        if current_handle == "unknown":
+            print(f"\n[SECURITY BLOCK] IDENTITY UNVERIFIABLE!")
+            print(f"       ERROR: Automation could not confirm which channel this is.")
+            print(f"       REASON: Likely an 'invalid_client' or 'invalid_grant' error (see above).")
+            print(f"       ACTION: Fix credentials and re-run. Upload Terminated for safety.")
+            return None
+
         if expected_handle and expected_handle not in current_handle:
             print(f"\n[SECURITY BLOCK] IDENTITY MISMATCH DETECTED!")
             print(f"       ERROR: The provided credentials belong to '{current_handle}'.")
