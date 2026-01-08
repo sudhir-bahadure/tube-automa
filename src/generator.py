@@ -67,17 +67,19 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
     voice = "en-US-ChristopherNeural" 
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     
-    max_retries = 3
+    max_retries = 5
     for attempt in range(max_retries):
         try:
             await communicate.save(output_file)
             return
         except Exception as e:
             print(f"Audio generation attempt {attempt+1} failed: {e}")
+            if "403" in str(e):
+                print("  [TIP] 403 error often means we need a version update or the service is temporarily throttling.")
             if attempt < max_retries - 1:
-                await asyncio.sleep(2) # Backoff
+                wait_time = (attempt + 1) * 3
+                await asyncio.sleep(wait_time)
             else:
-                # If all else fails, we might need a backup or silent clip, but let's try to crash early if critical
                 raise e
 
 def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
