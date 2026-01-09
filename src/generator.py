@@ -7,7 +7,7 @@ import json
 from datetime import datetime, timedelta
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip, ColorClip, ImageClip, concatenate_videoclips
 from moviepy.video.fx.all import crop, resize
-from src.captions import generate_word_level_captions
+from captions import generate_word_level_captions
 # Removed silent logging override as it causes issues in some moviepy versions
 
 # ============================================================================

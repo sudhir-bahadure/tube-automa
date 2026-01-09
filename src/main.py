@@ -1,10 +1,10 @@
 import argparse
 import os
-from src.content import get_fact, get_meme_metadata, get_video_metadata, get_long_video_metadata
-from src.generator import create_video
-from src.youtube_uploader import upload_video
-from src.telegram_bot import upload_to_telegram
-from src.thumbnail import create_thumbnail
+from content import get_fact, get_meme_metadata, get_video_metadata, get_long_video_metadata
+from generator import create_video
+from youtube_uploader import upload_video
+from telegram_bot import upload_to_telegram
+from thumbnail import create_thumbnail
 from moviepy.editor import VideoFileClip
 
 def main():
