@@ -564,43 +564,6 @@ def fetch_wikipedia_content(topic):
         print(f"Wikipedia fetch error: {e}")
         return None
 
-    # Fallback is handled by AI logic (it returns None if it fails, allowing main.py to handle)
-    return None
-
-Join us as we deep dive into the mysteries of {niche_name}.
-
-📚 Sources & Research:
-"""
-    
-    if wiki_data:
-        description += f"- Wikipedia: {wiki_data['url']}\n"
-    
-    description += f"""- Public domain educational content
-
-🎓 What You'll Learn:
-- Historical background and discoveries
-- Scientific explanations and research
-- Real-world impact and applications
-- Future implications and possibilities
-
-🤖 Production:
-- Video: Pexels API (royalty-free)
-- Voice: Microsoft Edge TTS
-- Research: Public domain sources
-
-💬 What topic should we explore next? Comment below!
-"""
-
-    return {
-        "mode": "long",
-        "topic": topic,
-        "segments": segments,
-        "title": title,
-        "description": description,
-        "tags": hashtags,
-        "youtube_category": "27" if "Space" in niche_name or "Tech" in niche_name else "28",
-        "wiki_url": wiki_data['url'] if wiki_data else None
-    }
 
 if __name__ == "__main__":
     print(get_video_metadata())
