@@ -33,25 +33,40 @@ class LLMWrapper:
     def _build_prompt(self, topic, video_type, niche):
         duration = "60 seconds" if video_type == "short" else "8-10 minutes"
         
+        # Specialized instruction for "curiosity/mystery" niche
+        mystery_instruction = ""
+        if niche in ["curiosity", "mystery", "discovery"]:
+            mystery_instruction = """
+            TONE: Mysterious, investigative, and intellectually stimulating.
+            HOOK: Start with an enigma or a 'what if' scenario that challenges reality.
+            STORYTELLING: Unfold the topic like a detective story, revealing layers of complexity.
+            HOOKS: Use cliffhangers at the end of segments to bridge to the next one.
+            """
+
         prompt = f"""
-        Generate a YouTube video script about '{topic}' for the '{niche}' niche.
+        Generate a professional YouTube video script about '{topic}' for the '{niche}' niche.
         Target Duration: {duration}
         
+        {mystery_instruction}
+
         Requirements:
-        1. High Retention: Start with a strong hook. For long videos, add retention hooks every 60 seconds.
-        2. YPP Compliance: Use investigative and analytical language. Don't just list facts; provide interpretations and 'why it matters'.
-        3. Visual/Script Sync: For every 5-10 seconds of script, provide 3-5 keywords for background footage selection.
-        4. No repetitive visuals: Ensure keywords are specific and varied.
+        1. High Retention: Start with a powerful hook. For long videos (8-10 mins), provide at least 15-20 segments.
+        2. YPP Compliance: Use investigative and analytical language. Provide unique interpretations and 'why it matters' from a modern perspective.
+        3. Visual/Script Sync: For every segment, provide 3-5 keywords for background footage selection.
+        4. Structure: 
+           - INTRO: High-stakes hook.
+           - BODY: Deep investigation with analytical transitions.
+           - OUTRO: Philosophical synthesis and call to action.
         
         Output Format: JSON only
         {{
-            "title": "Catcy Title",
-            "tags": ["tag1", "tag2"],
+            "title": "Catcy Mystery Title",
+            "tags": ["mystery", "curiosity", "analysis", "discovery"],
             "script_segments": [
                 {{
-                    "text": "The script text for this segment...",
-                    "visual_keywords": ["keyword1", "keyword2", "keyword3"],
-                    "duration_estimate": 8
+                    "text": "The script text for this segment (approx 20-30 seconds of speech)...",
+                    "visual_keywords": ["specific keyword 1", "keyword 2", "keyword 3"],
+                    "duration_estimate": 25
                 }},
                 ...
             ]

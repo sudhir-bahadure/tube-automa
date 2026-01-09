@@ -98,7 +98,7 @@ def add_background_music(voice_audio, duration):
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-ChristopherNeural" 
+    voice = "en-US-BrianNeural" 
     word_metadata = []
     
     max_retries = 5
@@ -462,6 +462,34 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Progress indicator
             print(f"  ✓ Segment {i+1}/{len(segments)} complete ({duration:.1f}s)")
 
+        # --- HYBRID AVATAR: Intro/Outro Injection ---
+        use_avatar = metadata.get('use_avatar', False)
+        if use_avatar:
+            print("[*] Generating AI Avatar Intro/Outro...")
+            # Intro Avatar
+            intro_audio = "temp_avatar_intro.mp3"
+            intro_video = "temp_avatar_intro.mp4"
+            intro_text = metadata.get('avatar_intro', "Welcome to another curiosity deep dive.")
+            asyncio.run(generate_audio(intro_text, intro_audio, rate="-5%", pitch="-10Hz")) 
+            avatar_path = generate_avatar_video(intro_audio, intro_video)
+            if avatar_path:
+                intro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
+                segment_clips.insert(0, intro_clip)
+                temp_audio_files.append(intro_audio)
+                temp_bg_files.append(intro_video)
+            
+            # Outro Avatar
+            outro_audio = "temp_avatar_outro.mp3"
+            outro_video = "temp_avatar_outro.mp4"
+            outro_text = metadata.get('avatar_outro', "Thanks for watching. Subscribe for more curiosity.")
+            asyncio.run(generate_audio(outro_text, outro_audio, rate="-5%", pitch="-10Hz"))
+            avatar_path = generate_avatar_video(outro_audio, outro_video)
+            if avatar_path:
+                outro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
+                segment_clips.append(outro_clip)
+                temp_audio_files.append(outro_audio)
+                temp_bg_files.append(outro_video)
+
         # Final Concatenation
         final_video = concatenate_videoclips(segment_clips, method="compose")
         total_duration = final_video.duration
@@ -472,7 +500,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         else:
             print(f"✅ SUCCESS: Video meets 8+ minute requirement!")
         
-        # Save with optimized settings (better quality than ultrafast)
+        # Save with optimized settings
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", 
                                     preset="medium", bitrate="2500k")
         
@@ -577,7 +605,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             asyncio.run(generate_audio(intro_text, intro_audio, rate="-5%", pitch="-10Hz")) # Use narrative voice
             avatar_path = generate_avatar_video(intro_audio, intro_video)
             if avatar_path:
-                intro_clip = VideoFileClip(avatar_path).resize(newsize=(1080, 1920))
+                avatar_size = (1080, 1920) if metadata.get('orientation') == 'vertical' else (1920, 1080)
+                intro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
                 final_clips.insert(0, intro_clip)
                 temp_files.extend([intro_audio, intro_video])
             
@@ -588,7 +617,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             asyncio.run(generate_audio(outro_text, outro_audio, rate="-5%", pitch="-10Hz"))
             avatar_path = generate_avatar_video(outro_audio, outro_video)
             if avatar_path:
-                outro_clip = VideoFileClip(avatar_path).resize(newsize=(1080, 1920))
+                avatar_size = (1080, 1920) if metadata.get('orientation') == 'vertical' else (1920, 1080)
+                outro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
                 final_clips.append(outro_clip)
                 temp_files.extend([outro_audio, outro_video])
 

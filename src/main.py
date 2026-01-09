@@ -17,12 +17,15 @@ def main():
     print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
     
     # 1. Fetch Content
-    if args.category == "meme":
-        metadata = get_meme_metadata()
-    elif args.category == "long":
+    if args.long or args.category == "long":
         metadata = get_long_video_metadata()
+        metadata['orientation'] = 'landscape' # Force landscape for long form
+    elif args.category == "meme":
+        metadata = get_meme_metadata()
+        metadata['orientation'] = 'vertical'
     else:
         metadata = get_video_metadata()
+        metadata['orientation'] = 'vertical'
         
     if metadata is None:
         print("[!] Error: No metadata generated. Exiting...")
