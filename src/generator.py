@@ -121,6 +121,25 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                             "start": start_sec,
                             "end": start_sec + duration_sec
                         })
+            
+            # VALIDATION: Check if audio file is valid
+            if not os.path.exists(output_file):
+                raise Exception("Audio file was not created")
+            
+            file_size = os.path.getsize(output_file)
+            if file_size < 1000:  # Less than 1KB is likely corrupt
+                raise Exception(f"Audio file too small ({file_size} bytes), likely corrupt")
+            
+            # VALIDATION: Check audio duration
+            try:
+                test_clip = AudioFileClip(output_file)
+                if test_clip.duration < 0.1:  # Less than 0.1 seconds
+                    test_clip.close()
+                    raise Exception(f"Audio duration too short ({test_clip.duration}s)")
+                test_clip.close()
+                print(f"  [OK] Audio generated: {file_size} bytes, duration: {test_clip.duration:.2f}s")
+            except Exception as validation_error:
+                raise Exception(f"Audio validation failed: {validation_error}")
                         
             return word_metadata
             
@@ -132,8 +151,29 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                 wait_time = (attempt + 1) * 3
                 await asyncio.sleep(wait_time)
                 word_metadata = [] # Reset on retry
+                # Clean up failed file
+                if os.path.exists(output_file):
+                    try:
+                        os.remove(output_file)
+                    except:
+                        pass
             else:
-                raise e
+                # FALLBACK: Create silent audio as last resort
+                print(f"  [FALLBACK] All retries failed, creating silent audio clip")
+                try:
+                    from moviepy.audio.AudioClip import AudioClip
+                    import numpy as np
+                    # Create 2 seconds of silence
+                    silent_duration = 2.0
+                    silent_audio = AudioClip(lambda t: np.zeros((int(silent_duration * 44100), 2)), 
+                                            duration=silent_duration, fps=44100)
+                    silent_audio.write_audiofile(output_file, fps=44100, codec='libmp3lame', verbose=False, logger=None)
+                    silent_audio.close()
+                    print(f"  [OK] Silent audio fallback created")
+                    return []  # No word metadata for silent audio
+                except Exception as fallback_error:
+                    print(f"  [ERROR] Even silent audio fallback failed: {fallback_error}")
+                    raise e
     return []
 
 def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
@@ -215,13 +255,32 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # 1. Generate Audio for this joke
             audio_path = f"temp_audio_{i}.mp3"
             script = f"{setup} ... ... {punchline} ... Hahaha!"
-            asyncio.run(generate_audio(script, audio_path))
-            audio_clip = AudioFileClip(audio_path)
-            temp_audio_files.append(audio_path)
             
-            duration = audio_clip.duration + 0.5
-            # Fix: Pad audio to match video duration to avoid MoviePy OSError
-            audio = add_background_music(audio_clip, duration)
+            try:
+                asyncio.run(generate_audio(script, audio_path))
+                
+                # Validate audio file before using
+                if not os.path.exists(audio_path):
+                    print(f"  [WARN] Audio file not created for meme {i}, skipping segment")
+                    continue
+                
+                audio_clip = AudioFileClip(audio_path)
+                
+                # Validate duration
+                if audio_clip.duration < 0.1:
+                    print(f"  [WARN] Audio duration too short for meme {i} ({audio_clip.duration}s), skipping segment")
+                    audio_clip.close()
+                    continue
+                
+                temp_audio_files.append(audio_path)
+                
+                duration = audio_clip.duration + 0.5
+                # Fix: Pad audio to match video duration to avoid MoviePy OSError
+                audio = add_background_music(audio_clip, duration)
+            except Exception as audio_error:
+                print(f"  [ERROR] Audio generation failed for meme {i}: {audio_error}")
+                print(f"  [SKIP] Skipping this meme segment")
+                continue
             
             # 2. Get Background for this segment
             # Use unique filename to prevent locking/overwrite issues
