@@ -307,12 +307,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 
                 temp_audio_files.append(audio_path)
                 
-                duration = clip_dur + 0.5
-                
-                # CRITICAL FIX: DO NOT use add_background_music for memes
-                # It causes OSError with CompositeAudioClip on edge cases
-                # Just use the voice audio directly - memes don't need background music
-                audio = audio_clip.set_duration(duration)
+                # Use actual audio duration - DO NOT pad beyond file length
+                # Padding with set_duration() causes OSError when MoviePy tries to read beyond actual audio data
+                duration = clip_dur
+                audio = audio_clip
                 print(f"  [OK] Meme {i} audio ready: {duration:.1f}s")
             except Exception as audio_error:
                 print(f"  [ERROR] Audio generation failed for meme {i}: {audio_error}")
