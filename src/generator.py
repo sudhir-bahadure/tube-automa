@@ -355,7 +355,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 pitch = "+0Hz"
             
             # 1. Generate Audio for this segment with variation
-            audio_path = f"temp_long_audio_{i}.mp3"
+            # Specialized Voice: Deep & Storytelling for Long-form
+            rate = "-5%"
+            pitch = "-10Hz"
             asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch))
             audio_clip = AudioFileClip(audio_path)
             temp_audio_files.append(audio_path)
@@ -499,11 +501,14 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             keyword = seg.get('keyword', metadata.get('topic', 'abstract'))
             
             # 1. Voice
+            # Specialized Voice: Energetic & Fast for Memes
+            rate = "+15%" 
+            pitch = "-2Hz"
             audio_path = f"temp_voc_{i}.mp3"
-            word_metadata = asyncio.run(generate_audio(text, audio_path))
-            audio_raw = AudioFileClip(audio_path)
-            duration = audio_raw.duration + 0.2
-            audio = add_background_music(audio_raw, duration)
+            word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch))
+            audio_clip = AudioFileClip(audio_path)
+            duration = audio_clip.duration + 0.2
+            audio = add_background_music(audio_clip, duration)
             temp_files.append(audio_path)
             
             # 2. Visual
