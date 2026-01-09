@@ -5,8 +5,9 @@ import asyncio
 import edge_tts
 import json
 from datetime import datetime, timedelta
-from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip, ColorClip, ImageClip, concatenate_videoclips
+from moviepy.editor import *
 from moviepy.video.fx.all import crop, resize
+from avatar_engine import generate_avatar_video
 from captions import generate_word_level_captions
 # Removed silent logging override as it causes issues in some moviepy versions
 
@@ -565,7 +566,32 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             seg_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
             final_clips.append(seg_clip)
+
+        # --- HYBRID AVATAR: Intro/Outro Injection ---
+        use_avatar = metadata.get('use_avatar', False)
+        if use_avatar:
+            # Intro Avatar
+            intro_audio = "temp_avatar_intro.mp3"
+            intro_video = "temp_avatar_intro.mp4"
+            intro_text = metadata.get('avatar_intro', "Welcome to another curiosity deep dive.")
+            asyncio.run(generate_audio(intro_text, intro_audio, rate="-5%", pitch="-10Hz")) # Use narrative voice
+            avatar_path = generate_avatar_video(intro_audio, intro_video)
+            if avatar_path:
+                intro_clip = VideoFileClip(avatar_path).resize(newsize=(1080, 1920))
+                final_clips.insert(0, intro_clip)
+                temp_files.extend([intro_audio, intro_video])
             
+            # Outro Avatar
+            outro_audio = "temp_avatar_outro.mp3"
+            outro_video = "temp_avatar_outro.mp4"
+            outro_text = metadata.get('avatar_outro', "Thanks for watching. Subscribe for more curiosity.")
+            asyncio.run(generate_audio(outro_text, outro_audio, rate="-5%", pitch="-10Hz"))
+            avatar_path = generate_avatar_video(outro_audio, outro_video)
+            if avatar_path:
+                outro_clip = VideoFileClip(avatar_path).resize(newsize=(1080, 1920))
+                final_clips.append(outro_clip)
+                temp_files.extend([outro_audio, outro_video])
+
         final_video = concatenate_videoclips(final_clips, method="compose")
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
         

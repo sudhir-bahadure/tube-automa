@@ -206,13 +206,14 @@ def generate_broader_field(topic):
 # YPP-SAFE SCRIPT GENERATOR
 # ============================================================================
 
-def generate_ypp_safe_script(topic, wikipedia_sentences=None):
+def generate_ypp_safe_script(topic, wikipedia_sentences=None, force_long=False):
     """
     Generate YPP-compliant analytical script
     
     Args:
         topic: Main topic
         wikipedia_sentences: Optional list of Wikipedia sentences
+        force_long: If True, ensure 8+ minutes
     
     Returns:
         List of segment dictionaries with text and type
@@ -342,6 +343,9 @@ def generate_ypp_safe_script(topic, wikipedia_sentences=None):
     identity = random.choice(YPP_TEMPLATES["identity"])
     segments.append({"text": identity, "type": "identity", "keyword": "education"})
     
+    if force_long:
+        segments = ensure_minimum_duration(segments, min_duration=480)
+        
     return segments
 
 # ============================================================================
