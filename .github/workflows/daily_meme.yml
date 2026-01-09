@@ -2,8 +2,8 @@ name: Daily TubeAutoma Meme
 
 on:
   schedule:
-    # Run at 9:00 PM IST (15:30 UTC) daily
-    - cron: '30 15 * * *'
+    # Run at 1:30 PM IST (8:00 AM EST) - Morning Peak
+    - cron: '0 13 * * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:

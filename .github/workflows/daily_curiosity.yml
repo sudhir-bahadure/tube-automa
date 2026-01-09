@@ -2,8 +2,8 @@ name: Daily Curiosity (New Channel)
 
 on:
   schedule:
-    # Run at 7:15 PM IST (13:45 UTC) - Peak Hour
-    - cron: '45 13 * * *'
+    # Run at 12:30 AM IST (2:00 PM EST) - Afternoon Peak
+    - cron: '0 19 * * *'
   workflow_dispatch:
 
 permissions:

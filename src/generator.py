@@ -131,15 +131,19 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                 raise Exception(f"Audio file too small ({file_size} bytes), likely corrupt")
             
             # VALIDATION: Check audio duration
+            # AudioFileClip can throw exceptions on corrupt/zero-duration files
             try:
                 test_clip = AudioFileClip(output_file)
-                if test_clip.duration < 0.1:  # Less than 0.1 seconds
-                    test_clip.close()
-                    raise Exception(f"Audio duration too short ({test_clip.duration}s)")
+                clip_duration = test_clip.duration
                 test_clip.close()
-                print(f"  [OK] Audio generated: {file_size} bytes, duration: {test_clip.duration:.2f}s")
+                
+                if clip_duration < 0.1:  # Less than 0.1 seconds
+                    raise Exception(f"Audio duration too short ({clip_duration}s)")
+                    
+                print(f"  [OK] Audio generated: {file_size} bytes, duration: {clip_duration:.2f}s")
             except Exception as validation_error:
-                raise Exception(f"Audio validation failed: {validation_error}")
+                # Don't re-raise with nested exception, just raise cleanly for retry
+                raise Exception(f"Audio clip validation failed: {str(validation_error)}")
                         
             return word_metadata
             
@@ -264,17 +268,30 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     print(f"  [WARN] Audio file not created for meme {i}, skipping segment")
                     continue
                 
-                audio_clip = AudioFileClip(audio_path)
+                # CRITICAL: Wrap AudioFileClip in try-except as it can fail on corrupt files
+                try:
+                    audio_clip = AudioFileClip(audio_path)
+                except Exception as clip_error:
+                    print(f"  [ERROR] Cannot open audio file for meme {i}: {clip_error}")
+                    print(f"  [SKIP] Skipping this meme segment")
+                    continue
                 
-                # Validate duration
-                if audio_clip.duration < 0.1:
-                    print(f"  [WARN] Audio duration too short for meme {i} ({audio_clip.duration}s), skipping segment")
+                # Validate duration IMMEDIATELY before using
+                try:
+                    clip_dur = audio_clip.duration
+                except:
+                    print(f"  [ERROR] Cannot read duration for meme {i}")
+                    audio_clip.close()
+                    continue
+                    
+                if clip_dur < 0.1 or clip_dur == 0:
+                    print(f"  [WARN] Audio duration invalid for meme {i} ({clip_dur}s), skipping segment")
                     audio_clip.close()
                     continue
                 
                 temp_audio_files.append(audio_path)
                 
-                duration = audio_clip.duration + 0.5
+                duration = clip_dur + 0.5
                 # Fix: Pad audio to match video duration to avoid MoviePy OSError
                 audio = add_background_music(audio_clip, duration)
             except Exception as audio_error:

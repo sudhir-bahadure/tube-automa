@@ -2,8 +2,8 @@ name: Daily TubeAutoma Video
 
 on:
   schedule:
-    # Run at 9:00 AM IST (03:30 UTC) daily
-    - cron: '30 3 * * *'
+    # Run at 10:00 PM IST (11:30 AM EST) - Lunch Peak
+    - cron: '30 16 * * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
