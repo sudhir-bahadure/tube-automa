@@ -118,7 +118,7 @@ ensure_assets_dir()
 def get_trending_memes_reddit():
     """Fetch trending jokes from Reddit (Free, No API Key)"""
     jokes = []
-    subreddits = ['Jokes', 'dadjokes', 'cleanjokes']
+    subreddits = ['WhitePeopleTwitter', 'NonPoliticalTwitter', 'meirl', 'rareinsults']
     
     for subreddit in subreddits:
         try:
@@ -357,48 +357,60 @@ def get_fact():
     return final_script
 
 def get_meme_metadata():
-    print("\n[*] Fetching trending memes from Reddit...")
+    print("\n[*] Fetching high-quality memes from Reddit...")
     
     # Try to get trending jokes from Reddit
-    trending_jokes = get_trending_memes_reddit()
+    raw_jokes = get_trending_memes_reddit()
     
-    if trending_jokes and len(trending_jokes) >= 5:
-        # Use trending jokes
-        print(f"  [OK] Found {len(trending_jokes)} trending jokes from Reddit")
-        # Select 5 random jokes from trending
-        import random
-        selected_jokes = random.sample(trending_jokes, min(5, len(trending_jokes)))
+    memes_list = []
+    if raw_jokes:
+        print(f"  [PROCESS] Filtering {len(raw_jokes)} jokes for humor quality...")
+        random.shuffle(raw_jokes)
+        for joke in raw_jokes:
+            # Check if used
+            if is_joke_used(joke['setup']):
+                continue
+                
+            # AI Humor Verification (only for non-dad joke subreddits)
+            if llm.verify_humor(f"{joke['setup']} {joke['punchline']}"):
+                memes_list.append(joke)
+                save_used_joke(joke['setup'])
+                if len(memes_list) >= 5:
+                    break
         
-        # Track used jokes
-        for joke in selected_jokes:
-            save_used_joke(joke['setup'])
-        
-        memes_list = selected_jokes
-    else:
-        # Fallback to curated jokes
-        print(f"  [WARN] Using curated jokes (trending not available)")
-        memes_list = [
-            {"setup": "Why don't scientists trust atoms?", "punchline": "Because they make up everything!"},
-            {"setup": "What do you call a bear with no teeth?", "punchline": "A gummy bear!"},
-            {"setup": "Why did the scarecrow win an award?", "punchline": "He was outstanding in his field!"},
-            {"setup": "What do you call fake spaghetti?", "punchline": "An impasta!"},
-            {"setup": "Why don't eggs tell jokes?", "punchline": "They'd crack each other up!"}
+    if len(memes_list) < 5:
+        # Fallback to high-quality curated modern humor
+        print(f"  [OK] Supplementing with curated modern humor...")
+        fallback_pool = [
+            {"setup": "My boss told me to have a good day.", "punchline": "So I went home."},
+            {"setup": "I put my phone on airplane mode.", "punchline": "It's been 2 hours and it still hasn't flown anywhere. Scammed."},
+            {"setup": "Me: I need to save money.", "punchline": "Also me: *buys something I don't need* 'Self care is important.'"},
+            {"setup": "I followed my heart today.", "punchline": "It led me straight to the fridge."},
+            {"setup": "I told my doctor I broke my arm in two places.", "punchline": "He told me to stop going to those places."},
+            {"setup": "My bank account is basically a 'Don't Open, Dead Inside' meme.", "punchline": "I'm scared of my own balance."},
+            {"setup": "I have a lot of jokes about unemployed people.", "punchline": "But none of them work."},
+            {"setup": "I didn't think for a second that I would be this tired.", "punchline": "And yet, here I am, exhausted after doing absolutely nothing."}
         ]
+        needed = 5 - len(memes_list)
+        available_fallbacks = [f for f in fallback_pool if not is_joke_used(f['setup'])]
+        if len(available_fallbacks) < needed:
+            available_fallbacks = fallback_pool # Reset if exhausted
+        memes_list.extend(random.sample(available_fallbacks, needed))
     
-    # Combine scripts for description/tts if needed, but generator will handle individual clips
+    # Combined script text
     full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
     
     # Hashtags
-    hashtags = "#Memes #Funny #DailyMemes #Humor #Shorts #Jokes #Compilation"
+    hashtags = "#Memes #Funny #Relatable #ModernHumor #Shorts #DailyMeme #Comedy"
     
     return {
         "mode": "meme",
-        "memes": memes_list,  # List of {setup, punchline}
-        "text": full_script_text, # Legacy support
-        "title": f"Daily Meme Therapy! 😂 ({len(memes_list)} Jokes)",
-        "description": f"Enjoy these funny jokes!\n\n{hashtags}",
+        "memes": memes_list,
+        "text": full_script_text,
+        "title": f"Daily Meme Therapy! 😂 High-Res Humor",
+        "description": f"Audience choice! These memes are actually funny.\n\n{hashtags}",
         "tags": hashtags,
-        "youtube_category": "23" # Comedy
+        "youtube_category": "23" 
     }
 
 

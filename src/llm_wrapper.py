@@ -92,4 +92,38 @@ class LLMWrapper:
             logger.error(f"Raw response: {text[:200]}...")
             return None
 
+    def verify_humor(self, joke_text):
+        """Verify if a joke is actually funny and high-engagement (not corny)."""
+        if not self.api_key:
+            return True # Fallback to true if no API key
+            
+        prompt = f"""
+        Evaluate the following joke/meme text for a modern YouTube audience. 
+        Audience Feedback: "not funny", "didn't even smile", "cornball".
+        
+        Joke Text: "{joke_text}"
+        
+        Your Task:
+        1. Determine if this is a "Dad Joke" or "Corny" joke.
+        2. Determine if it has "Viral Potential" for a meme channel.
+        3. Rate from 1-10.
+        
+        Output JSON:
+        {{
+            "is_funny": true/false,
+            "is_corny": true/false,
+            "score": 1-10,
+            "reason": "short explanation"
+        }}
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_response(response.text)
+            # Only accept if funny, not corny, and score >= 6
+            if result and result.get("is_funny") and not result.get("is_corny") and result.get("score", 0) >= 6:
+                return True
+            return False
+        except:
+            return True # Fallback
+
 llm = LLMWrapper()
