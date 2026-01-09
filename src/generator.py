@@ -62,6 +62,7 @@ def get_varied_keyword(base_keyword, segment_index):
         f"{base_keyword} amazing",
         f"{base_keyword} cinematic",
         f"{base_keyword} aerial"
+    ]
     return variations[segment_index % len(variations)]
 
 def add_background_music(voice_audio, duration):
