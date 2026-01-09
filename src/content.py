@@ -28,6 +28,7 @@ NICHE_KEYWORDS = {
 
 # Tracking for used assets to prevent repetition
 INVENTORY_FILE = "assets/used_inventory.json"
+USED_JOKES_FILE = "assets/used_jokes.json"
 
 def track_inventory(item_id, category):
     """Save used item to inventory"""
@@ -106,6 +107,13 @@ def is_joke_used(joke_text):
     used_jokes = load_used_jokes()
     joke_key = joke_text[:50].lower().strip()
     return joke_key in used_jokes
+
+def ensure_assets_dir():
+    if not os.path.exists("assets"):
+        os.makedirs("assets")
+
+# Initialize directory
+ensure_assets_dir()
 
 def get_trending_memes_reddit():
     """Fetch trending jokes from Reddit (Free, No API Key)"""

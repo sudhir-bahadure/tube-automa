@@ -13,7 +13,10 @@ from moviepy.video.fx.all import crop, resize
 # VISUAL TRACKING SYSTEM - Prevents video repetition
 # ============================================================================
 
-TRACKING_FILE = "used_videos.json"
+TRACKING_FILE = "assets/used_videos.json"
+
+if not os.path.exists("assets"):
+    os.makedirs("assets")
 
 def load_used_videos():
     """Load tracking file and clean old entries (>90 days)"""

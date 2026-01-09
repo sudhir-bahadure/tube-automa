@@ -41,3 +41,11 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
         python src/main.py
+
+    - name: Commit Tracking Data (Uniqueness)
+      if: success()
+      run: |
+        git config --global user.name "TubeAutoma Bot"
+        git config --global user.email "bot@tubeautoma.com"
+        git add assets/*.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update tracking data [skip ci]" && git push)

@@ -37,3 +37,11 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: python src/main.py --category long
+
+    - name: Commit Tracking Data (Uniqueness)
+      if: success()
+      run: |
+        git config --global user.name "TubeAutoma Bot"
+        git config --global user.email "bot@tubeautoma.com"
+        git add assets/*.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update tracking data [skip ci]" && git push)
