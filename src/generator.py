@@ -357,6 +357,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             # 1. Generate Audio for this segment with variation
             # Specialized Voice: Deep & Storytelling for Long-form
+            audio_path = f"temp_long_audio_{i}.mp3" 
             rate = "-5%"
             pitch = "-10Hz"
             asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch))
