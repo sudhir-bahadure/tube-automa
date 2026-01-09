@@ -68,6 +68,16 @@ def get_varied_keyword(base_keyword, segment_index):
 
 def add_background_music(voice_audio, duration):
     """Mix background music if available in assets/music"""
+    # CRITICAL: Validate input audio clip has non-zero duration
+    try:
+        voice_duration = voice_audio.duration
+        if voice_duration <= 0 or voice_duration < 0.1:
+            print(f"  [WARN] Voice audio has invalid duration ({voice_duration}s), skipping background music")
+            return voice_audio
+    except Exception as e:
+        print(f"  [ERROR] Cannot read voice audio duration: {e}, skipping background music")
+        return voice_audio
+    
     music_dir = "assets/music"
     if not os.path.exists(music_dir):
         return voice_audio
@@ -80,6 +90,12 @@ def add_background_music(voice_audio, duration):
         # Pick random track
         bg_music_path = os.path.join(music_dir, random.choice(music_files))
         bg_music = AudioFileClip(bg_music_path)
+        
+        # Validate background music duration
+        if bg_music.duration <= 0:
+            print(f"  [WARN] Background music file is corrupt, skipping")
+            bg_music.close()
+            return voice_audio
         
         # Loop if needed
         if bg_music.duration < duration:
