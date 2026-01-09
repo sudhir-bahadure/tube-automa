@@ -50,6 +50,6 @@ jobs:
         run: |
           git config --global user.name "TubeAutoma Bot"
           git config --global user.email "bot@tubeautoma.com"
-          git add assets/used_jokes.json assets/used_videos.json || true
+          git add assets/used_inventory.json assets/used_jokes.json assets/used_videos.json || true
           git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
           git push
