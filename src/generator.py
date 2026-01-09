@@ -62,8 +62,37 @@ def get_varied_keyword(base_keyword, segment_index):
         f"{base_keyword} amazing",
         f"{base_keyword} cinematic",
         f"{base_keyword} aerial"
-    ]
     return variations[segment_index % len(variations)]
+
+def add_background_music(voice_audio, duration):
+    """Mix background music if available in assets/music"""
+    music_dir = "assets/music"
+    if not os.path.exists(music_dir):
+        return voice_audio
+        
+    music_files = [f for f in os.listdir(music_dir) if f.endswith(".mp3")]
+    if not music_files:
+        return voice_audio
+        
+    try:
+        # Pick random track
+        bg_music_path = os.path.join(music_dir, random.choice(music_files))
+        bg_music = AudioFileClip(bg_music_path)
+        
+        # Loop if needed
+        if bg_music.duration < duration:
+            bg_music = bg_music.loop(duration=duration)
+        else:
+            bg_music = bg_music.subclip(0, duration)
+            
+        # Lower volume (20%)
+        bg_music = bg_music.volumex(0.15)
+        
+        from moviepy.audio.AudioClip import CompositeAudioClip
+        return CompositeAudioClip([voice_audio, bg_music]).set_duration(duration)
+    except Exception as e:
+        print(f"Background music error: {e}")
+        return voice_audio
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
@@ -190,8 +219,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             duration = audio_clip.duration + 0.5
             # Fix: Pad audio to match video duration to avoid MoviePy OSError
-            from moviepy.audio.AudioClip import CompositeAudioClip
-            audio = CompositeAudioClip([audio_clip]).set_duration(duration)
+            audio = add_background_music(audio_clip, duration)
             
             # 2. Get Background for this segment
             # Use unique filename to prevent locking/overwrite issues
@@ -332,8 +360,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             temp_audio_files.append(audio_path)
             
             duration = audio_clip.duration + 0.5
-            from moviepy.audio.AudioClip import CompositeAudioClip
-            audio = CompositeAudioClip([audio_clip]).set_duration(duration)
+            audio = add_background_music(audio_clip, duration)
             
             # 2. Get Background (Landscape for long videos)
             bg_filename = f"temp_long_bg_{i}.mp4"
@@ -475,8 +502,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             word_metadata = asyncio.run(generate_audio(text, audio_path))
             audio_raw = AudioFileClip(audio_path)
             duration = audio_raw.duration + 0.2
-            from moviepy.audio.AudioClip import CompositeAudioClip
-            audio = CompositeAudioClip([audio_raw]).set_duration(duration)
+            audio = add_background_music(audio_raw, duration)
             temp_files.append(audio_path)
             
             # 2. Visual
