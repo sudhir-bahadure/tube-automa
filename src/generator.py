@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timedelta
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip, ColorClip, ImageClip, concatenate_videoclips
 from moviepy.video.fx.all import crop, resize
+from src.captions import generate_word_level_captions
 # Removed silent logging override as it causes issues in some moviepy versions
 
 # ============================================================================
@@ -67,14 +68,31 @@ def get_varied_keyword(base_keyword, segment_index):
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
     voice = "en-US-ChristopherNeural" 
+    word_metadata = []
     
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            # Recreate Communicate object on each attempt to avoid "stream can only be called once" error
             communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
-            await communicate.save(output_file)
-            return
+            
+            with open(output_file, "wb") as file:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        file.write(chunk["data"])
+                    elif chunk["type"] == "WordBoundary":
+                        # Convert 100ns units to seconds
+                        # offset and duration are int (100-nanoseconds ticks)
+                        # 1 tick = 1e-7 seconds. 10,000,000 ticks = 1 second.
+                        start_sec = chunk["offset"] / 1e7
+                        duration_sec = chunk["duration"] / 1e7
+                        word_metadata.append({
+                            "word": chunk["text"],
+                            "start": start_sec,
+                            "end": start_sec + duration_sec
+                        })
+                        
+            return word_metadata
+            
         except Exception as e:
             print(f"Audio generation attempt {attempt+1} failed: {e}")
             if "403" in str(e):
@@ -82,8 +100,10 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
             if attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 3
                 await asyncio.sleep(wait_time)
+                word_metadata = [] # Reset on retry
             else:
                 raise e
+    return []
 
 def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
     """Download a unique background video from Pexels"""
@@ -452,7 +472,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             # 1. Voice
             audio_path = f"temp_voc_{i}.mp3"
-            asyncio.run(generate_audio(text, audio_path))
+            word_metadata = asyncio.run(generate_audio(text, audio_path))
             audio_raw = AudioFileClip(audio_path)
             duration = audio_raw.duration + 0.2
             from moviepy.audio.AudioClip import CompositeAudioClip
@@ -490,21 +510,26 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 clip = crop(clip, y1=(h/2 - nh/2), width=w, height=nh)
             clip = clip.resize(newsize=(1080, 1920))
             
-            # 3. Text Overlays (Subtitles)
-            words = text.split()
-            chunks = [" ".join(words[j:j+5]) for j in range(0, len(words), 5)]
-            txt_clips = []
-            chunk_dur = duration / len(chunks)
-            for j, chunk in enumerate(chunks):
-                try:
-                    txt = (TextClip(chunk, fontsize=75, color='white', font='Liberation-Sans-Bold',
-                                    method='caption', size=(950, None), stroke_color='black', stroke_width=3)
-                           .set_position('center')
-                           .set_duration(chunk_dur)
-                           .set_start(j * chunk_dur))
-                    txt_clips.append(txt)
-                except:
-                    continue
+            # 3. Text Overlays (Dynamic Word-Level)
+            if word_metadata:
+                # Use precise timestamps from EdgeTTS
+                txt_clips = generate_word_level_captions(word_metadata, duration)
+            else:
+                # Fallback to chunked layout if metadata missing
+                words = text.split()
+                chunks = [" ".join(words[j:j+5]) for j in range(0, len(words), 5)]
+                txt_clips = []
+                chunk_dur = duration / len(chunks)
+                for j, chunk in enumerate(chunks):
+                    try:
+                        txt = (TextClip(chunk, fontsize=75, color='white', font='Liberation-Sans-Bold',
+                                        method='caption', size=(950, None), stroke_color='black', stroke_width=3)
+                               .set_position('center')
+                               .set_duration(chunk_dur)
+                               .set_start(j * chunk_dur))
+                        txt_clips.append(txt)
+                    except:
+                        continue
             
             seg_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
             final_clips.append(seg_clip)

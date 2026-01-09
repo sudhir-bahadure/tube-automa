@@ -1,8 +1,11 @@
 import argparse
 import os
-from content import get_video_metadata, get_meme_metadata, get_long_video_metadata
-from generator import create_video
-from telegram_bot import upload_to_telegram
+from src.content import get_fact, get_meme_metadata, get_video_metadata, get_long_video_metadata
+from src.generator import create_video
+from src.youtube_uploader import upload_video
+from src.telegram_bot import upload_to_telegram
+from src.thumbnail import create_thumbnail
+from moviepy.editor import VideoFileClip
 
 def main():
     parser = argparse.ArgumentParser()
@@ -46,14 +49,26 @@ def main():
     # 3. Upload to YouTube (Primary)
     youtube_id = None
     try:
-        from youtube_uploader import upload_video
-        youtube_id = upload_video(
-            video_path_final, 
-            metadata['title'], 
-            metadata['description'], 
-            metadata['tags'],
-            metadata.get('youtube_category', '27')
-        )
+        # Generate Thumbnail (Phase 2)
+        thumbnail_path = None
+        try:
+            print("[*] Generating Thumbnail...")
+            # Extract frame
+            thumb_bg = "temp_thumb_bg.jpg"
+            with VideoFileClip(final_video_path) as clip:
+                clip.save_frame(thumb_bg, t=min(clip.duration/2, 5.0)) # Frame at 5s or mid
+            
+            # Create Thumbnail
+            thumb_text = metadata['title'].split(':')[0][:20] # Short text
+            if len(thumb_text) < 5: thumb_text = "WATCH THIS"
+            
+            thumbnail_path = create_thumbnail(thumb_bg, thumb_text, "final_thumbnail.jpg")
+        except Exception as e:
+            print(f"[WARN] Thumbnail generation failed: {e}")
+
+        # 3. Upload to YouTube
+        print("Uploading to YouTube...")
+        youtube_id = upload_video(final_video_path, metadata['title'], metadata['description'], metadata['tags'], metadata['youtube_category'], thumbnail_path)
     except Exception as e:
         print(f"YouTube Upload Module Error: {e}")
 
