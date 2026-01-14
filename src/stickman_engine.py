@@ -13,7 +13,12 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg"):
     
     # Construct a high-quality prompt for Pollinations
     # We want consistency: Black stickman, white background.
-    prompt = f"Minimalist professional black stickman {clean_pose}, pure white background, simple clean lines, high contrast, 4k, digital art"
+    prompt = (
+        f"A clean 2D vector animation style illustration of a stickman {clean_pose}. "
+        "Use a pleasant, soft pastel color palette (e.g., soft blues, mint greens, warm yellows) for background elements or props. "
+        "The stickman should be black with smooth lines. High quality, flat design, aesthetic, clear visibility. "
+        "White or very light solid pastel background."
+    )
     encoded_prompt = urllib.parse.quote(prompt)
     
     # Lower resolution for faster/more reliable generation

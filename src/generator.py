@@ -479,8 +479,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 
                 if img1 and img2:
                     try:
-                        f1 = ImageClip(img1).set_duration(0.3)
-                        f2 = ImageClip(img2).set_duration(0.3)
+                        f1 = ImageClip(img1).set_duration(0.2)
+                        f2 = ImageClip(img2).set_duration(0.2)
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
                         clip = anim_loop.resize(lambda t: 1.0 + 0.15 * (t/duration))
                         clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
