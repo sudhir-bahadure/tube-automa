@@ -44,31 +44,38 @@ class LLMWrapper:
             """
 
         prompt = f"""
-        Generate a professional YouTube video script about '{topic}' for the '{niche}' niche.
-        Target Duration: {duration}
+        Generate a VIRAL YouTube Shorts script about '{topic}' for the '{niche}' niche.
+        Target: High Audience Retention and Max CTR.
         
         {mystery_instruction}
 
         Requirements:
-        1. High Retention: Start with a powerful hook. For long videos (8-10 mins), provide at least 15-20 segments.
-        2. YPP Compliance: Use investigative and analytical language. Provide unique interpretations and 'why it matters' from a modern perspective.
-        3. Visual/Script Sync: For every segment, provide 3-5 keywords for background footage selection.
-        4. Structure: 
-           - INTRO: High-stakes hook.
-           - BODY: Deep investigation with analytical transitions.
-           - OUTRO: Philosophical synthesis and call to action.
+        1. VIRAL HOOK: The first 3 seconds MUST be a shocking or deeply curious statement.
+        2. VIRAL TITLE: Click-heavy, curiosity-gap title (Max 50 chars). DO NOT use 'none'.
+        3. STICKMAN VISUALS: For every segment, provide TWO alternating "stickman_poses" to create a motion effect.
+           - These should be unique, specific, and relatable to the segment text.
+           - Example: ["stickman waving left hand", "stickman waving right hand"]
+        4. NO STOCK FOOTAGE: Script for a purely stickman-animated aesthetic.
+        5. TONE: High energy, human-like emotions in writing, use engaging storytelling.
+        6. ABSOLUTE UNIQUENESS: Every script and visual description must be 100% fresh and never repeated.
         
         Output Format: JSON only
         {{
-            "title": "Catcy Mystery Title",
-            "tags": ["mystery", "curiosity", "analysis", "discovery"],
+            "title": "Shocking Viral Title Here",
+            "tags": ["trending", "mystery", "shocking", "facts"],
             "script_segments": [
                 {{
-                    "text": "The script text for this segment (approx 20-30 seconds of speech)...",
-                    "visual_keywords": ["specific keyword 1", "keyword 2", "keyword 3"],
-                    "duration_estimate": 25
+                    "text": "First 3 seconds: SHOCKING hook here...",
+                    "visual_keywords": ["mystery", "darkness"],
+                    "stickman_pose": "stickman pointing at a mysterious shadow",
+                    "duration_estimate": 5
                 }},
-                ...
+                {{
+                    "text": "Next part of the story...",
+                    "visual_keywords": ["discovery"],
+                    "stickman_pose": "stickman holding a magnifying glass",
+                    "duration_estimate": 10
+                }}
             ]
         }}
         """

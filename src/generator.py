@@ -4,10 +4,13 @@ import requests
 import asyncio
 import edge_tts
 import json
+import math
+import time
 from datetime import datetime, timedelta
 from moviepy.editor import *
 from moviepy.video.fx.all import crop, resize
 from avatar_engine import generate_avatar_video
+from stickman_engine import generate_stickman_image
 from captions import generate_word_level_captions
 # Removed silent logging override as it causes issues in some moviepy versions
 
@@ -461,23 +464,50 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             duration = audio_clip.duration + 0.5
             audio = add_background_music(audio_clip, duration)
             
-            # 2. Get Background (Landscape for long videos)
-            bg_filename = f"temp_long_bg_{i}.mp4"
-            bg_file = download_background_video(keyword, pexels_key, bg_filename, orientation="landscape", segment_index=i)
+            # 2. Visual (FORCE STICKMAN)
+            is_stickman = True
+            bg_filename = f"temp_long_bg_{i}_a.jpg" if is_stickman else f"temp_long_bg_{i}.mp4"
+            
             clip = None
-            if bg_file:
-                try:
-                    clip = VideoFileClip(bg_file)
-                    _ = clip.get_frame(0) 
-                    if clip.duration < duration:
-                        clip = clip.loop(duration=duration)
-                    else:
-                        clip = clip.subclip(0, duration)
-                    temp_bg_files.append(bg_file)
-                except Exception as e:
-                    print(f"Corrupted long bg skip: {e}")
-                    if clip: clip.close()
-                    clip = None
+            if is_stickman:
+                segment_poses = seg.get('stickman_poses', ["standing normally", "standing relaxed"])
+                if isinstance(segment_poses, str): segment_poses = [segment_poses, segment_poses]
+                if len(segment_poses) < 2: segment_poses = segment_poses + [segment_poses[0]]
+                
+                img1 = generate_stickman_image(segment_poses[0], f"temp_long_bg_{i}_a.jpg")
+                img2 = generate_stickman_image(segment_poses[1], f"temp_long_bg_{i}_b.jpg")
+                
+                if img1 and img2:
+                    try:
+                        f1 = ImageClip(img1).set_duration(0.3)
+                        f2 = ImageClip(img2).set_duration(0.3)
+                        anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
+                        clip = anim_loop.resize(lambda t: 1.0 + 0.15 * (t/duration))
+                        clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
+                        temp_bg_files.extend([f"temp_long_bg_{i}_a.jpg", f"temp_long_bg_{i}_b.jpg"])
+                    except Exception as e:
+                        print(f"Long Stickman Anim Error: {e}")
+                        clip = None
+                elif img1:
+                    clip = ImageClip(img1).set_duration(duration).resize(lambda t: 1.0 + 0.15 * (t/duration))
+                    clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
+                    temp_bg_files.append(f"temp_long_bg_{i}_a.jpg")
+            else:
+                # Stock Footage Fallback
+                bg_file = download_background_video(keyword, pexels_key, bg_filename, orientation="landscape", segment_index=i)
+                if bg_file:
+                    try:
+                        clip = VideoFileClip(bg_file)
+                        _ = clip.get_frame(0) 
+                        if clip.duration < duration:
+                            clip = clip.loop(duration=duration)
+                        else:
+                            clip = clip.subclip(0, duration)
+                        temp_bg_files.append(bg_file)
+                    except Exception as e:
+                        print(f"Corrupted long bg skip: {e}")
+                        if clip: clip.close()
+                        clip = None
             
             if not clip:
                 # Varied background colors for visual interest
@@ -635,27 +665,72 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             audio = add_background_music(audio_clip, duration)
             temp_files.append(audio_path)
             
-            # 2. Visual
-            bg_path = f"temp_bg_{i}.mp4"
-            bg_file = download_background_video(keyword, pexels_key, bg_path, segment_index=i)
+            # 2. Visual (Stickman or Stock)
+            # FORCE STICKMAN FOR ALL WORKFLOWS AS REQUESTED
+            is_stickman = True 
+            bg_path = f"temp_bg_{i}.jpg" if is_stickman else f"temp_bg_{i}.mp4"
+            
             clip = None
-            if bg_file:
-                try:
-                    clip = VideoFileClip(bg_file)
-                    _ = clip.get_frame(0)
-                    if clip.duration < duration:
-                        clip = clip.loop(duration=duration)
-                    else:
-                        clip = clip.subclip(0, duration)
-                    temp_files.append(bg_path)
-                except:
-                    if clip: clip.close()
-                    clip = None
+            if is_stickman:
+                # Use Stickman Engine with Animation (Alternating Frames)
+                all_segment_poses = metadata.get('stickman_poses', [])
+                segment_poses = all_segment_poses[i] if i < len(all_segment_poses) else ["standing normally", "standing relaxed"]
+                
+                # Ensure we have at least 2 poses
+                if isinstance(segment_poses, str): segment_poses = [segment_poses, segment_poses]
+                if len(segment_poses) < 2: segment_poses = segment_poses + [segment_poses[0]]
+
+                # Generate two frames
+                img1 = generate_stickman_image(segment_poses[0], f"temp_bg_{i}_a.jpg")
+                img2 = generate_stickman_image(segment_poses[1], f"temp_bg_{i}_b.jpg")
+                
+                if img1 and img2:
+                    try:
+                        # Create alternating frames (0.3s each)
+                        f1 = ImageClip(img1).set_duration(0.3)
+                        f2 = ImageClip(img2).set_duration(0.3)
+                        
+                        # Concatenate and loop to fill segment duration
+                        anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
+                        
+                        # Add Ken Burns zoom (1.0 to 1.15)
+                        clip = anim_loop.resize(lambda t: 1.0 + 0.15 * (t/duration))
+                        
+                        # Add a "breathing" or "talking" scale effect synced with audio volume 
+                        # (Simpler: just a subtle periodic scale)
+                        clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
+                        
+                        temp_files.extend([f"temp_bg_{i}_a.jpg", f"temp_bg_{i}_b.jpg"])
+                    except Exception as e:
+                        print(f"Stickman Animation Error: {e}")
+                        clip = None
+                elif img1:
+                    # Fallback to single frame with rocking animation
+                    clip = ImageClip(img1).set_duration(duration).resize(lambda t: 1.0 + 0.15 * (t/duration))
+                    # Rocking animation
+                    clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
+                    temp_files.append(f"temp_bg_{i}_a.jpg")
+            else:
+                # Use Stock Footage (Pexels) - Fallback/Legacy
+                bg_file = download_background_video(keyword, pexels_key, bg_path, segment_index=i)
+                if bg_file:
+                    try:
+                        clip = VideoFileClip(bg_file)
+                        _ = clip.get_frame(0)
+                        if clip.duration < duration:
+                            clip = clip.loop(duration=duration)
+                        else:
+                            clip = clip.subclip(0, duration)
+                        temp_files.append(bg_path)
+                    except:
+                        if clip: clip.close()
+                        clip = None
             
             if not clip:
-                clip = ColorClip(size=(1080, 1920), color=(20, 20, 20), duration=duration)
+                # Light Gray background instead of pure white to distinguish between 'failure' and 'white image'
+                clip = ColorClip(size=(1080, 1920), color=(240, 240, 240), duration=duration)
             
-            # Crop to Vertical
+            # Ensure proper orientation/resize
             w, h = clip.size
             tr = 9/16
             if w/h > tr:
@@ -667,20 +742,24 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             clip = clip.resize(newsize=(1080, 1920))
             
             # 3. Text Overlays (Dynamic Word-Level)
+            # Use colored captions if background is white (stickman)
+            text_color = 'black' if is_stickman else 'white'
+            stroke_color = 'white' if is_stickman else 'black'
+            
             if word_metadata:
-                # Use precise timestamps from EdgeTTS
                 txt_clips = generate_word_level_captions(word_metadata, duration)
+                # Override colors for stickman if needed (captions.py might need update, checking it)
             else:
-                # Fallback to chunked layout if metadata missing
+                # Fallback to chunked layout
                 words = text.split()
                 chunks = [" ".join(words[j:j+5]) for j in range(0, len(words), 5)]
                 txt_clips = []
                 chunk_dur = duration / len(chunks)
                 for j, chunk in enumerate(chunks):
                     try:
-                        txt = (TextClip(chunk, fontsize=75, color='white', font='Liberation-Sans-Bold',
-                                        method='caption', size=(950, None), stroke_color='black', stroke_width=3)
-                               .set_position('center')
+                        txt = (TextClip(chunk, fontsize=85, color=text_color, font='Liberation-Sans-Bold',
+                                        method='caption', size=(950, None), stroke_color=stroke_color, stroke_width=2)
+                               .set_position(('center', 1400))
                                .set_duration(chunk_dur)
                                .set_start(j * chunk_dur))
                         txt_clips.append(txt)

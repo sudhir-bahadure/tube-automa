@@ -179,8 +179,10 @@ def get_youtube_trending():
     try:
         url = "https://www.youtube.com/feeds/trending.rss"
         feed = feedparser.parse(url)
-        topics = [entry.title for entry in feed.entries[:20]]
-        return topics
+        # Filter for topics not already in inventory
+        topics = [entry.title for entry in feed.entries if not is_in_inventory(entry.title, "topics")]
+        print(f"  - YouTube RSS: Found {len(topics)} new trending topics")
+        return topics[:20]
     except Exception as e:
         print(f"YouTube RSS error: {e}")
         return []
@@ -261,9 +263,17 @@ def get_trending_video_topic():
         print(f"\n[OK] Selected trending topic: '{selected[0]}' (Niche: {selected[1]})")
         return selected[0], selected[1]
     
-    # Fallback to curated topics
-    print("\n[WARN] No trending matches found, using curated topics")
-    return None, None
+    # Fallback to high-quality viral fact niches
+    viral_fallback_topics = [
+        ("The mystery of the Voynich Manuscript", "Mysteries & History"),
+        ("Why time might be an illusion", "Future Tech & AI"),
+        ("The secret life of deep sea creatures", "Nature & Deep Sea"),
+        ("How AI will change the world in 2026", "Future Tech & AI"),
+        ("The engineering marvel of the Great Pyramids", "Mysteries & History")
+    ]
+    selected_fallback = random.choice(viral_fallback_topics)
+    print(f"\n[OK] Using robust fallback topic: '{selected_fallback[0]}'")
+    return selected_fallback[0], selected_fallback[1]
 
 # ============================================================================
 # EXISTING FUNCTIONS
@@ -448,7 +458,8 @@ def get_video_metadata():
                 } for seg in ai_script.get("script_segments", [])
             ],
             "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["facts", topic])]),
-            "keywords": [seg.get("visual_keywords", [topic]) for seg in ai_script.get("script_segments", [])]
+            "keywords": [seg.get("visual_keywords", [topic]) for seg in ai_script.get("script_segments", [])],
+            "stickman_poses": [seg.get("stickman_poses", ["standing normally", "standing relaxed"]) for seg in ai_script.get("script_segments", [])]
         }
     
     # Fallback if AI fails
@@ -486,7 +497,8 @@ def get_long_video_metadata():
         segments = [
             {
                 "text": seg["text"],
-                "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic
+                "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic,
+                "stickman_poses": seg.get("stickman_poses", ["standing normally", "standing relaxed"])
             } for seg in ai_script.get("script_segments", [])
         ]
         
