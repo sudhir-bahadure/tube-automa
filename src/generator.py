@@ -655,10 +655,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             keyword = seg.get('keyword', metadata.get('topic', 'abstract'))
             
             # 1. Voice
-            # Specialized Voice: Happy, Energetic & Fast for Memes
+            # Specialized Voice: Professional & Engaging (Slightly faster but natural)
             is_meme = (metadata.get('mode') == 'meme' or metadata.get('category') == 'meme')
-            rate = "+20%" if is_meme else "+0%" 
-            pitch = "+5Hz" if is_meme else "+0Hz"
+            
+            # Use a more natural speed increase. Too fast = robotic/unpleasant.
+            rate = "+10%" if is_meme else "+0%" 
+            pitch = "+0Hz" # Keep natural pitch, don't artificially raise it
             # Add happy emotion hints to the generated audio via rate/pitch or specific voice if supported
             # For edge-tts we mostly rely on rate/pitch and AI text styling 
             audio_path = f"temp_voc_{i}.mp3"

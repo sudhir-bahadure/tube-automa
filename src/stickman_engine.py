@@ -21,15 +21,17 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg"):
     )
     encoded_prompt = urllib.parse.quote(prompt)
     
-    # Lower resolution for faster/more reliable generation
     # Pollinations works best with standard sizes
     seed = random.randint(1, 1000000)
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=896&nologo=true&seed={seed}"
+    # Use a backup model/seed strategy if needed? simpler prompt?
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=896&nologo=true&seed={seed}&model=flux"
     
-    for attempt in range(3):
+    # Increased retries to 5 and timeout to 90s for reliability
+    for attempt in range(5):
         try:
             print(f"  [*] Generating Stickman Pose (Attempt {attempt+1}): {pose_description}...")
-            response = requests.get(url, timeout=60)
+            # 90s timeout to handle server load spikes
+            response = requests.get(url, timeout=90)
             if response.status_code == 200:
                 with open(output_path, "wb") as f:
                     f.write(response.content)
