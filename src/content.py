@@ -428,15 +428,21 @@ def get_video_metadata():
     else:
         topic, category = topic_result, "curiosity"
     
-    if not topic:
-        topic = "the mystery of time"
-    
+    # Force validation of topic to prevent "None" or "Null Hypothesis" loop
+    if not topic or str(topic).lower() in ["none", "null", "null hypothesis"]:
+        print("  [WARN] Invalid topic detected, using random fallback.")
+        topic = random.choice(["the mystery of time", "the scale of the universe", "the great pyramids"])
+
     # Check if we already used this exact topic recently
     if is_in_inventory(topic, "topics"):
         # Try once more for a fresh topic
         topic_result = get_trending_video_topic()
         if isinstance(topic_result, tuple):
             topic, category = topic_result
+            
+        # Re-validate after retry
+        if not topic or str(topic).lower() in ["none", "null", "null hypothesis"]:
+            topic = "the mystery of time"
             
     ai_script = llm.generate_script(topic, video_type="short", niche=category)
     
