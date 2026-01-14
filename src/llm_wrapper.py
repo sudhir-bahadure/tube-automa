@@ -21,7 +21,10 @@ class LLMWrapper:
         if not self.api_key:
             return None
 
-        prompt = self._build_prompt(topic, video_type, niche)
+        if niche == "meme":
+            prompt = self._build_meme_prompt(topic)
+        else:
+            prompt = self._build_prompt(topic, video_type, niche)
         
         try:
             response = self.model.generate_content(prompt)
@@ -29,6 +32,41 @@ class LLMWrapper:
         except Exception as e:
             logger.error(f"Error generating script: {e}")
             return None
+
+    def _build_meme_prompt(self, topic):
+        prompt = f"""
+        Generate a VIRAL YouTube Shorts MEME script about '{topic}'.
+        Target: Extreme Humor, Laughter, and Shareability.
+        
+        Requirements:
+        1. VIRAL HOOK: A relatable or "literally me" opening that grabs attention.
+        2. VIRAL TITLE: High-CTR, relatable meme title (Max 50 chars).
+        3. TONE: Happy, upbeat, and relatable human emotions. The writing should induce laughter.
+        4. STICKMAN VISUALS: Provide TWO alternating "stickman_poses" per segment.
+           - These MUST be expressive (e.g., facepalm, laughing, crying of laughter, dancing).
+        5. ABSOLUTE UNIQUENESS: Never use common jokes. Create fresh, witty commentary.
+        
+        Output Format: JSON only
+        {{
+            "title": "When you finally... 😂",
+            "tags": ["memes", "funny", "relatable", "humor"],
+            "script_segments": [
+                {{
+                    "text": "The relatable setup...",
+                    "visual_keywords": ["funny", "laughing"],
+                    "stickman_poses": ["stickman laughing hard", "stickman rolling on floor"],
+                    "duration_estimate": 4
+                }},
+                {{
+                    "text": "The punchline that hits hard...",
+                    "visual_keywords": ["savage"],
+                    "stickman_poses": ["stickman doing the 'L' dance", "stickman celebration"],
+                    "duration_estimate": 6
+                }}
+            ]
+        }}
+        """
+        return prompt
 
     def _build_prompt(self, topic, video_type, niche):
         duration = "60 seconds" if video_type == "short" else "8-10 minutes"

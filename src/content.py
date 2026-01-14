@@ -367,59 +367,54 @@ def get_fact():
     return final_script
 
 def get_meme_metadata():
-    print("\n[*] Fetching high-quality memes from Reddit...")
+    print("\n[*] Fetching real-time trending meme topics...")
     
-    # Try to get trending jokes from Reddit
+    # 1. Get viral meme topics/keywords from Reddit/Trends
+    trending_topics = get_reddit_trending(subreddits=['memes', 'dankmemes', 'Relatable', 'funny'])
+    
+    # Filter for uniqueness
+    fresh_topics = [t for t in trending_topics if not is_in_inventory(t[:50], "meme_topics")]
+    
+    if fresh_topics:
+        selected_topic = random.choice(fresh_topics[:10])
+    else:
+        # Fallback to general relatable themes
+        selected_topic = random.choice(["Monday mornings", "gym life", "student life", "gaming marathons", "shopping regrets"])
+
+    print(f"  [OK] Selected Meme Topic: {selected_topic}")
+    
+    # 2. Let AI generate 100% unique viral meme script
+    ai_script = llm.generate_script(selected_topic, video_type="short", niche="meme")
+    
+    if ai_script:
+        track_inventory(selected_topic[:50], "meme_topics")
+        return {
+            "mode": "meme",
+            "topic": selected_topic,
+            "script": [
+                {
+                    "text": seg["text"],
+                    "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else "meme",
+                    "stickman_poses": seg.get("stickman_poses", ["stickman laughing", "stickman happy"])
+                } for seg in ai_script.get("script_segments", [])
+            ],
+            "title": ai_script.get("title", f"Relatable {selected_topic} Memes 😂"),
+            "description": f"When {selected_topic} hits different... #Memes #Relatable #Funny #Shorts",
+            "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["memes", "funny", "relatable"])]),
+            "youtube_category": "23" 
+        }
+
+    # Fallback legacy logic if AI fails
+    print("  [WARN] Meme AI failed, using legacy Reddit aggregator...")
     raw_jokes = get_trending_memes_reddit()
-    
-    memes_list = []
-    if raw_jokes:
-        print(f"  [PROCESS] Filtering {len(raw_jokes)} jokes for humor quality...")
-        random.shuffle(raw_jokes)
-        for joke in raw_jokes:
-            # Check if used
-            if is_joke_used(joke['setup']):
-                continue
-                
-            # AI Humor Verification (only for non-dad joke subreddits)
-            if llm.verify_humor(f"{joke['setup']} {joke['punchline']}"):
-                memes_list.append(joke)
-                save_used_joke(joke['setup'])
-                if len(memes_list) >= 5:
-                    break
-        
-    if len(memes_list) < 5:
-        # Fallback to high-quality curated modern humor
-        print(f"  [OK] Supplementing with curated modern humor...")
-        fallback_pool = [
-            {"setup": "My boss told me to have a good day.", "punchline": "So I went home."},
-            {"setup": "I put my phone on airplane mode.", "punchline": "It's been 2 hours and it still hasn't flown anywhere. Scammed."},
-            {"setup": "Me: I need to save money.", "punchline": "Also me: *buys something I don't need* 'Self care is important.'"},
-            {"setup": "I followed my heart today.", "punchline": "It led me straight to the fridge."},
-            {"setup": "I told my doctor I broke my arm in two places.", "punchline": "He told me to stop going to those places."},
-            {"setup": "My bank account is basically a 'Don't Open, Dead Inside' meme.", "punchline": "I'm scared of my own balance."},
-            {"setup": "I have a lot of jokes about unemployed people.", "punchline": "But none of them work."},
-            {"setup": "I didn't think for a second that I would be this tired.", "punchline": "And yet, here I am, exhausted after doing absolutely nothing."}
-        ]
-        needed = 5 - len(memes_list)
-        available_fallbacks = [f for f in fallback_pool if not is_joke_used(f['setup'])]
-        if len(available_fallbacks) < needed:
-            available_fallbacks = fallback_pool # Reset if exhausted
-        memes_list.extend(random.sample(available_fallbacks, needed))
-    
-    # Combined script text
+    # ... (rest of old code as safety fallback)
+    memes_list = random.sample(raw_jokes, 5) if len(raw_jokes) >= 5 else raw_jokes[:5]
     full_script_text = " ".join([f"{m['setup']} {m['punchline']}" for m in memes_list])
-    
-    # Hashtags
-    hashtags = "#Memes #Funny #Relatable #ModernHumor #Shorts #DailyMeme #Comedy"
     
     return {
         "mode": "meme",
-        "memes": memes_list,
         "text": full_script_text,
         "title": f"Daily Meme Therapy! 😂 High-Res Humor",
-        "description": f"Audience choice! These memes are actually funny.\n\n{hashtags}",
-        "tags": hashtags,
         "youtube_category": "23" 
     }
 
