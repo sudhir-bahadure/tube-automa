@@ -69,16 +69,45 @@ def test_metadata_with_trending():
     print(f"\n[*] Generating metadata with trending topic integration...")
     metadata = get_long_video_metadata()
     
-    print(f"\n  Topic: {metadata['topic']}")
-    print(f"  Mode: {metadata['mode']}")
-    print(f"  Segments: {len(metadata['segments'])}")
-    print(f"  Title: {metadata['title']}")
+    if metadata:
+        print(f"\n  Topic: {metadata['topic']}")
+        print(f"  Mode: {metadata['mode']}")
+        print(f"  Segments: {len(metadata['segments'])}")
+        print(f"  Title: {metadata['title']}")
+        
+        # Check if it's a trending topic or curated
+        if metadata.get('wiki_url'):
+            print(f"  Wikipedia URL: {metadata['wiki_url']}")
+        print(f"\n[OK] Metadata generated successfully!")
+    else:
+        print(f"\n[WARN] Metadata generation returned None (likely due to missing LLM key)")
+
+    print("\n" + "=" * 60)
+
+def test_meme_metadata():
+    print("\nTEST 4: Meme Metadata Generation (Reddit Integration)")
+    print("=" * 60)
     
-    # Check if it's a trending topic or curated
-    if metadata.get('wiki_url'):
-        print(f"  Wikipedia URL: {metadata['wiki_url']}")
+    print(f"\n[*] Generating meme metadata...")
+    from content import get_meme_metadata
+    metadata = get_meme_metadata()
     
-    print(f"\n[OK] Metadata generated successfully!")
+    if metadata:
+        print(f"\n  Title: {metadata.get('title')}")
+        print(f"  Mode: {metadata.get('mode')}")
+        if 'script' in metadata:
+            print(f"  Script Segments: {len(metadata['script'])}")
+        elif 'text' in metadata:
+             print(f"  Script Text Length: {len(metadata['text'])}")
+             
+        # Verify it's not empty
+        if metadata.get('mode') == 'meme':
+             print(f"  [OK] Valid meme metadata generated")
+        else:
+             print(f"  [FAIL] Incorrect mode: {metadata.get('mode')}")
+    else:
+        print(f"\n[FAIL] Meme metadata generation failed completely")
+
     print("\n" + "=" * 60)
 
 def main():
@@ -96,6 +125,7 @@ def main():
         test_trending_detection()
         test_video_tracking()
         test_metadata_with_trending()
+        test_meme_metadata()
         
         print("\n[OK] ALL TESTS COMPLETE!")
         print("\nSummary:")
