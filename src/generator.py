@@ -510,8 +510,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         clip = None
             
             if not clip:
-                # Varied background colors for visual interest
-                colors = [(20,20,20), (30,30,50), (50,30,30), (30,50,30), (40,40,60)]
+                # Fallback: Pleasant Pastel Backgrounds (Soft Blue, Mint, Cream, Lavender, Peach)
+                colors = [(200, 230, 255), (200, 255, 230), (255, 250, 200), (230, 200, 255), (255, 218, 185)]
                 clip = ColorClip(size=(1920, 1080), color=colors[i % len(colors)], duration=duration)
             
             # Standard 16:9 Resize

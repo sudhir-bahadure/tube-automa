@@ -29,7 +29,7 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg"):
     for attempt in range(3):
         try:
             print(f"  [*] Generating Stickman Pose (Attempt {attempt+1}): {pose_description}...")
-            response = requests.get(url, timeout=40)
+            response = requests.get(url, timeout=60)
             if response.status_code == 200:
                 with open(output_path, "wb") as f:
                     f.write(response.content)
