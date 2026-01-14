@@ -115,6 +115,31 @@ def add_background_music(voice_audio, duration):
         print(f"Background music error: {e}")
         return voice_audio
 
+def create_subscribe_hook(duration=2.0):
+    """Create a high-energy Subscribe & Like outro hook"""
+    try:
+        # Vibrant Red Background for urgency/attention
+        bg = ColorClip(size=(1080, 1920), color=(204, 0, 0), duration=duration)
+        
+        try:
+            # Pulsing Text
+            txt = (TextClip("SUBSCRIBE\n&\nLIKE!", fontsize=150, color='white', font='Impact', 
+                            stroke_color='black', stroke_width=5, method='label', align='center')
+                   .set_position('center')
+                   .set_duration(duration))
+            
+            # Add simple pulse animation (scale up/down)
+            txt = txt.resize(lambda t: 1.0 + 0.1 * math.sin(t * 8))
+            
+            return CompositeVideoClip([bg, txt]).set_duration(duration)
+        except Exception as e:
+            print(f"  [WARN] TextClip failed for subscribe hook: {e}")
+            return bg # Return just background if text fails
+            
+    except Exception as e:
+        print(f"  [WARN] Failed to create subscribe hook: {e}")
+        return None
+
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
     voice = "en-US-AndrewNeural" # Warmer, more human-like than Brian
@@ -404,6 +429,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 # Combine Meme Segment
                 meme_segment = CompositeVideoClip([clip, banner, divider, setup_txt, punch_txt]).set_audio(audio)
             meme_clips.append(meme_segment.set_duration(duration))
+
+        # --- SUBSCRIBE HOOK INJECTION ---
+        print("  [*] Adding Subscribe & Like hook...")
+        sub_hook = create_subscribe_hook()
+        if sub_hook:
+            meme_clips.append(sub_hook)
 
         # Final Concatenation
         final_video = concatenate_videoclips(meme_clips, method="compose")
@@ -800,6 +831,16 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 outro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
                 final_clips.append(outro_clip)
                 temp_files.extend([outro_audio, outro_video])
+
+        # --- SUBSCRIBE HOOK INJECTION ---
+        print("  [*] Adding Subscribe & Like hook...")
+        sub_hook = create_subscribe_hook()
+        if sub_hook:
+            # Add audio to hook if possible (e.g. just a silence or continue bg music)
+            # For now, it will be silent or carry over ambient if mixed appropriately, 
+            # but usually concatenate cuts audio. 
+            # Ideally we'd add a sound effect, but keeping it simple as per plan.
+            final_clips.append(sub_hook)
 
         final_video = concatenate_videoclips(final_clips, method="compose")
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
