@@ -117,7 +117,7 @@ def add_background_music(voice_audio, duration):
 
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
     # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-BrianNeural" 
+    voice = "en-US-AndrewNeural" # Warmer, more human-like than Brian
     word_metadata = []
     
     max_retries = 5
