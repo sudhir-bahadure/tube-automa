@@ -1,13 +1,17 @@
 name: Daily Curiosity (New Channel)
 
+
 on:
   schedule:
     # Run at 12:30 AM IST (2:00 PM EST) - Afternoon Peak
-    - cron: '0 19 * * *'
+    - cron: '0 19 1-31/2 * *'→ Runs at 19:00
+
   workflow_dispatch:
+
 
 permissions:
   contents: write
+
 
 jobs:
   build-and-post:
@@ -16,10 +20,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
 
       - name: Install dependencies
         run: |
@@ -31,25 +37,7 @@ jobs:
           fi
           pip install -r requirements.txt
 
+
       - name: Generate and Upload Video
         env:
           # Use NEW CHANNEL Secrets mapped to standard Env Vars
-          YOUTUBE_CLIENT_ID: ${{ secrets.NEW_CHANNEL_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_CHANNEL_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_CHANNEL_REFRESH_TOKEN }}
-          
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PYTHONPATH: ${{ github.workspace }}
-        run: python src/main.py --category fact
-
-      - name: Commit Tracking Data (Uniqueness)
-        if: success()
-        run: |
-          git config --global user.name "TubeAutoma Bot"
-          git config --global user.email "bot@tubeautoma.com"
-          git add assets/used_inventory.json assets/used_jokes.json assets/used_videos.json || true
-          git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
-          git push
