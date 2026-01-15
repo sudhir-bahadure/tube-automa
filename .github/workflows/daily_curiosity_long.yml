@@ -1,17 +1,13 @@
 name: Daily Curiosity (Long-Form)
 
-
 on:
   schedule:
     # Run at 6:30 AM IST (8:00 PM EST) - Late Prime Time Peak
-    - cron: '0 1 2-30/2 * *'→ Runs at 01:00
-
+    - cron: '0 1 * * *'
   workflow_dispatch:
-
 
 permissions:
   contents: write
-
 
 jobs:
   build-and-post:
@@ -20,12 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
 
       - name: Install dependencies
         run: |
@@ -38,6 +32,26 @@ jobs:
           pip install -r requirements.txt
           pip install gradio_client
 
-
       - name: Generate and Upload Video
         env:
+          # Targets NEW CHANNEL
+          YOUTUBE_CLIENT_ID: ${{ secrets.NEW_CHANNEL_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_CHANNEL_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_CHANNEL_REFRESH_TOKEN }}
+          
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}
+        # Pass specialized flag for long form with avatar
+        run: python src/main.py --category fact --long --avatar
+
+      - name: Commit Tracking Data (Uniqueness)
+        if: success()
+        run: |
+          git config --global user.name "TubeAutoma Bot"
+          git config --global user.email "bot@tubeautoma.com"
+          git add assets/used_inventory.json assets/used_jokes.json assets/used_videos.json || true
+          git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
+          git push
