@@ -505,8 +505,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 if isinstance(segment_poses, str): segment_poses = [segment_poses, segment_poses]
                 if len(segment_poses) < 2: segment_poses = segment_poses + [segment_poses[0]]
                 
-                img1 = generate_stickman_image(segment_poses[0], f"temp_long_bg_{i}_a.jpg")
-                img2 = generate_stickman_image(segment_poses[1], f"temp_long_bg_{i}_b.jpg")
+                # Get niche from metadata for color palette
+                niche = metadata.get('niche', 'default')
+                img1 = generate_stickman_image(segment_poses[0], f"temp_long_bg_{i}_a.jpg", niche=niche)
+                img2 = generate_stickman_image(segment_poses[1], f"temp_long_bg_{i}_b.jpg", niche=niche)
                 
                 if img1 and img2:
                     try:
@@ -717,8 +719,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 if len(segment_poses) < 2: segment_poses = segment_poses + [segment_poses[0]]
 
                 # Generate two frames
-                img1 = generate_stickman_image(segment_poses[0], f"temp_bg_{i}_a.jpg")
-                img2 = generate_stickman_image(segment_poses[1], f"temp_bg_{i}_b.jpg")
+                # Get niche from metadata for color palette
+                niche = metadata.get('niche', 'default')
+                img1 = generate_stickman_image(segment_poses[0], f"temp_bg_{i}_a.jpg", niche=niche)
+                img2 = generate_stickman_image(segment_poses[1], f"temp_bg_{i}_b.jpg", niche=niche)
                 
                 if img1 and img2:
                     try:

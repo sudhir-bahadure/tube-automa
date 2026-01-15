@@ -3,21 +3,39 @@ import random
 import os
 import urllib.parse
 
-def generate_stickman_image(pose_description, output_path="temp_stickman.jpg"):
+def get_niche_color_palette(niche="default"):
+    """
+    Returns color palette description based on content niche.
+    Ensures visuals match the emotional tone of each workflow.
+    """
+    palettes = {
+        "meme": "vibrant playful colors like bright yellow, hot pink, electric orange, lime green",
+        "fact": "professional calming colors like deep blue, teal, soft purple, mint green",
+        "curiosity": "professional calming colors like deep blue, teal, soft purple, mint green",
+        "documentary": "sophisticated muted colors like warm gray, deep navy, earth brown, sage green",
+        "long": "sophisticated muted colors like warm gray, deep navy, earth brown, sage green"
+    }
+    return palettes.get(niche, "soft pastel colors like light blue, pale pink, cream")
+
+def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", niche="default"):
     """
     Generates a stickman image based on a pose description using Pollinations.ai.
     Style: Minimalist, black on white, professional.
+    Now supports niche-specific color palettes.
     """
     # Clean and encode the prompt
     clean_pose = pose_description.lower().replace("stickman", "").strip()
     
+    # Get niche-appropriate color palette
+    color_palette = get_niche_color_palette(niche)
+    
     # Construct a high-quality prompt for Pollinations
-    # We want consistency: Black stickman, white background.
+    # We want consistency: Black stickman, niche-appropriate background.
     prompt = (
         f"A clean 2D vector animation style illustration of a stickman {clean_pose}. "
-        "Use a pleasant, soft pastel color palette (e.g., soft blues, mint greens, warm yellows) for background elements or props. "
+        f"Use {color_palette} for background elements or props. "
         "The stickman should be black with smooth lines. High quality, flat design, aesthetic, clear visibility. "
-        "White or very light solid pastel background."
+        "White or very light solid background."
     )
     encoded_prompt = urllib.parse.quote(prompt)
     
@@ -42,8 +60,13 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg"):
                 print(f"  [WARN] Attempt {attempt+1} failed with status {response.status_code}")
         except Exception as e:
             print(f"  [WARN] Attempt {attempt+1} failed: {e}")
+        
+        # Exponential backoff: 2s, 4s, 8s, 16s
+        if attempt < 4:
+            wait_time = 2 ** (attempt + 1)
+            print(f"  [RETRY] Waiting {wait_time}s before retry...")
             import time
-            time.sleep(2) # Brief wait before retry
+            time.sleep(wait_time)
             
     return None
 

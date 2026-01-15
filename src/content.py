@@ -414,16 +414,23 @@ def get_meme_metadata():
         print("  [*] Polishing script for human engagement...")
         ai_script = llm.refine_script_for_quality(ai_script, niche="meme")
 
-        # VIDIQ OPTIMIZATION
+        # VIDIQ OPTIMIZATION (with error recovery)
         print("  [*] Optimizing metadata for YouTube algorithm...")
-        keywords = keyword_researcher.find_best_keywords(selected_topic, "meme", count=5)
-        viral_title = llm.generate_viral_title(selected_topic, keywords, max_chars=65)
-        optimized_tags = llm.generate_optimized_tags(selected_topic, keywords)
-        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        try:
+            keywords = keyword_researcher.find_best_keywords(selected_topic, "meme", count=5)
+            viral_title = llm.generate_viral_title(selected_topic, keywords, max_chars=65)
+            optimized_tags = llm.generate_optimized_tags(selected_topic, keywords)
+            optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        except Exception as e:
+            print(f"  [WARN] VidIQ optimization failed: {e}. Using fallback metadata.")
+            viral_title = ai_script.get("title", f"Relatable {selected_topic} Memes 😂")[:65]
+            optimized_tags = f"#memes #funny #relatable #{selected_topic.replace(' ', '')}"
+            optimized_desc = f"When {selected_topic} hits different... #Memes #Relatable\n\nDISCLAIMER: Content generated with the help of AI."
 
         track_inventory(selected_topic[:50], "meme_topics")
         return {
             "mode": "meme",
+            "niche": "meme",
             "topic": selected_topic,
             "script": [
                 {
@@ -493,15 +500,22 @@ def get_video_metadata():
         print("  [*] Polishing script for human engagement...")
         ai_script = llm.refine_script_for_quality(ai_script, niche=category)
 
-        # VIDIQ OPTIMIZATION
+        # VIDIQ OPTIMIZATION (with error recovery)
         print("  [*] Optimizing metadata for YouTube algorithm...")
-        keywords = keyword_researcher.find_best_keywords(topic, category, count=5)
-        viral_title = llm.generate_viral_title(topic, keywords, max_chars=65)
-        optimized_tags = llm.generate_optimized_tags(topic, keywords)
-        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        try:
+            keywords = keyword_researcher.find_best_keywords(topic, category, count=5)
+            viral_title = llm.generate_viral_title(topic, keywords, max_chars=65)
+            optimized_tags = llm.generate_optimized_tags(topic, keywords)
+            optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        except Exception as e:
+            print(f"  [WARN] VidIQ optimization failed: {e}. Using fallback metadata.")
+            viral_title = ai_script.get("title", f"The Truth About {topic}")[:65]
+            optimized_tags = f"#facts #shorts #{topic.replace(' ', '')}"
+            optimized_desc = f"Discover the truth about {topic}. #shorts #facts\n\nDISCLAIMER: Content generated with the help of AI."
 
         track_inventory(topic, "topics")
         return {
+            "niche": category,
             "title": viral_title,
             "topic": topic,
             "script": [
@@ -559,12 +573,18 @@ def get_long_video_metadata():
         print("  [*] Polishing script for human engagement...")
         ai_script = llm.refine_script_for_quality(ai_script, niche=category)
 
-        # VIDIQ OPTIMIZATION
+        # VIDIQ OPTIMIZATION (with error recovery)
         print("  [*] Optimizing metadata for YouTube algorithm...")
-        keywords = keyword_researcher.find_best_keywords(topic, category, count=5)
-        viral_title = llm.generate_viral_title(topic, keywords, max_chars=70)  # Slightly longer for long videos
-        optimized_tags = llm.generate_optimized_tags(topic, keywords)
-        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        try:
+            keywords = keyword_researcher.find_best_keywords(topic, category, count=5)
+            viral_title = llm.generate_viral_title(topic, keywords, max_chars=70)  # Slightly longer for long videos
+            optimized_tags = llm.generate_optimized_tags(topic, keywords)
+            optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        except Exception as e:
+            print(f"  [WARN] VidIQ optimization failed: {e}. Using fallback metadata.")
+            viral_title = ai_script.get("title", f"{topic}: The Complete Story")[:70]
+            optimized_tags = f"#documentary #{topic.replace(' ', '')}"
+            optimized_desc = f"{topic}\n\nJoin us as we deep dive.\n\nDISCLAIMER: Content generated with the help of AI."
 
         track_inventory(topic, "topics")
         segments = [
@@ -579,6 +599,7 @@ def get_long_video_metadata():
         
         return {
             "mode": "long",
+            "niche": category,
             "topic": topic,
             "segments": segments,
             "title": f"{viral_title} 🎥",
