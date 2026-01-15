@@ -35,46 +35,48 @@ class LLMWrapper:
 
     def _build_meme_prompt(self, topic):
         prompt = f"""
-        Generate a VIRAL YouTube Shorts RELATABLE HUMOR script about '{topic}'.
-        Target: Extreme Humor, Relatability, and "Literally Me" energy.
+        Generate a HILARIOUS and RELATABLE YouTube Shorts meme script about '{topic}'.
+        Target: 10/10 Humor, High Shareability.
         
-        CRITICAL RULES:
-        1. NO LISTICLES: Do not generate "Top 5", "Best 10", or "Reasons why" content.
-        2. NO INFORMATIONAL CONTENT: This is a meme channel, not a documentary. Focus on the hilarious struggle/situation.
-        3. TONE: Sarcastic, self-deprecating, and high-energy humor. Must be human and relatable.
-        4. POLICY: Must be ADVERTISER-FRIENDLY. No hate speech, no controversy.
+        STRICT RULES:
+        1. NO LISTICLES: Do not list "Top 5" or "3 Reasons". This is a single, relatable situation or a joke.
+        2. LENGTH: The script must be 35-45 SECONDS long when spoken.
+        3. SEGMENTS: Provide 5-7 distinct segments to maintain fast pacing.
+        4. CONTENT: Focus on "Deeply Relatable" situations, "Modern Struggles", or "Funny Observations".
+        5. FORBIDDEN: No informational content, no educational facts, no "Top" lists.
         
         Requirements:
-        1. VIRAL HOOK: A relatable setup that makes the viewer say "That's exactly me."
-        2. VIRAL TITLE: Click-heavy, funny title (Max 50 chars). Example: "The struggle is real... 😂"
-        3. STICKMAN VISUALS: Provide TWO alternating "stickman_poses" per segment for animation effect.
-           - POSES: Must be expressive (e.g., facepalm, laughing, face in hands, dancing).
+        1. VIRAL HOOK: First 3 seconds must be an "instantly relatable" setup.
+        2. VIRAL TITLE: Click-heavy, curiosity-gap title (Max 50 chars).
+        3. STICKMAN VISUALS: For every segment, provide TWO alternating "stickman_poses" (animation effect).
+        4. TONE: Human-like, slightly sarcastic, high-energy.
         
         Output Format: JSON only
         {{
-            "title": "When you finally... 😂",
-            "tags": ["memes", "funny", "relatable", "humor"],
+            "title": "Shocking Viral Title Here",
+            "tags": ["memes", "funny", "relatable", "shorts"],
             "script_segments": [
                 {{
-                    "text": "The relatable setup...",
-                    "visual_keywords": ["funny", "frustrated"],
-                    "stickman_poses": ["stickman facepalm", "stickman stressed"],
-                    "duration_estimate": 4
+                    "text": "The setup (3-5 seconds)...",
+                    "visual_keywords": ["funny"],
+                    "stickman_poses": ["stickman laughing", "stickman rolling on floor"],
+                    "duration_estimate": 7
                 }},
-                {{
-                    "text": "The punchline or relatable realization...",
-                    "visual_keywords": ["laughing"],
-                    "stickman_poses": ["stickman laughing hard", "stickman celebration"],
-                    "duration_estimate": 6
-                }}
+                ... (5-7 segments total summing to 35-45 seconds)
             ]
         }}
         """
         return prompt
 
     def _build_prompt(self, topic, video_type, niche):
-        duration = "60 seconds" if video_type == "short" else "8-10 minutes"
-        
+        # Target durations
+        if video_type == "short":
+            target_duration = "35-45 seconds"
+            segments_required = "5-7 segments"
+        else:
+            target_duration = "8-10 minutes"
+            segments_required = "15-20 segments"
+            
         # Specialized instruction for "curiosity/mystery" niche
         mystery_instruction = ""
         if niche in ["curiosity", "mystery", "discovery"]:
@@ -86,17 +88,23 @@ class LLMWrapper:
             """
 
         prompt = f"""
-        Generate a VIRAL YouTube Shorts script about '{topic}' for the '{niche}' niche.
+        Generate a VIRAL YouTube {'Shorts' if video_type == 'short' else 'Video'} script about '{topic}' for the '{niche}' niche.
         Target: High Audience Retention and Max CTR.
         POLICY: Must be ADVERTISER-FRIENDLY. No controversial topics, no fear-mongering.
+        
+        STRICT RULES:
+        1. NO LISTICLES: Do not generate "Top 5", "Best 10", or "3 Facts". Focus on ONE deep narrative or a single analytical story about the topic.
+        2. TITLE SYNC: The "title" MUST exactly reflect the actual story told in the script. No clickbait mismatches.
+        3. HUMAN STORYTELLING: Write like a real documentary filmmaker (e.g., Vox or Wendover style). Use deep analysis ("This means...", "This implies...") instead of just listing.
+        4. TARGET LENGTH: {target_duration} total.
+        5. SEGMENTS: Provide {segments_required} minimum.
         
         {mystery_instruction}
 
         Requirements:
         1. VIRAL HOOK: The first 3 seconds MUST be a shocking or deeply curious statement.
-        2. VIRAL TITLE: Click-heavy, curiosity-gap title (Max 50 chars). DO NOT use 'none'.
+        2. VIRAL TITLE: Click-heavy, curiosity-gap title (Max 50 chars). 
         3. STICKMAN VISUALS: For every segment, provide TWO alternating "stickman_poses" to create a motion effect.
-           - These should be unique, specific, and relatable to the segment text.
            - Example: ["stickman waving left hand", "stickman waving right hand"]
         4. NO STOCK FOOTAGE: Script for a purely stickman-animated aesthetic.
         5. TONE: High energy, human-like emotions in writing, use engaging storytelling.
@@ -110,15 +118,10 @@ class LLMWrapper:
                 {{
                     "text": "First 3 seconds: SHOCKING hook here...",
                     "visual_keywords": ["mystery", "darkness"],
-                    "stickman_pose": "stickman pointing at a mysterious shadow",
+                    "stickman_poses": ["stickman pointing left", "stickman pointing right"],
                     "duration_estimate": 5
                 }},
-                {{
-                    "text": "Next part of the story...",
-                    "visual_keywords": ["discovery"],
-                    "stickman_pose": "stickman holding a magnifying glass",
-                    "duration_estimate": 10
-                }}
+                ... ({segments_required} total summing to {target_duration})
             ]
         }}
         """
@@ -284,13 +287,14 @@ class LLMWrapper:
         REQUIREMENTS:
         1. Maximum {max_chars} characters (strict limit)
         2. Incorporate these high-value keywords naturally: {keywords_str}
-        3. Use proven CTR patterns:
+        3. Use proven NARRATIVE CTR patterns:
            - Curiosity gap ("The Secret...", "What Nobody Tells You...")
            - Urgency ("Before It's Too Late", "Right Now")
            - Personal address ("You", "Your")
-           - Numbers ("5 Ways", "3 Reasons")
-        4. Be honest (no clickbait that misleads)
-        5. Front-load the main keyword
+           - Philosophical/Analytical ("Why we were wrong about...", "The truth of...")
+        4. ABSOLUTELY NO LISTICLES: Do not use numbers like "Top 5" or "3 Reasons".
+        5. HONESTY: Title must match a narrative analysis, not a list of facts.
+        6. Front-load the main keyword
         
         Output JSON:
         {{

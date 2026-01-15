@@ -6,6 +6,10 @@ from youtube_uploader import upload_video
 from telegram_bot import upload_to_telegram
 from thumbnail import create_thumbnail
 from moviepy.editor import VideoFileClip
+import warnings
+
+# Suppress Pytrends/Pandas FutureWarnings to keep logs clean
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def main():
     parser = argparse.ArgumentParser()

@@ -140,9 +140,16 @@ def create_subscribe_hook(duration=2.0):
         print(f"  [WARN] Failed to create subscribe hook: {e}")
         return None
 
-async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"):
-    # Microsoft Edge Neural Voices (High Quality, Free)
-    voice = "en-US-AndrewNeural" # Warmer, more human-like than Brian
+async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz", voice="en-US-AndrewNeural"):
+    # Voice Mapping for "Human Persona"
+    # Andrew: Balanced, warm, good for general facts.
+    # Christopher: Deep, serious, great for Long-form Documentaries.
+    # Ryan: Cheerful, quick, great for Memes/Shorts.
+    
+    # Logic to be handled by caller, but defaults here for safety.
+    if voice is None:
+        voice = "en-US-AndrewNeural"
+        
     word_metadata = []
     
     max_retries = 5
@@ -457,7 +464,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         temp_audio_files = []
         
         print(f"Generating long-form video: {metadata.get('topic')}...")
-        print(f"Total segments: {len(segments)} (Target: 8+ minutes)")
+        # Use "Christopher" (Deep, Documentary Style)
+        voice_persona = "en-US-ChristopherNeural"
+        print(f"Total segments: {len(segments)} (Target: 8+ minutes) | Voice: {voice_persona}")
         
         for i, seg in enumerate(segments):
             text = seg['text']
@@ -691,13 +700,15 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Specialized Voice: Professional & Engaging (Slightly faster but natural)
             is_meme = (metadata.get('mode') == 'meme' or metadata.get('category') == 'meme')
             
+            # Use "Ryan" (British, Sarcastic/Funny) for Memes, "Andrew" (Warm/Professional) for Facts
+            voice_persona = "en-GB-RyanNeural" if is_meme else "en-US-AndrewNeural"
+            
             # Use a more natural speed increase. Too fast = robotic/unpleasant.
             rate = "+10%" if is_meme else "+0%" 
-            pitch = "+0Hz" # Keep natural pitch, don't artificially raise it
-            # Add happy emotion hints to the generated audio via rate/pitch or specific voice if supported
-            # For edge-tts we mostly rely on rate/pitch and AI text styling 
+            pitch = "+0Hz" 
+            
             audio_path = f"temp_voc_{i}.mp3"
-            word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch))
+            word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice_persona))
             audio_clip = AudioFileClip(audio_path)
             duration = audio_clip.duration + 0.2
             audio = add_background_music(audio_clip, duration)
@@ -847,6 +858,17 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             final_clips.append(sub_hook)
 
         final_video = concatenate_videoclips(final_clips, method="compose")
+        total_duration = final_video.duration
+        print(f"\n🎥 Total video duration: {total_duration/60:.2f} minutes ({total_duration:.1f} seconds)")
+        
+        # Validation for Shorts/FACTS (Target: 30-45s)
+        if total_duration < 30:
+            print(f"⚠️  WARNING: Short video is {30-total_duration:.1f}s TOO SHORT! (Target: 30-45s)")
+        elif total_duration > 59:
+            print(f"⚠️  WARNING: Short video is nearing the 60s limit ({total_duration:.1f}s)")
+        else:
+            print(f"✅ SUCCESS: Short video length is perfect ({total_duration:.1f}s)")
+
         final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
         
         # Cleanup

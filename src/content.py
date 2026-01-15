@@ -422,14 +422,18 @@ def get_meme_metadata():
         print("  [*] Optimizing metadata for YouTube algorithm...")
         try:
             keywords = keyword_researcher.find_best_keywords(selected_topic, "meme", count=5)
+            # Preference for Human-centric "Meme Therapy" titles
             viral_title = llm.generate_viral_title(selected_topic, keywords, max_chars=65)
+            if "Meme" not in viral_title:
+                viral_title = f"{viral_title} | Daily Meme Therapy 😂"
+            
             optimized_tags = llm.generate_optimized_tags(selected_topic, keywords)
             optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
         except Exception as e:
             print(f"  [WARN] VidIQ optimization failed: {e}. Using fallback metadata.")
-            viral_title = ai_script.get("title", f"Relatable {selected_topic} Memes 😂")[:65]
-            optimized_tags = f"#memes #funny #relatable #{selected_topic.replace(' ', '')}"
-            optimized_desc = f"When {selected_topic} hits different... #Memes #Relatable\n\nDISCLAIMER: Content generated with the help of AI."
+            viral_title = f"Daily Meme Therapy: {selected_topic} 😂"[:65]
+            optimized_tags = f"#memes #funny #relatable #memetherapy"
+            optimized_desc = f"Your daily dose of Meme Therapy. When {selected_topic} hits different...\n\nDISCLAIMER: Content generated with the help of AI."
 
         track_inventory(selected_topic[:50], "meme_topics")
         return {
@@ -591,13 +595,38 @@ def get_long_video_metadata():
             optimized_desc = f"{topic}\n\nJoin us as we deep dive.\n\nDISCLAIMER: Content generated with the help of AI."
 
         track_inventory(topic, "topics")
-        segments = [
-            {
-                "text": seg["text"],
-                "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic,
-                "stickman_poses": seg.get("stickman_poses", ["standing normally", "standing relaxed"])
-            } for seg in ai_script.get("script_segments", [])
-        ]
+        
+        # Enforce Minimum Duration (8-10 minutes)
+        # AI often provides 10-12 segments, but we need more for 8+ mins if segments are short.
+        # Use a simplified version of ensure_minimum_duration or similar logic
+        raw_segments = ai_script.get("script_segments", [])
+        
+        # Estimate total duration
+        total_est = sum([seg.get("duration_estimate", 10) for seg in raw_segments])
+        if total_est < 480: # 8 minutes
+            print(f"  [INFO] Script too short ({total_est}s), requesting AI expansion...")
+            # Use already imported utility
+            ypp_segments = [{"text": s["text"], "type": "analysis"} for s in raw_segments]
+            expanded = ensure_minimum_duration(ypp_segments, min_duration=480)
+            
+            # Map back to our segment structure
+            segments = []
+            for i, seg in enumerate(expanded):
+                # Try to reuse visual data if it's an original segment
+                orig = raw_segments[i] if i < len(raw_segments) else raw_segments[-1]
+                segments.append({
+                    "text": seg["text"],
+                    "keyword": random.choice(orig.get("visual_keywords", [topic])),
+                    "stickman_poses": orig.get("stickman_poses", ["standing normally", "standing relaxed"])
+                })
+        else:
+            segments = [
+                {
+                    "text": seg["text"],
+                    "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic,
+                    "stickman_poses": seg.get("stickman_poses", ["standing normally", "standing relaxed"])
+                } for seg in raw_segments
+            ]
         
         hashtags = optimized_tags
         
