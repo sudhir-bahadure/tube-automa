@@ -25,7 +25,7 @@ jobs:
     - name: Install system dependencies (ImageMagick & FFmpeg)
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick ffmpeg fonts-liberation
+        sudo apt-get install -y imagemagick ffmpeg fonts-liberation libjpeg-dev zlib1g-dev
         # Fix ImageMagick policy for text rendering
         sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 

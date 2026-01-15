@@ -1,15 +1,20 @@
 import argparse
 import os
+import warnings
+import PIL.Image
+
+# Monkeypatch Pillow 10+ ANTIALIAS for MoviePy 1.0.3 compatibility
+if not hasattr(PIL.Image, 'ANTIALIAS'):
+    PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
+
+# Suppress Pytrends/Pandas FutureWarnings to keep logs clean
+warnings.simplefilter(action='ignore', category=FutureWarning)
 from content import get_fact, get_meme_metadata, get_video_metadata, get_long_video_metadata
 from generator import create_video
 from youtube_uploader import upload_video
 from telegram_bot import upload_to_telegram
 from thumbnail import create_thumbnail
 from moviepy.editor import VideoFileClip
-import warnings
-
-# Suppress Pytrends/Pandas FutureWarnings to keep logs clean
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def main():
     parser = argparse.ArgumentParser()
