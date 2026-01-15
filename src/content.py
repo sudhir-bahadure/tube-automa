@@ -23,7 +23,7 @@ except ImportError:
 NICHE_KEYWORDS = {
     "Space & Universe": ["space", "mars", "nasa", "telescope", "galaxy", "planet", "asteroid", "moon", "star", "universe", "cosmic"],
     "Mysteries & History": ["ancient", "mystery", "history", "civilization", "artifact", "pyramid", "archaeological", "historical"],
-    "Future Tech & AI": ["ai", "robot", "tech", "quantum", "future", "innovation", "artificial intelligence", "machine learning"],
+    "Future Tech & AI": ["ai", "robot", "tech", "quantum", "future", "innovation", "gaming", "marathon", "esports", "code", "software"],
     "Nature & Deep Sea": ["ocean", "sea", "nature", "wildlife", "volcano", "earth", "animal", "marine", "rainforest"]
 }
 
@@ -394,8 +394,12 @@ def get_meme_metadata():
     if fresh_topics:
         selected_topic = random.choice(fresh_topics[:10])
     else:
-        # Fallback to general relatable themes
-        selected_topic = random.choice(["Monday mornings", "gym life", "student life", "gaming marathons", "shopping regrets"])
+        # Fallback to general relatable humor themes (strictly NO listicles)
+        selected_topic = random.choice(["When you wake up at 3am thinking about that one embarrassing thing you did in 2012", 
+                                       "Trying to act normal when you see your crush", 
+                                       "The struggle of parallel parking with people watching",
+                                       "When you realize you've been talking on mute for 10 minutes",
+                                       "That moment you find money in your old jeans"])
 
     print(f"  [OK] Selected Meme Topic: {selected_topic}")
     

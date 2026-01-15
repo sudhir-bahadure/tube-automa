@@ -35,17 +35,20 @@ class LLMWrapper:
 
     def _build_meme_prompt(self, topic):
         prompt = f"""
-        Generate a VIRAL YouTube Shorts MEME script about '{topic}'.
-        Target: Extreme Humor, Laughter, and Shareability.
-        POLICY: Must be ADVERTISER-FRIENDLY. No hate speech, no controversy, no bullying.
+        Generate a VIRAL YouTube Shorts RELATABLE HUMOR script about '{topic}'.
+        Target: Extreme Humor, Relatability, and "Literally Me" energy.
+        
+        CRITICAL RULES:
+        1. NO LISTICLES: Do not generate "Top 5", "Best 10", or "Reasons why" content.
+        2. NO INFORMATIONAL CONTENT: This is a meme channel, not a documentary. Focus on the hilarious struggle/situation.
+        3. TONE: Sarcastic, self-deprecating, and high-energy humor. Must be human and relatable.
+        4. POLICY: Must be ADVERTISER-FRIENDLY. No hate speech, no controversy.
         
         Requirements:
-        1. VIRAL HOOK: A relatable or "literally me" opening that grabs attention.
-        2. VIRAL TITLE: High-CTR, relatable meme title (Max 50 chars).
-        3. TONE: Happy, upbeat, and relatable human emotions. The writing should induce laughter.
-        4. STICKMAN VISUALS: Provide TWO alternating "stickman_poses" per segment.
-           - These MUST be expressive (e.g., facepalm, laughing, crying of laughter, dancing).
-        5. ABSOLUTE UNIQUENESS: Never use common jokes. Create fresh, witty commentary.
+        1. VIRAL HOOK: A relatable setup that makes the viewer say "That's exactly me."
+        2. VIRAL TITLE: Click-heavy, funny title (Max 50 chars). Example: "The struggle is real... 😂"
+        3. STICKMAN VISUALS: Provide TWO alternating "stickman_poses" per segment for animation effect.
+           - POSES: Must be expressive (e.g., facepalm, laughing, face in hands, dancing).
         
         Output Format: JSON only
         {{
@@ -54,14 +57,14 @@ class LLMWrapper:
             "script_segments": [
                 {{
                     "text": "The relatable setup...",
-                    "visual_keywords": ["funny", "laughing"],
-                    "stickman_poses": ["stickman laughing hard", "stickman rolling on floor"],
+                    "visual_keywords": ["funny", "frustrated"],
+                    "stickman_poses": ["stickman facepalm", "stickman stressed"],
                     "duration_estimate": 4
                 }},
                 {{
-                    "text": "The punchline that hits hard...",
-                    "visual_keywords": ["savage"],
-                    "stickman_poses": ["stickman doing the 'L' dance", "stickman celebration"],
+                    "text": "The punchline or relatable realization...",
+                    "visual_keywords": ["laughing"],
+                    "stickman_poses": ["stickman laughing hard", "stickman celebration"],
                     "duration_estimate": 6
                 }}
             ]
