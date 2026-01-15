@@ -5,6 +5,7 @@ import feedparser
 from datetime import datetime
 from ypp_script_template import generate_ypp_safe_script, ensure_minimum_duration
 from llm_wrapper import llm
+from keyword_research import keyword_researcher
 import json
 import os
 
@@ -409,6 +410,17 @@ def get_meme_metadata():
             print(f"  [BLOCKED] Script rejected by policy check: {reason}")
             return None # Fail safe, will trigger fallback or retry
 
+        # QUALITY REFINEMENT
+        print("  [*] Polishing script for human engagement...")
+        ai_script = llm.refine_script_for_quality(ai_script, niche="meme")
+
+        # VIDIQ OPTIMIZATION
+        print("  [*] Optimizing metadata for YouTube algorithm...")
+        keywords = keyword_researcher.find_best_keywords(selected_topic, "meme", count=5)
+        viral_title = llm.generate_viral_title(selected_topic, keywords, max_chars=65)
+        optimized_tags = llm.generate_optimized_tags(selected_topic, keywords)
+        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+
         track_inventory(selected_topic[:50], "meme_topics")
         return {
             "mode": "meme",
@@ -420,9 +432,9 @@ def get_meme_metadata():
                     "stickman_poses": seg.get("stickman_poses", ["stickman laughing", "stickman happy"])
                 } for seg in ai_script.get("script_segments", [])
             ],
-            "title": ai_script.get("title", f"Relatable {selected_topic} Memes 😂"),
-            "description": f"When {selected_topic} hits different... #Memes #Relatable #Funny #Shorts\n\nDISCLAIMER: Content generated with the help of AI.",
-            "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["memes", "funny", "relatable"])]),
+            "title": viral_title,
+            "description": optimized_desc,
+            "tags": optimized_tags,
             "youtube_category": "23" 
         }
 
@@ -477,9 +489,20 @@ def get_video_metadata():
             # Try one retry with a generic safe topic
             return None
 
+        # QUALITY REFINEMENT
+        print("  [*] Polishing script for human engagement...")
+        ai_script = llm.refine_script_for_quality(ai_script, niche=category)
+
+        # VIDIQ OPTIMIZATION
+        print("  [*] Optimizing metadata for YouTube algorithm...")
+        keywords = keyword_researcher.find_best_keywords(topic, category, count=5)
+        viral_title = llm.generate_viral_title(topic, keywords, max_chars=65)
+        optimized_tags = llm.generate_optimized_tags(topic, keywords)
+        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+
         track_inventory(topic, "topics")
         return {
-            "title": ai_script.get("title", f"The Truth About {topic}"),
+            "title": viral_title,
             "topic": topic,
             "script": [
                 {
@@ -488,8 +511,8 @@ def get_video_metadata():
                     "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic
                 } for seg in ai_script.get("script_segments", [])
             ],
-            "description": f"Discover the truth about {topic}. #shorts #facts\n\nDISCLAIMER: Content generated with the help of AI.",
-            "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["facts", topic])]),
+            "description": optimized_desc,
+            "tags": optimized_tags,
             "keywords": [seg.get("visual_keywords", [topic]) for seg in ai_script.get("script_segments", [])],
             "stickman_poses": [seg.get("stickman_poses", ["standing normally", "standing relaxed"]) for seg in ai_script.get("script_segments", [])]
         }
@@ -532,6 +555,17 @@ def get_long_video_metadata():
             print(f"  [BLOCKED] Long script rejected by policy check: {reason}")
             return None
 
+        # QUALITY REFINEMENT
+        print("  [*] Polishing script for human engagement...")
+        ai_script = llm.refine_script_for_quality(ai_script, niche=category)
+
+        # VIDIQ OPTIMIZATION
+        print("  [*] Optimizing metadata for YouTube algorithm...")
+        keywords = keyword_researcher.find_best_keywords(topic, category, count=5)
+        viral_title = llm.generate_viral_title(topic, keywords, max_chars=70)  # Slightly longer for long videos
+        optimized_tags = llm.generate_optimized_tags(topic, keywords)
+        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+
         track_inventory(topic, "topics")
         segments = [
             {
@@ -541,15 +575,14 @@ def get_long_video_metadata():
             } for seg in ai_script.get("script_segments", [])
         ]
         
-        title = ai_script.get("title", f"{topic}: The Complete Story")
-        hashtags = " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["documentary", topic])])
+        hashtags = optimized_tags
         
         return {
             "mode": "long",
             "topic": topic,
             "segments": segments,
-            "title": f"{title} 🎥",
-            "description": f"{title}\n\n{hashtags}\n\nJoin us as we deep dive into {topic}.\n\nDISCLAIMER: Content generated with the help of AI.",
+            "title": f"{viral_title} 🎥",
+            "description": optimized_desc,
             "tags": hashtags,
             "youtube_category": "27" if "Space" in str(category) or "Tech" in str(category) else "28"
         }

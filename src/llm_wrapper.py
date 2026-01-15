@@ -220,4 +220,191 @@ class LLMWrapper:
         except:
             return True # Fallback
 
+    def refine_script_for_quality(self, script_json, niche="curiosity"):
+        """
+        Act as a professional YouTube Script Editor to polish the script.
+        Target: Increase emotional connection, remove robotic phrasing, ensure value.
+        """
+        if not self.api_key:
+            return script_json
+
+        # Serialize input for the prompt
+        script_text = json.dumps(script_json, indent=2)
+
+        prompt = f"""
+        You are a Master YouTube Script Editor (Human connection expert).
+        Your Job: Polishing an AI-generated script to make it feel deeply human and valuable.
+        
+        Input Script (JSON):
+        {script_text}
+        
+        CRITIQUE GUIDELINES:
+        1. HOOK: Is the first 3 seconds generic? Make it personal ("You", "We", "I"). 
+           - Bad: "Black holes are mysterious."
+           - Good: "You shouldn't exist right now, and black holes are the reason why."
+        2. FLOW: Remove "transition words" like "However", "Furthermore", "In conclusion". Use natural speech.
+        3. VALUE: Ensure every sentence respects the viewer's time. Cut fluff.
+        4. EMOTION: Add emotional context. Why should the viewer *care*?
+        
+        ACTION:
+        - Rewrite the "text" fields in the JSON.
+        - Keep the JSON structure EXACTLY the same.
+        - Do not change keywords or stickman poses unless they don't match the new text.
+        
+        Output: The Polished JSON ONLY.
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_response(response.text)
+            if result:
+                logger.info("Script refined for quality successfully.")
+                return result
+            return script_json # Fallback to original
+        except Exception as e:
+            logger.error(f"Quality refinement error: {e}")
+            return script_json # Fallback to original
+
+    def generate_viral_title(self, topic, keywords=None, max_chars=65):
+        """
+        Generate VidIQ-style viral title optimized for CTR.
+        Returns the best title from multiple AI-generated options.
+        """
+        if not self.api_key:
+            return f"{topic[:max_chars]}"
+
+        keywords_str = ", ".join([kw['keyword'] for kw in (keywords or [])[:3]])
+
+        prompt = f"""
+        Generate 5 viral YouTube video titles for the topic: "{topic}"
+        
+        REQUIREMENTS:
+        1. Maximum {max_chars} characters (strict limit)
+        2. Incorporate these high-value keywords naturally: {keywords_str}
+        3. Use proven CTR patterns:
+           - Curiosity gap ("The Secret...", "What Nobody Tells You...")
+           - Urgency ("Before It's Too Late", "Right Now")
+           - Personal address ("You", "Your")
+           - Numbers ("5 Ways", "3 Reasons")
+        4. Be honest (no clickbait that misleads)
+        5. Front-load the main keyword
+        
+        Output JSON:
+        {{
+            "titles": [
+                {{"title": "Example Title Here", "ctr_score": 85}},
+                {{"title": "Another Title", "ctr_score": 78}},
+                ...
+            ]
+        }}
+        
+        Score each title 0-100 for predicted CTR.
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_response(response.text)
+            if result and 'titles' in result:
+                # Sort by CTR score and return best
+                titles = sorted(result['titles'], key=lambda x: x.get('ctr_score', 0), reverse=True)
+                best_title = titles[0]['title'][:max_chars]  # Enforce limit
+                logger.info(f"Generated viral title: {best_title} (CTR: {titles[0].get('ctr_score')})") 
+                return best_title
+        except Exception as e:
+            logger.error(f"Viral title generation error: {e}")
+        
+        # Fallback
+        return f"{topic[:max_chars]}"
+
+    def generate_optimized_tags(self, topic, keywords=None):
+        """
+        Generate VidIQ-style optimized tags (15-20 tags, max 500 chars total).
+        Mixes broad + specific tags, includes misspellings.
+        """
+        if not self.api_key:
+            return f"#{topic.replace(' ', '')} #shorts #viral"
+
+        keywords_str = ", ".join([kw['keyword'] for kw in (keywords or [])[:5]])
+
+        prompt = f"""
+        Generate optimized YouTube tags for: "{topic}"
+        High-value keywords: {keywords_str}
+        
+        REQUIREMENTS:
+        1. Generate 15-20 tags total
+        2. Mix:
+           - 3-5 broad tags (e.g., "facts", "education")
+           - 8-12 specific long-tail tags (e.g., "how black holes work")
+           - 2-3 common misspellings of main keywords
+        3. Prioritize high-value keywords first
+        4. Total character count must be under 500 chars
+        5. No irrelevant tags
+        
+        Output JSON:
+        {{
+            "tags": ["tag1", "tag2", "tag3", ...]
+        }}
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_response(response.text)
+            if result and 'tags' in result:
+                tags = result['tags'][:20]  # Max 20
+                # Validate total length
+                tags_str = " ".join([f"#{t.replace(' ', '')}" for t in tags])
+                if len(tags_str) > 500:
+                    # Trim to fit
+                    tags = tags[:15]
+                    tags_str = " ".join([f"#{t.replace(' ', '')}" for t in tags])
+                logger.info(f"Generated {len(tags)} optimized tags")
+                return tags_str
+        except Exception as e:
+            logger.error(f"Tag generation error: {e}")
+        
+        # Fallback
+        return f"#{topic.replace(' ', '')} #shorts #viral #trending"
+
+    def optimize_description(self, title, script_segments, keywords=None):
+        """
+        Generate SEO-optimized description.
+        Keywords in first 150 chars, timestamps for long videos, CTA.
+        """
+        if not self.api_key:
+            return f"{title}\n\nWatch to learn more!"
+
+        keywords_str = ", ".join([kw['keyword'] for kw in (keywords or [])[:3]])
+        script_preview = " ".join([seg.get('text', '')[:50] for seg in script_segments[:3]])
+
+        prompt = f"""
+        Generate an SEO-optimized YouTube video description.
+        
+        Title: {title}
+        Script Preview: {script_preview}...
+        Keywords: {keywords_str}
+        
+        REQUIREMENTS:
+        1. First 150 characters: Hook + main keywords naturally integrated
+        2. Brief summary (2-3 sentences)
+        3. Call-to-action (subscribe, like, comment)
+        4. Hashtags (3-5 relevant)
+        5. AI Disclaimer: "Content generated with the help of AI."
+        6. Keep total under 5000 characters
+        
+        Output: Plain text description (not JSON)
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            description = response.text.strip()
+            # Remove any markdown artifacts
+            description = description.replace('```', '').strip()
+            logger.info("Generated optimized description")
+            return description[:5000]  # YouTube limit
+        except Exception as e:
+            logger.error(f"Description optimization error: {e}")
+        
+        # Fallback
+        return f"{title}\n\nDiscover the truth about {keywords_str}.\n\n👍 Like and Subscribe for more!\n\nDISCLAIMER: Content generated with the help of AI."
+
 llm = LLMWrapper()
