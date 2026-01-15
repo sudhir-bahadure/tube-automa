@@ -2,8 +2,8 @@ name: Daily Curiosity (Long-Form)
 
 on:
   schedule:
-    # Run at 6:30 AM IST (8:00 PM EST) - Late Prime Time Peak
-    - cron: '0 1 * * *'
+    # Run at 6:30 AM IST on EVEN days only (New Channel - Long Form)
+    - cron: '0 1 2,4,6,8,10,12,14,16,18,20,22,24,26,28,30 * *'
   workflow_dispatch:
 
 permissions:

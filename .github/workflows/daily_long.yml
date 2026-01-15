@@ -2,11 +2,8 @@ name: Daily TubeAutoma Documentary
 
 on:
   schedule:
-    # Run at 4:30 AM IST (6:00 PM EST) - Prime Time Peak
-    # - Highest viewer engagement
-    # - Post-work/school audience
-    # - Maximum algorithm boost
-    - cron: '0 23 * * *'
+    # Run every 3 days at 4:30 AM IST (Prime Time Peak)
+    - cron: '0 23 */3 * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
