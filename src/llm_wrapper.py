@@ -37,6 +37,7 @@ class LLMWrapper:
         prompt = f"""
         Generate a VIRAL YouTube Shorts MEME script about '{topic}'.
         Target: Extreme Humor, Laughter, and Shareability.
+        POLICY: Must be ADVERTISER-FRIENDLY. No hate speech, no controversy, no bullying.
         
         Requirements:
         1. VIRAL HOOK: A relatable or "literally me" opening that grabs attention.
@@ -84,6 +85,7 @@ class LLMWrapper:
         prompt = f"""
         Generate a VIRAL YouTube Shorts script about '{topic}' for the '{niche}' niche.
         Target: High Audience Retention and Max CTR.
+        POLICY: Must be ADVERTISER-FRIENDLY. No controversial topics, no fear-mongering.
         
         {mystery_instruction}
 
@@ -137,6 +139,44 @@ class LLMWrapper:
             logger.error(f"Raw response: {text[:200]}...")
             return None
 
+    def check_policy_compliance(self, script_content):
+        """
+        Validate content against YouTube's Advertiser-Friendly Guidelines.
+        Returns: (bool, str) -> (passed, reason)
+        """
+        if not self.api_key:
+            return True, "No API key, skipping check"
+
+        prompt = f"""
+        Analyze the following YouTube video script/content for policy violations.
+        
+        Content:
+        "{script_content[:3000]}"... (truncated)
+
+        POLICIES TO CHECK:
+        1. Hate Speech: No discrimination, slurs, or promoting violence against groups.
+        2. Dangerous Content: No encouragement of self-harm, suicide, or dangerous challenges.
+        3. Shocking Content: No gratuitous violence, gore, or repulsive imagery.
+        4. Sexual Content: No explicit sexual content or nudity.
+        5. Misinformation: No harmful health claims or election interference.
+        
+        Output JSON:
+        {{
+            "passed": true/false,
+            "reason": "Brief explanation if failed, otherwise 'Safe'"
+        }}
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_response(response.text)
+            if result:
+                return result.get("passed", False), result.get("reason", "Unknown")
+            return True, "Parse error, failing open (safe)"
+        except Exception as e:
+            logger.error(f"Policy check error: {e}")
+            return True, "Check failed, failing open (safe)"
+
     def verify_humor(self, joke_text):
         """Verify if a joke is actually funny and high-engagement (not corny)."""
         if not self.api_key:
@@ -152,11 +192,13 @@ class LLMWrapper:
         1. Determine if this is a "Dad Joke" or "Corny" joke.
         2. Determine if it has "Viral Potential" for a meme channel.
         3. Rate from 1-10.
+        4. CHECK SAFETY: Ensure it is not offensive, racist, or bullying.
         
         Output JSON:
         {{
             "is_funny": true/false,
             "is_corny": true/false,
+            "is_safe": true/false,
             "score": 1-10,
             "reason": "short explanation"
         }}
@@ -164,6 +206,13 @@ class LLMWrapper:
         try:
             response = self.model.generate_content(prompt)
             result = self._parse_response(response.text)
+            
+            # Safety check first
+            if result and not result.get("is_safe", True):
+                logger.warning(f"Joke rejected for safety: {result.get('reason')}")
+                return False
+                
+            # Then quality check
             # Only accept if funny, not corny, and score >= 6
             if result and result.get("is_funny") and not result.get("is_corny") and result.get("score", 0) >= 6:
                 return True

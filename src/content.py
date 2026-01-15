@@ -269,7 +269,22 @@ def get_trending_video_topic():
         ("Why time might be an illusion", "Future Tech & AI"),
         ("The secret life of deep sea creatures", "Nature & Deep Sea"),
         ("How AI will change the world in 2026", "Future Tech & AI"),
-        ("The engineering marvel of the Great Pyramids", "Mysteries & History")
+        ("The engineering marvel of the Great Pyramids", "Mysteries & History"),
+        ("The simulation theory explained", "Future Tech & AI"),
+        ("What happened to the Library of Alexandria?", "Mysteries & History"),
+        ("The psychological trick of reciprocity", "Mysteries & History"),
+        ("How black holes distort time", "Space & Universe"),
+        ("The bloop: An unsolved ocean mystery", "Nature & Deep Sea"),
+        ("The dark forest theory of the universe", "Space & Universe"),
+        ("Why we sleep: The science of dreams", "Nature & Deep Sea"),
+        ("The dead internet theory", "Future Tech & AI"),
+        ("The antikythera mechanism mystery", "Mysteries & History"),
+        ("How quantum computers will break encryption", "Future Tech & AI"),
+        ("The great filter: Why we haven't found aliens", "Space & Universe"),
+        ("The placebo effect: Mind over matter", "Mysteries & History"),
+        ("The ocean's twilight zone", "Nature & Deep Sea"),
+        ("Roko's Basilisk: The most terrifying thought experiment", "Future Tech & AI"),
+        ("The mystery of dark matter", "Space & Universe")
     ]
     selected_fallback = random.choice(viral_fallback_topics)
     print(f"\n[OK] Using robust fallback topic: '{selected_fallback[0]}'")
@@ -387,6 +402,13 @@ def get_meme_metadata():
     ai_script = llm.generate_script(selected_topic, video_type="short", niche="meme")
     
     if ai_script:
+        # POLICY CHECK
+        script_text = " ".join([seg["text"] for seg in ai_script.get("script_segments", [])])
+        passed, reason = llm.check_policy_compliance(script_text)
+        if not passed:
+            print(f"  [BLOCKED] Script rejected by policy check: {reason}")
+            return None # Fail safe, will trigger fallback or retry
+
         track_inventory(selected_topic[:50], "meme_topics")
         return {
             "mode": "meme",
@@ -399,7 +421,7 @@ def get_meme_metadata():
                 } for seg in ai_script.get("script_segments", [])
             ],
             "title": ai_script.get("title", f"Relatable {selected_topic} Memes 😂"),
-            "description": f"When {selected_topic} hits different... #Memes #Relatable #Funny #Shorts",
+            "description": f"When {selected_topic} hits different... #Memes #Relatable #Funny #Shorts\n\nDISCLAIMER: Content generated with the help of AI.",
             "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["memes", "funny", "relatable"])]),
             "youtube_category": "23" 
         }
@@ -447,6 +469,14 @@ def get_video_metadata():
     ai_script = llm.generate_script(topic, video_type="short", niche=category)
     
     if ai_script:
+        # POLICY CHECK
+        script_text = " ".join([seg["text"] for seg in ai_script.get("script_segments", [])])
+        passed, reason = llm.check_policy_compliance(script_text)
+        if not passed:
+            print(f"  [BLOCKED] Script rejected by policy check: {reason}")
+            # Try one retry with a generic safe topic
+            return None
+
         track_inventory(topic, "topics")
         return {
             "title": ai_script.get("title", f"The Truth About {topic}"),
@@ -458,6 +488,7 @@ def get_video_metadata():
                     "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else topic
                 } for seg in ai_script.get("script_segments", [])
             ],
+            "description": f"Discover the truth about {topic}. #shorts #facts\n\nDISCLAIMER: Content generated with the help of AI.",
             "tags": " ".join([f"#{t.replace(' ', '')}" for t in ai_script.get("tags", ["facts", topic])]),
             "keywords": [seg.get("visual_keywords", [topic]) for seg in ai_script.get("script_segments", [])],
             "stickman_poses": [seg.get("stickman_poses", ["standing normally", "standing relaxed"]) for seg in ai_script.get("script_segments", [])]
@@ -494,6 +525,13 @@ def get_long_video_metadata():
     ai_script = llm.generate_script(topic, video_type="long", niche=category)
     
     if ai_script:
+        # POLICY CHECK
+        script_text = " ".join([seg["text"] for seg in ai_script.get("script_segments", [])])
+        passed, reason = llm.check_policy_compliance(script_text)
+        if not passed:
+            print(f"  [BLOCKED] Long script rejected by policy check: {reason}")
+            return None
+
         track_inventory(topic, "topics")
         segments = [
             {
@@ -511,7 +549,7 @@ def get_long_video_metadata():
             "topic": topic,
             "segments": segments,
             "title": f"{title} 🎥",
-            "description": f"{title}\n\n{hashtags}\n\nJoin us as we deep dive into {topic}.",
+            "description": f"{title}\n\n{hashtags}\n\nJoin us as we deep dive into {topic}.\n\nDISCLAIMER: Content generated with the help of AI.",
             "tags": hashtags,
             "youtube_category": "27" if "Space" in str(category) or "Tech" in str(category) else "28"
         }
