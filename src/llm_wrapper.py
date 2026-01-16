@@ -28,7 +28,19 @@ class LLMWrapper:
         
         try:
             response = self.model.generate_content(prompt)
-            return self._parse_response(response.text)
+            data = self._parse_response(response.text)
+            
+            # CLEANUP: Strip all parenthetical sound cues/stage directions
+            # These cause the TTS to read things like "(whispering)" literally.
+            if data and 'script_segments' in data:
+                import re
+                for seg in data['script_segments']:
+                    if 'text' in seg:
+                        # Remove content in parentheses ( ) or brackets [ ]
+                        seg['text'] = re.sub(r'[\(\[].*?[\)\]]', '', seg['text']).strip()
+                        # Clean up double spaces
+                        seg['text'] = re.sub(r'\s+', ' ', seg['text'])
+            return data
         except Exception as e:
             logger.error(f"Error generating script: {e}")
             return None
@@ -44,6 +56,7 @@ class LLMWrapper:
         3. SEGMENTS: Provide 5-7 distinct segments to maintain fast pacing.
         4. CONTENT: Focus on "Deeply Relatable" situations, "Modern Struggles", or "Funny Observations".
         5. FORBIDDEN: No informational content, no educational facts, no "Top" lists.
+        6. NO STAGE DIRECTIONS: Do not include parentheses or brackets with instructions like "(whispering)" or "[sound cue]". ONLY output the exact words to be spoken.
         
         Requirements:
         1. VIRAL HOOK: First 3 seconds must be an "instantly relatable" setup.
@@ -109,6 +122,7 @@ class LLMWrapper:
         4. NO STOCK FOOTAGE: Script for a purely stickman-animated aesthetic.
         5. TONE: High energy, human-like emotions in writing, use engaging storytelling.
         6. ABSOLUTE UNIQUENESS: Every script and visual description must be 100% fresh and never repeated.
+        7. NO STAGE DIRECTIONS: Do not include parentheses or brackets with instructions like "(whispering)" or "[sound cue]". ONLY output the exact words to be spoken.
         
         Output Format: JSON only
         {{

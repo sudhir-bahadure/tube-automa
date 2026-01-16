@@ -129,10 +129,7 @@ def create_subscribe_hook(duration=2.0):
                    .set_position('center')
                    .set_duration(duration))
             
-            # Add simple pulse animation (scale up/down)
-            txt = txt.resize(lambda t: 1.0 + 0.1 * math.sin(t * 8))
-            
-            return CompositeVideoClip([bg, txt]).set_duration(duration)
+            return bg # Return just background (Pure visual as requested)
         except Exception as e:
             print(f"  [WARN] TextClip failed for subscribe hook: {e}")
             return bg # Return just background if text fails
@@ -433,8 +430,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                              .set_start(punch_start)
                              .set_duration(duration - punch_start))
                 
-                # Combine Meme Segment
-                meme_segment = CompositeVideoClip([clip, banner, divider, setup_txt, punch_txt]).set_audio(audio)
+                # Combine Meme Segment (Pure visual, no text as requested)
+                meme_segment = CompositeVideoClip([clip]).set_audio(audio)
             meme_clips.append(meme_segment.set_duration(duration))
 
         # --- SUBSCRIBE HOOK INJECTION ---
@@ -639,8 +636,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                  except Exception as e:
                     print(f"Frame transform warning: {e}")
             
-            # Combine all elements
-            segment_clip = CompositeVideoClip([clip] + chapter_overlays + txt_clips).set_audio(audio)
+            # Combine all elements (Pure visual, no text/subtitles as requested)
+            segment_clip = CompositeVideoClip([clip]).set_audio(audio)
             segment_clips.append(segment_clip)
             
             # Progress indicator
@@ -843,7 +840,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     except:
                         continue
             
-            seg_clip = CompositeVideoClip([clip] + txt_clips).set_audio(audio)
+            # Combine all elements (Pure visual, no text/captions as requested)
+            seg_clip = CompositeVideoClip([clip]).set_audio(audio)
             final_clips.append(seg_clip)
 
         # --- HYBRID AVATAR: Intro/Outro Injection ---
