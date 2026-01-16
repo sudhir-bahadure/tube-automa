@@ -51,18 +51,16 @@ class LLMWrapper:
         Target: 10/10 Humor, High Shareability.
         
         STRICT RULES:
-        1. NO LISTICLES: Do not list "Top 5" or "3 Reasons". This is a single, relatable situation or a joke.
-        2. LENGTH: The script must be 35-45 SECONDS long when spoken.
-        3. SEGMENTS: Provide 5-7 distinct segments to maintain fast pacing.
-        4. CONTENT: Focus on "Deeply Relatable" situations, "Modern Struggles", or "Funny Observations".
-        5. FORBIDDEN: No informational content, no educational facts, no "Top" lists.
-        6. NO STAGE DIRECTIONS: Do not include parentheses or brackets with instructions like "(whispering)" or "[sound cue]". ONLY output the exact words to be spoken.
+        1. NO LISTICLES: Do not list "Top 5" or "3 Reasons". This is a single, relatable narrative.
+        2. CONVERSATIONAL PIVOTS: Use phrases like "So, I was thinking...", "Wait, tell me this hasn't happened to you...", "And then, of course...", "The audacity of...".
+        3. NO AI-ISMS: Avoid "In a world", "Ever wondered", "Meet Joe". Talk like a real person venting on social media.
+        4. LENGTH: Must be 40-50 SECONDS long.
+        5. SEGMENTS: provide 6-8 fast-paced segments.
         
         Requirements:
-        1. VIRAL HOOK: First 3 seconds must be an "instantly relatable" setup.
-        2. VIRAL TITLE: Click-heavy, curiosity-gap title (Max 50 chars).
-        3. STICKMAN VISUALS: For every segment, provide TWO alternating "stickman_poses" (animation effect).
-        4. TONE: Human-like, slightly sarcastic, high-energy.
+        1. SHOCKING HOOK: The first sentence must be a "Wait, what?" moment.
+        2. TONE: Sarcastic, self-deprecating, deeply relatable "Human-to-Human" vibe.
+        3. PUNCHLINE: End with a sharp, unexpected twist or a relatable sigh.
         
         Output Format: JSON only
         {{
@@ -106,23 +104,18 @@ class LLMWrapper:
         POLICY: Must be ADVERTISER-FRIENDLY. No controversial topics, no fear-mongering.
         
         STRICT RULES:
-        1. NO LISTICLES: Do not generate "Top 5", "Best 10", or "3 Facts". Focus on ONE deep narrative or a single analytical story about the topic.
-        2. TITLE SYNC: The "title" MUST exactly reflect the actual story told in the script. No clickbait mismatches.
-        3. HUMAN STORYTELLING: Write like a real documentary filmmaker (e.g., Vox or Wendover style). Use deep analysis ("This means...", "This implies...") instead of just listing.
+        1. NO LISTICLES: Focus on ONE deep narrative or a single analytical story.
+        2. NO INTRODUCTIONS: Don't say "Hi guys" or "Welcome back". Start in the middle of the action/thought.
+        3. Conversational "Wait, listen to this..." or "This is where it gets weird..." patterns.
         4. TARGET LENGTH: {target_duration} total.
         5. SEGMENTS: Provide {segments_required} minimum.
         
         {mystery_instruction}
 
         Requirements:
-        1. VIRAL HOOK: The first 3 seconds MUST be a shocking or deeply curious statement.
-        2. VIRAL TITLE: Click-heavy, curiosity-gap title (Max 50 chars). 
-        3. STICKMAN VISUALS: For every segment, provide TWO alternating "stickman_poses" to create a motion effect.
-           - Example: ["stickman waving left hand", "stickman waving right hand"]
-        4. NO STOCK FOOTAGE: Script for a purely stickman-animated aesthetic.
-        5. TONE: High energy, human-like emotions in writing, use engaging storytelling.
-        6. ABSOLUTE UNIQUENESS: Every script and visual description must be 100% fresh and never repeated.
-        7. NO STAGE DIRECTIONS: Do not include parentheses or brackets with instructions like "(whispering)" or "[sound cue]". ONLY output the exact words to be spoken.
+        1. VIRAL HOOK: Start with a declaration that challenges the viewer's current belief.
+        2. TONE: Intellectual yet punchy. Like a high-budget documentary but with "Street Wisdom".
+        3. NO AI-ISMS: Ban phrases like "The significance of...", "It is important to note...", "In conclusion...". Instead use: "Basically...", "This changes everything because...", "And honestly...".
         
         Output Format: JSON only
         {{

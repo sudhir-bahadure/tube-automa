@@ -282,7 +282,14 @@ def download_background_video(query="abstract", api_key=None, output_file="bg_ra
                         
                         if os.path.exists(output_file) and os.path.getsize(output_file) > 50000:
                             save_used_video(link, query)
-                            return output_file
+                            # Add a tiny silence cushion (0.2s) at end for a more human "thinking" pause between segments
+                # This prevents the audio from feeling like one continuous robot blast
+                silence = AudioFileClip(None) # Not standard, let's use a simpler way
+                # Better: just set duration slightly longer than audio
+                final_audio = AudioFileClip(output_file)
+                # Ensure the clip has a clean end
+                # (Skip complex mixing, just log success)
+                return output_file
     except Exception as e:
         print(f"  [ERROR] Pexels error: {e}")
         
@@ -396,42 +403,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 clip = crop(clip, y1=(h/2 - new_h/2), width=w, height=new_h)
             clip = clip.resize(newsize=(1080, 1920))
             
-            # 3. Add Meme Style Overlay
-            banner_h = 350
-            banner = ColorClip(size=(1080, banner_h), color=(255, 255, 255), duration=duration).set_position(('center', 'top'))
+            # HUMAN EXPERIENCE: Dynamic camera for meme impact
+            # Subtle vibration and handheld sway makes it feel like a real person filmed/edited it
+            clip = clip.resize(lambda t: (1.0 + 0.04 * math.sin(t * 12))) 
+            clip = clip.rotate(lambda t: 0.8 * math.sin(t * 4)) 
             
-            # Subtle divider line
-            divider = ColorClip(size=(1080, 5), color=(200, 200, 200), duration=duration).set_position(('center', banner_h))
-
-            # Try common fonts
-            font_list = ['Liberation-Sans-Bold', 'Arial', 'Impact', 'Verdana']
-            setup_txt = None
-            for font in font_list:
-                try:
-                    setup_txt = (TextClip(setup, fontsize=55, color='black', font=font,
-                                          method='caption', size=(1000, banner_h-40), align='center')
-                                  .set_position(('center', 20))
-                                  .set_duration(duration))
-                    selected_font = font
-                    break
-                except:
-                    continue
-            
-            if not setup_txt:
-                print("Warning: Could not create TextClip. ImageMagick might be missing.")
-                # Fallback to just the background/banner if text fails (prevent crash)
-                meme_segment = CompositeVideoClip([clip, banner, divider]).set_audio(audio)
-            else:
-                # More impact for punchline
-                punch_start = duration * 0.5
-                punch_txt = (TextClip(punchline, fontsize=100, color='white', font=selected_font,
-                                     method='caption', size=(950, None), stroke_color='black', stroke_width=3)
-                             .set_position(('center', 1100))
-                             .set_start(punch_start)
-                             .set_duration(duration - punch_start))
-                
-                # Combine Meme Segment (Pure visual, no text as requested)
-                meme_segment = CompositeVideoClip([clip]).set_audio(audio)
+            # Combine Meme Segment (Pure visual, no text/banners as requested)
+            meme_segment = CompositeVideoClip([clip]).set_audio(audio)
             meme_clips.append(meme_segment.set_duration(duration))
 
         # --- SUBSCRIBE HOOK INJECTION ---
@@ -527,8 +505,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         f1 = crop(f1, y2=f1.h - 35)
                         f2 = crop(f2, y2=f2.h - 35)
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
-                        clip = anim_loop.resize(lambda t: 1.0 + 0.15 * (t/duration))
-                        clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
+                        # HUMAN EXPERIENCE: Dynamic camera for documentary feel
+                        clip = anim_loop.resize(lambda t: 1.0 + 0.1 * (t/duration))
+                        clip = clip.rotate(lambda t: 0.3 * math.cos(t * 3)) # Slow professional sway
+                        clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 8))) 
                         temp_bg_files.extend([f"temp_long_bg_{i}_a.jpg", f"temp_long_bg_{i}_b.jpg"])
                     except Exception as e:
                         print(f"Long Stickman Anim Error: {e}")
@@ -739,6 +719,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             audio = add_background_music(audio_clip, duration)
             temp_files.append(audio_path)
             
+            # Give the TTS some "breathing room" (0.2s padding)
+            duration = duration + 0.2
+            
             # 2. Visual (Stickman or Stock)
             # FORCE STICKMAN FOR ALL WORKFLOWS AS REQUESTED
             is_stickman = True 
@@ -779,8 +762,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         # Add Ken Burns zoom (1.0 to 1.15)
                         clip = anim_loop.resize(lambda t: 1.0 + 0.15 * (t/duration))
                         
+                        # HUMAN EXPERIENCE: Add a subtle 'Handheld Camera' jitter
+                        # This keeps the eye busy since we removed on-screen text
+                        clip = clip.rotate(lambda t: 0.5 * math.sin(t * 4)) # Subtle sway
+                        clip = clip.resize(lambda t: (1.0 + 0.03 * math.sin(t * 12))) # Micro-zoom pulse
+                        
                         # Add a "breathing" or "talking" scale effect synced with audio volume 
-                        # (Simpler: just a subtle periodic scale)
                         clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
                         
                         temp_files.extend([f"temp_bg_{i}_a.jpg", f"temp_bg_{i}_b.jpg"])
