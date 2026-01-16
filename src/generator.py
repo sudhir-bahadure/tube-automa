@@ -622,6 +622,18 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 except:
                     continue
             
+            # 4. TRANSFORMATIVE OVERLAY (Monetization Safety)
+            # Add a "Polaroid/Gallery" style frame to define "visual transformation"
+            # This prevents instances of "reused content" by adding a distinct framing element
+            if is_stickman:
+                 # Add 20px white border, then 2px black border
+                 try:
+                    clip = clip.margin(20, color=(255, 255, 255)).margin(2, color=(0, 0, 0))
+                    # Resize back to target to ensure it fits (1080x1920)
+                    clip = clip.resize(newsize=(1080, 1920))
+                 except Exception as e:
+                    print(f"Frame transform warning: {e}")
+            
             # Combine all elements
             segment_clip = CompositeVideoClip([clip] + chapter_overlays + txt_clips).set_audio(audio)
             segment_clips.append(segment_clip)

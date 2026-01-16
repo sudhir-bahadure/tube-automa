@@ -205,5 +205,11 @@ class KeywordResearcher:
         
         return top_keywords
 
-# Singleton instance
 keyword_researcher = KeywordResearcher()
+
+if __name__ == "__main__":
+    # Test VidIQ Logic
+    print("Testing VidIQ Research Engine...")
+    results = keyword_researcher.find_best_keywords("gaming marathon", "meme", count=5)
+    for res in results:
+        print(f"Result: {res['keyword']} | Score: {res['score']}")
