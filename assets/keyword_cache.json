@@ -83,44 +83,36 @@
     "value": 30,
     "timestamp": "2026-01-16T07:46:45.541404"
   },
-  "competition_Future Technology": {
-    "value": 70,
-    "timestamp": "2026-01-16T16:07:54.989573"
-  },
-  "competition_how to Future Technology": {
+  "competition_When you realize you've been talking on mute for 10 minutes": {
     "value": 30,
-    "timestamp": "2026-01-16T16:08:01.474713"
+    "timestamp": "2026-01-16T12:40:40.597853"
   },
-  "competition_Future Technology explained": {
-    "value": 50,
-    "timestamp": "2026-01-16T16:08:18.602297"
-  },
-  "competition_why Future Technology": {
-    "value": 50,
-    "timestamp": "2026-01-16T16:08:25.473572"
-  },
-  "competition_Future Technology tutorial": {
-    "value": 50,
-    "timestamp": "2026-01-16T16:08:32.202595"
-  },
-  "competition_best Future Technology": {
-    "value": 50,
-    "timestamp": "2026-01-16T16:08:39.506052"
-  },
-  "competition_what is Future Technology": {
+  "competition_why When you realize you've been talking on mute for 10 minutes": {
     "value": 30,
-    "timestamp": "2026-01-16T16:08:50.358740"
+    "timestamp": "2026-01-16T12:40:42.180251"
   },
-  "competition_Future Technology for beginners": {
+  "competition_When you realize you've been talking on mute for 10 minutes explained": {
     "value": 30,
-    "timestamp": "2026-01-16T16:08:57.476331"
+    "timestamp": "2026-01-16T12:40:43.508537"
   },
-  "volume_Future Technology": {
-    "value": 62,
-    "timestamp": "2026-01-16T16:09:28.330221"
+  "competition_how to When you realize you've been talking on mute for 10 minutes": {
+    "value": 30,
+    "timestamp": "2026-01-16T12:40:45.064037"
   },
-  "volume_how to Future Technology": {
-    "value": 43,
-    "timestamp": "2026-01-16T16:09:51.793652"
+  "competition_what is When you realize you've been talking on mute for 10 minutes": {
+    "value": 30,
+    "timestamp": "2026-01-16T12:40:46.286842"
+  },
+  "competition_When you realize you've been talking on mute for 10 minutes for beginners": {
+    "value": 30,
+    "timestamp": "2026-01-16T12:40:47.672341"
+  },
+  "competition_When you realize you've been talking on mute for 10 minutes tutorial": {
+    "value": 30,
+    "timestamp": "2026-01-16T12:40:48.969236"
+  },
+  "competition_best When you realize you've been talking on mute for 10 minutes": {
+    "value": 30,
+    "timestamp": "2026-01-16T12:40:50.265204"
   }
 }
