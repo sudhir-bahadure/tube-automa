@@ -321,8 +321,7 @@ class LLMWrapper:
             logger.error(f"Viral title generation error: {e}")
         
         # Fallback
-    # Fallback
-    return f"{topic[:max_chars]}"
+        return f"{topic[:max_chars]}"
 
     def generate_thumbnail_text(self, topic, keywords=None):
         """
