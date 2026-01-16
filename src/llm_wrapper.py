@@ -321,7 +321,53 @@ class LLMWrapper:
             logger.error(f"Viral title generation error: {e}")
         
         # Fallback
-        return f"{topic[:max_chars]}"
+    # Fallback
+    return f"{topic[:max_chars]}"
+
+    def generate_thumbnail_text(self, topic, keywords=None):
+        """
+        Generate high-CTR, VidIQ-style thumbnail text (Max 3-5 words).
+        """
+        if not self.api_key:
+            return topic.upper()[:20]
+
+        keywords_str = ", ".join([kw['keyword'] for kw in (keywords or [])[:3]])
+        
+        prompt = f"""
+        Generate 5 high-CTR text overlays for a YouTube thumbnail about: "{topic}"
+        
+        VIDIQ RULES:
+        1. MAX 3-5 WORDS. Short and punchy.
+        2. DO NOT repeat the Title. Complement it.
+        3. EMOTION: Use Shock, Disbelief, or "Impossible" vibes.
+        4. TEXT ONLY. No descriptions of images.
+        5. EXAMPLES:
+           - "THEY LIED?"
+           - "DON'T DO THIS"
+           - "IMPOSSIBLE."
+           - "SECRET REVEALED"
+           - "WHY??"
+           
+        Keywords context: {keywords_str}
+        
+        Output JSON:
+        {{
+            "texts": ["TEXT 1", "TEXT 2", ...]
+        }}
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_response(response.text)
+            if result and 'texts' in result:
+                import random
+                best_text = random.choice(result['texts']).upper()
+                logger.info(f"Generated thumbnail text: {best_text}")
+                return best_text
+        except Exception as e:
+            logger.error(f"Thumbnail text gen error: {e}")
+        
+        return keywords[0]['keyword'].upper() if keywords else topic.upper()[:20]
+
 
     def generate_optimized_tags(self, topic, keywords=None):
         """

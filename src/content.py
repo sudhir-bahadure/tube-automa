@@ -372,10 +372,15 @@ def get_fact():
         viral_title = llm.generate_viral_title(subject, keywords, max_chars=60)
         optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
         tags = llm.generate_optimized_tags(subject, keywords)
+        
+        # KEY UPGRADE: Generate VidIQ-style Thumbnail Text (Punchy, 3 words)
+        thumb_text = llm.generate_thumbnail_text(subject, keywords)
+        
     except:
         viral_title = f"Did you know about {subject}?"
         optimized_desc = f"Mind-blowing facts about {subject}.\n\nDISCLAIMER: Content generated with the help of AI."
         tags = "#shorts #facts #didyouknow"
+        thumb_text = subject.upper()
 
     track_inventory(subject, "fact_topics")
 
@@ -392,6 +397,7 @@ def get_fact():
             } for seg in ai_script.get("script_segments", [])
         ],
         "title": viral_title,
+        "thumbnail_text": thumb_text, # Explicitly pass punchy text
         "description": optimized_desc,
         "tags": tags,
         "category": "fact" # Explicitly set for generator logic

@@ -889,7 +889,18 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 if os.path.exists(f): os.remove(f)
             except:
                 pass
-                
+        
+        # KEY UPGRADE: VidIQ Thumbnail Generation
+        # Uses punchy 3-word text if available (from content.py), otherwise falls back to title
+        print("\n[*] Generating thumbnail...")
+        thumb_text = metadata.get('thumbnail_text', metadata.get('title', 'Video'))[:30]
+        try:
+            # Use one of the used backgrounds if available
+            thumb_bg = random.choice(temp_bg_files) if temp_bg_files else None
+            create_thumbnail(thumb_bg, thumb_text, output_path="thumbnail.jpg")
+        except:
+            create_thumbnail(None, thumb_text, output_path="thumbnail.jpg")
+
         return output_path
 
 if __name__ == "__main__":
