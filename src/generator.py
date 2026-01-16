@@ -722,10 +722,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Give the TTS some "breathing room" (0.2s padding)
             duration = duration + 0.2
             
-            # 2. Visual (Stickman or Stock)
-            # FORCE STICKMAN FOR ALL WORKFLOWS AS REQUESTED
-            is_stickman = True 
-            bg_path = f"temp_bg_{i}.jpg" if is_stickman else f"temp_bg_{i}.mp4"
+            # Define niche and flags for visual processing
+            niche = metadata.get('category', metadata.get('mode', 'fact'))
+            is_stickman = True # Force stickman as requested
             
             clip = None
             if is_stickman:
