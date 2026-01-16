@@ -49,13 +49,16 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
             
             # Use a fresh seed for every attempt
             seed = random.randint(1, 1000000)
-            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=896&nologo=true&seed={seed}&model=flux"
+            # Strategy: Use default model (faster) for first 2 attempts, then flux for quality/retry
+            model_param = "&model=flux" if attempt >= 2 else ""
+            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=894&nologo=1&seed={seed}{model_param}"
             
-            # Use shorter timeout for first 2 attempts to trigger fallback faster
-            # But keep 90s for later attempts if server is just slow
-            timeout = 30 if attempt < 2 else 90
+            # Increased timeout: 30s is often too tight for generating AI images
+            timeout = 60 if attempt < 4 else 90
             
-            print(f"  [*] Stickman Pose (Attempt {attempt+1}): {current_prompt[:60]}...")
+            # Identify if this is first or second image in a segment (using optional label)
+            label = getattr(generate_stickman_image, "current_label", "1")
+            print(f"  [*] Stickman Pose {label} (Attempt {attempt+1}): {current_prompt[:60]}...")
             
             response = requests.get(url, timeout=timeout)
             if response.status_code == 200:

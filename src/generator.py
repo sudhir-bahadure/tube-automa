@@ -512,8 +512,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 
                 # Get niche from metadata for color palette
                 niche = metadata.get('niche', 'default')
+                generate_stickman_image.current_label = "A"
                 img1 = generate_stickman_image(segment_poses[0], f"temp_long_bg_{i}_a.jpg", niche=niche)
+                generate_stickman_image.current_label = "B"
                 img2 = generate_stickman_image(segment_poses[1], f"temp_long_bg_{i}_b.jpg", niche=niche)
+                # Reset
+                generate_stickman_image.current_label = "1"
                 
                 if img1 and img2:
                     try:
@@ -703,10 +707,17 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
         final_clips = []
         temp_files = []
+        current_total_duration = 0 # Track duration for shorts limit
         
         print(f"Generating enhanced sync video with {len(script_segments)} segments...")
         
         for i, seg in enumerate(script_segments):
+            # --- SHORTS DURATION GUARD ---
+            # Check if adding this segment would exceed the 58-second limit for Shorts
+            if current_total_duration >= 58:
+                print(f"  [!] Shorts limit reached (58s). Skipping remaining {len(script_segments)-i} segments.")
+                break
+                
             text = seg['text']
             keyword = seg.get('keyword', metadata.get('topic', 'abstract'))
             
@@ -741,13 +752,17 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 
                 # Ensure we have at least 2 poses
                 if isinstance(segment_poses, str): segment_poses = [segment_poses, segment_poses]
-                if len(segment_poses) < 2: segment_poses = segment_poses + [segment_poses[0]]
-
-                # Generate two frames
-                # Get niche from metadata for color palette
-                niche = metadata.get('niche', 'default')
-                img1 = generate_stickman_image(segment_poses[0], f"temp_bg_{i}_a.jpg", niche=niche)
-                img2 = generate_stickman_image(segment_poses[1], f"temp_bg_{i}_b.jpg", niche=niche)
+                # Standard stickman logic
+                poses = seg.get('stickman_poses', ["standing normally", "standing relaxed"])
+                if isinstance(poses, str): poses = [poses, poses]
+                if len(poses) < 2: poses = poses + [poses[0]]
+                
+                generate_stickman_image.current_label = "A"
+                img1 = generate_stickman_image(poses[0], f"temp_bg_{i}_a.jpg", niche=niche)
+                generate_stickman_image.current_label = "B"
+                img2 = generate_stickman_image(poses[1], f"temp_bg_{i}_b.jpg", niche=niche)
+                # Reset
+                generate_stickman_image.current_label = "1"
                 
                 if img1 and img2:
                     try:
@@ -843,6 +858,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Combine all elements (Pure visual, no text/captions as requested)
             seg_clip = CompositeVideoClip([clip]).set_audio(audio)
             final_clips.append(seg_clip)
+            current_total_duration += duration
 
         # --- HYBRID AVATAR: Intro/Outro Injection ---
         use_avatar = metadata.get('use_avatar', False)
