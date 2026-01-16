@@ -50,6 +50,7 @@ jobs:
         run: |
           git config --global user.name "TubeAutoma Bot"
           git config --global user.email "bot@tubeautoma.com"
-          git add assets/*.json || true
+          git add assets/*.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tracking data [skip ci]")
           git pull origin main --rebase
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tracking data [skip ci]" && git push origin main)
+          git push origin main
