@@ -296,7 +296,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
     mode = metadata.get('category', metadata.get('mode', 'fact'))
     temp_bg_files = [] # Initialize globally for thumbnail fallback
     
-    if mode == 'meme':
+    if mode == 'meme' and 'memes' in metadata:
         memes = metadata.get('memes', [])
         meme_clips = []
         temp_audio_files = []
