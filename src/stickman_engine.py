@@ -34,7 +34,7 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
         f"A clean 2D vector animation style illustration of a stickman {clean_pose}. "
         f"Use {color_palette} for background elements or props. "
         "The stickman should be black with smooth lines. High quality, flat design, aesthetic, clear visibility. "
-        "White or very light solid background."
+        "White or very light solid background. (No watermark, no QR code, no logo, no signature, no text)."
     )
     
     # Fallback prompt for speed/reliability if main fails

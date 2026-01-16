@@ -522,6 +522,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     try:
                         f1 = ImageClip(img1).set_duration(0.2)
                         f2 = ImageClip(img2).set_duration(0.2)
+                        # Watermark Guard: Crop bottom 35px
+                        f1 = crop(f1, y2=f1.h - 35)
+                        f2 = crop(f2, y2=f2.h - 35)
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
                         clip = anim_loop.resize(lambda t: 1.0 + 0.15 * (t/duration))
                         clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
@@ -530,7 +533,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         print(f"Long Stickman Anim Error: {e}")
                         clip = None
                 elif img1:
-                    clip = ImageClip(img1).set_duration(duration).resize(lambda t: 1.0 + 0.15 * (t/duration))
+                    clip = ImageClip(img1).set_duration(duration)
+                    # Watermark Guard
+                    clip = crop(clip, y2=clip.h - 35)
+                    clip = clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
                     temp_bg_files.append(f"temp_long_bg_{i}_a.jpg")
             else:
@@ -751,6 +757,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         # Create alternating frames (0.3s each)
                         f1 = ImageClip(img1).set_duration(0.3)
                         f2 = ImageClip(img2).set_duration(0.3)
+                        # Watermark Guard
+                        f1 = crop(f1, y2=f1.h - 35)
+                        f2 = crop(f2, y2=f2.h - 35)
                         
                         # Concatenate and loop to fill segment duration
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
@@ -769,7 +778,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         clip = None
                 elif img1:
                     # Fallback to single frame with rocking animation
-                    clip = ImageClip(img1).set_duration(duration).resize(lambda t: 1.0 + 0.15 * (t/duration))
+                    clip = ImageClip(img1).set_duration(duration)
+                    # Watermark Guard
+                    clip = crop(clip, y2=clip.h - 35)
+                    clip = clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
                     # Rocking animation
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
                     temp_files.append(f"temp_bg_{i}_a.jpg")
