@@ -332,55 +332,70 @@ def get_trending_facts_reddit():
     return facts
 
 def get_fact():
-    # Fallback facts if API fails
-    facts = [
-        "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly edible.",
-        "Octopuses have three hearts. Two pump blood to the gills, while the third pumps it to the rest of the body.",
-        "Bananas are berries, but strawberries aren't. Botanically speaking, true berries arise from a single flower with one ovary.",
-        "A day on Venus is longer than a year on Venus. It takes Venus 243 Earth days to rotate once on its axis, but only 225 Earth days to orbit the Sun.",
-        "There are more trees on Earth than stars in the Milky Way. Estimates suggest 3 trillion trees vs. 100-400 billion stars.",
-        "The Eiffel Tower can be 15 cm taller during the summer. Thermal expansion causes the iron structure to grow when it gets hot.",
-        "Wombat poop is cube-shaped. This prevents it from rolling away and marks their territory effectively.",
-        "Human teeth are the only part of the body that cannot heal themselves. They lack the cells necessary for regeneration.",
-        "The shortest war in history lasted 38 to 45 minutes. It was between Britain and Zanzibar on August 27, 1896.",
-        "A cloud weighs around a million tonnes. A typical cumulus cloud has a volume of about one cubic kilometer."
-    ]
+    """
+    Generates a high-quality 'Did You Know' short using AI & VidIQ.
+    Replaces old random fact API with narrative-driven content.
+    """
+    print("\n[*] Generative Fact Mode: Searching for viral curiosity topics...")
     
-    # Fetch 3 unique facts to make the video longer (~40s)
-    facts_collection = []
+    # 1. Get a Broad Topic (Science, History, Tech)
+    topics = ["Space Anomalies", "Ancient History Secrets", "Future Technology", "Deep Sea Mysteries", "Human Psychology Tricks"]
+    selected_topic = random.choice(topics)
     
-    # Attempt to fetch 5 times to get 3 unique facts
-    for _ in range(5):
-        if len(facts_collection) >= 3:
-            break
-        try:
-            response = requests.get("https://uselessfacts.jsph.pl/random.json?language=en", timeout=5)
-            if response.status_code == 200:
-                text = response.json()['text']
-                if text not in facts_collection:
-                    facts_collection.append(text)
-        except:
-            pass
-            
-    # Fallback if API fails
-    if len(facts_collection) < 3:
-        needed = 3 - len(facts_collection)
-        facts_collection.extend(random.sample(facts, needed))
-        
-    # Combine with transitions
-    transitions = [
-        " And did you know...",
-        " Here is another mind-blowing fact.",
-        " Also...",
-        " Listen to this.",
-        " You won't believe this next one."
-    ]
+    # 2. VidIQ Research (Find specific high-value angle)
+    try:
+        keywords = keyword_researcher.find_best_keywords(selected_topic, "fact", count=5)
+        # Use top keyword as the specific subject
+        subject = keywords[0]['keyword']
+    except:
+        subject = selected_topic
+        keywords = []
+
+    print(f"  [OK] Selected Subject: {subject}")
     
-    final_script = facts_collection[0]
-    for i in range(1, len(facts_collection)):
-        final_script += f"{random.choice(transitions)} {facts_collection[i]}"
-        
-    return final_script
+    # 3. Generate Narrative Script (Human Style)
+    # Using 'fact' niche triggers the 'Andrew' voice and analytical prompt
+    ai_script = llm.generate_script(subject, video_type="short", niche="fact")
+    
+    if not ai_script:
+        return None
+
+    # 4. Policy & Quality Check
+    script_text = " ".join([seg["text"] for seg in ai_script.get("script_segments", [])])
+    passed, reason = llm.check_policy_compliance(script_text)
+    if not passed:
+        print(f"  [BLOCKED] Fact script rejected: {reason}")
+        return None
+
+    # 5. Optimization
+    try:
+        viral_title = llm.generate_viral_title(subject, keywords, max_chars=60)
+        optimized_desc = llm.optimize_description(viral_title, ai_script.get("script_segments", []), keywords)
+        tags = llm.generate_optimized_tags(subject, keywords)
+    except:
+        viral_title = f"Did you know about {subject}?"
+        optimized_desc = f"Mind-blowing facts about {subject}.\n\nDISCLAIMER: Content generated with the help of AI."
+        tags = "#shorts #facts #didyouknow"
+
+    track_inventory(subject, "fact_topics")
+
+    # 6. Return Standardized Structure
+    return {
+        "mode": "fact",
+        "niche": "fact",  # logical niche for generated content
+        "topic": subject,
+        "script": [
+            {
+                "text": seg["text"],
+                "keyword": random.choice(seg["visual_keywords"]) if seg.get("visual_keywords") else subject,
+                "stickman_poses": seg.get("stickman_poses", ["standing", "explaining"])
+            } for seg in ai_script.get("script_segments", [])
+        ],
+        "title": viral_title,
+        "description": optimized_desc,
+        "tags": tags,
+        "category": "fact" # Explicitly set for generator logic
+    }
 
 def get_meme_metadata():
     print("\n[*] Fetching real-time trending meme topics...")
