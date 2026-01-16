@@ -12,6 +12,7 @@ from moviepy.video.fx.all import crop, resize
 from avatar_engine import generate_avatar_video
 from stickman_engine import generate_stickman_image
 from captions import generate_word_level_captions
+from thumbnail import create_thumbnail
 # Removed silent logging override as it causes issues in some moviepy versions
 
 # ============================================================================
@@ -292,13 +293,12 @@ def download_background_video(query="abstract", api_key=None, output_file="bg_ra
 
 
 def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
-    mode = metadata.get('mode', 'fact')
+    mode = metadata.get('category', metadata.get('mode', 'fact'))
+    temp_bg_files = [] # Initialize globally for thumbnail fallback
     
-    if mode == 'meme' and 'memes' in metadata:
-        # --- NEW COMPILATION LOGIC FOR MEMES ---
-        memes = metadata['memes']
+    if mode == 'meme':
+        memes = metadata.get('memes', [])
         meme_clips = []
-        temp_bg_files = []
         temp_audio_files = []
         
         print(f"Generating meme compilation with {len(memes)} jokes...")
@@ -460,7 +460,6 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         # --- NEW LONG-FORM DOCUMENTARY LOGIC ---
         segments = metadata['segments']
         segment_clips = []
-        temp_bg_files = []
         temp_audio_files = []
         
         print(f"Generating long-form video: {metadata.get('topic')}...")
@@ -764,6 +763,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         clip = clip.resize(lambda t: (1.0 + 0.02 * math.sin(t * 10))) 
                         
                         temp_files.extend([f"temp_bg_{i}_a.jpg", f"temp_bg_{i}_b.jpg"])
+                        temp_bg_files.extend([f"temp_bg_{i}_a.jpg", f"temp_bg_{i}_b.jpg"])
                     except Exception as e:
                         print(f"Stickman Animation Error: {e}")
                         clip = None
@@ -773,6 +773,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     # Rocking animation
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
                     temp_files.append(f"temp_bg_{i}_a.jpg")
+                    temp_bg_files.append(f"temp_bg_{i}_a.jpg")
             else:
                 # Use Stock Footage (Pexels) - Fallback/Legacy
                 bg_file = download_background_video(keyword, pexels_key, bg_path, segment_index=i)
@@ -785,6 +786,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         else:
                             clip = clip.subclip(0, duration)
                         temp_files.append(bg_path)
+                        temp_bg_files.append(bg_path)
                     except:
                         if clip: clip.close()
                         clip = None
