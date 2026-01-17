@@ -9,6 +9,8 @@
     --neon-pink: #ff007a;
     --neon-purple: #bd00ff;
     --success: #00ff88;
+    --warning: #ffcc00;
+    --error: #ff4444;
 }
 
 * {
@@ -191,6 +193,67 @@ h1 {
     height: 100%;
 }
 
+/* Usage Card */
+.usage-container {
+    padding-top: 10px;
+}
+
+.usage-info {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.usage-info small {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+.usage-progress-bg {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.usage-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    box-shadow: 0 0 15px var(--neon-blue);
+    width: 0%;
+    transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pill.success {
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.pill.warning {
+    color: var(--warning);
+    border: 1px solid var(--warning);
+}
+
+.pill.error {
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
 /* Prompt Tweak */
 .prompt-tweak-container {
     padding: 24px;
@@ -235,23 +298,76 @@ h1 {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 200px;
-    transition: transform 0.3s;
+    height: 220px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-indicator-mini {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-dim);
+}
+
+.status-indicator-mini.completed {
+    background: var(--success);
+    box-shadow: 0 0 10px var(--success);
+}
+
+.status-indicator-mini.in_progress {
+    background: var(--warning);
+    box-shadow: 0 0 10px var(--warning);
+    animation: pulse 1.5s infinite;
+}
+
+.status-indicator-mini.failure {
+    background: var(--error);
+    box-shadow: 0 0 10px var(--error);
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .trigger-card:hover {
     transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .trigger-info h2 {
     font-size: 1.4rem;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .trigger-info p {
     color: var(--text-dim);
     font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.wf-status {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    opacity: 0.7;
 }
 
 .btn-trigger {

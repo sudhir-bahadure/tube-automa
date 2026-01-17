@@ -61,12 +61,27 @@
                         </svg>
                     </div>
                 </div>
+                <div class="card glass usage-card">
+                    <h3>Actions Usage</h3>
+                    <div class="usage-container">
+                        <div class="usage-info">
+                            <span id="used-minutes">0</span> / <span id="total-minutes">2000</span>
+                            <small>Minutes Used</small>
+                        </div>
+                        <div class="usage-progress-bg">
+                            <div id="usage-bar" class="usage-bar" style="width: 0%"></div>
+                        </div>
+                        <div id="remaining-minutes-tag" class="pill success">Calculated: -- left</div>
+                    </div>
+                </div>
                 <div class="card glass">
                     <h3>Trigger Events</h3>
                     <div class="stats-pills">
-                        <div class="pill">24h: 12 Runs</div>
-                        <div class="pill">Success: 100%</div>
+                        <div class="pill">24h: <span id="runs-count">--</span> Runs</div>
+                        <div class="pill">Success: <span id="success-rate">--</span>%</div>
                     </div>
+                    <div id="last-run-time" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 15px;">Last
+                        Run: --</div>
                 </div>
             </section>
 
@@ -79,25 +94,31 @@
             </section>
 
             <section class="command-grid">
-                <div class="trigger-card glass">
+                <div class="trigger-card glass" id="workflow-daily_meme.yml">
+                    <div class="status-indicator-mini" title="Status: Unknown"></div>
                     <div class="trigger-info">
                         <h2>Meme Therapy</h2>
                         <p>Generate viral funny shorts</p>
+                        <small class="wf-status">Last: --</small>
                     </div>
                     <button onclick="triggerWorkflow('daily_meme.yml')" class="btn-trigger neon-pink">Run Now</button>
                 </div>
-                <div class="trigger-card glass">
+                <div class="trigger-card glass" id="workflow-daily_curiosity.yml">
+                    <div class="status-indicator-mini" title="Status: Unknown"></div>
                     <div class="trigger-info">
                         <h2>CurioByte Fact</h2>
                         <p>Historical curiosity & AI Voice</p>
+                        <small class="wf-status">Last: --</small>
                     </div>
                     <button onclick="triggerWorkflow('daily_curiosity.yml')" class="btn-trigger neon-blue">Run
                         Now</button>
                 </div>
-                <div class="trigger-card glass">
+                <div class="trigger-card glass" id="workflow-daily_long.yml">
+                    <div class="status-indicator-mini" title="Status: Unknown"></div>
                     <div class="trigger-info">
                         <h2>Documentary</h2>
                         <p>Long form AI Storytelling</p>
+                        <small class="wf-status">Last: --</small>
                     </div>
                     <button onclick="triggerWorkflow('daily_long.yml')" class="btn-trigger neon-purple">Run Now</button>
                 </div>
