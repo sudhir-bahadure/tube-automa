@@ -2,6 +2,7 @@ import os
 import random
 import requests
 import asyncio
+import subprocess
 import edge_tts
 import json
 import math
@@ -153,6 +154,10 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
     max_retries = 5
     for attempt in range(max_retries):
         try:
+            # GUARD: Empty text check
+            if not text or not text.strip():
+                raise Exception("Cannot generate audio for empty/whitespace text")
+
             communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
             
             with open(output_file, "wb") as file:
@@ -161,8 +166,6 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                         file.write(chunk["data"])
                     elif chunk["type"] == "WordBoundary":
                         # Convert 100ns units to seconds
-                        # offset and duration are int (100-nanoseconds ticks)
-                        # 1 tick = 1e-7 seconds. 10,000,000 ticks = 1 second.
                         start_sec = chunk["offset"] / 1e7
                         duration_sec = chunk["duration"] / 1e7
                         word_metadata.append({
@@ -180,7 +183,6 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                 raise Exception(f"Audio file too small ({file_size} bytes), likely corrupt")
             
             # VALIDATION: Check audio duration
-            # AudioFileClip can throw exceptions on corrupt/zero-duration files
             try:
                 test_clip = AudioFileClip(output_file)
                 clip_duration = test_clip.duration
@@ -191,42 +193,51 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
                     
                 print(f"  [OK] Audio generated: {file_size} bytes, duration: {clip_duration:.2f}s")
             except Exception as validation_error:
-                # Don't re-raise with nested exception, just raise cleanly for retry
                 raise Exception(f"Audio clip validation failed: {str(validation_error)}")
                         
             return word_metadata
             
         except Exception as e:
             print(f"Audio generation attempt {attempt+1} failed: {e}")
-            if "403" in str(e):
-                print("  [TIP] 403 error often means we need a version update or the service is temporarily throttling.")
             if attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 3
                 await asyncio.sleep(wait_time)
                 word_metadata = [] # Reset on retry
-                # Clean up failed file
                 if os.path.exists(output_file):
-                    try:
-                        os.remove(output_file)
-                    except:
-                        pass
+                    try: os.remove(output_file)
+                    except: pass
             else:
-                # FALLBACK: Create silent audio as last resort
-                print(f"  [FALLBACK] All retries failed, creating silent audio clip")
+                # FALLBACK: Create silent audio as last resort using FFmpeg (More robust than moviepy writer)
+                print(f"  [FALLBACK] All retries failed, creating silent audio clip via FFmpeg")
                 try:
-                    from moviepy.audio.AudioClip import AudioClip
-                    import numpy as np
-                    # Create 2 seconds of silence
-                    silent_duration = 2.0
-                    silent_audio = AudioClip(lambda t: np.zeros((int(silent_duration * 44100), 2)), 
-                                            duration=silent_duration, fps=44100)
-                    silent_audio.write_audiofile(output_file, fps=44100, codec='libmp3lame', verbose=False, logger=None)
-                    silent_audio.close()
-                    print(f"  [OK] Silent audio fallback created")
-                    return []  # No word metadata for silent audio
+                    # FFmpeg command for 2 seconds of silence
+                    # Using AAC for broader compatibility while saving as .mp3 extension if requested
+                    # But actually we should use standard libmp3lame if output is .mp3
+                    codec = 'libmp3lame' if output_file.endswith('.mp3') else 'aac'
+                    cmd = [
+                        'ffmpeg', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', 
+                        '-t', '2', '-c:a', codec, output_file
+                    ]
+                    subprocess.run(cmd, check=True, capture_output=True)
+                    
+                    if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                        print(f"  [OK] FFmpeg silent audio fallback created: {output_file}")
+                        return []
+                    else:
+                        raise Exception("FFmpeg created empty file")
                 except Exception as fallback_error:
-                    print(f"  [ERROR] Even silent audio fallback failed: {fallback_error}")
-                    raise e
+                    print(f"  [ERROR] FFmpeg fallback failed: {fallback_error}")
+                    # Last ditch effort with MoviePy if FFmpeg fails
+                    try:
+                        from moviepy.audio.AudioClip import AudioClip
+                        import numpy as np
+                        silent_duration = 2.0
+                        silent_audio = AudioClip(lambda t: np.array([0.0, 0.0]), duration=silent_duration)
+                        silent_audio.write_audiofile(output_file, fps=44100, logger=None, verbose=False)
+                        silent_audio.close()
+                        return []
+                    except:
+                        raise e # Raise original edge-tts error
     return []
 
 def download_background_video(query="abstract", api_key=None, output_file="bg_raw.mp4", orientation="portrait", segment_index=0):
@@ -713,14 +724,31 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             pitch = "+0Hz" 
             
             audio_path = f"temp_voc_{i}.mp3"
-            word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice_persona))
-            audio_clip = AudioFileClip(audio_path)
-            duration = audio_clip.duration + 0.2
-            audio = add_background_music(audio_clip, duration)
-            temp_files.append(audio_path)
-            
-            # Give the TTS some "breathing room" (0.2s padding)
-            duration = duration + 0.2
+            try:
+                word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice_persona))
+                
+                # Validate file exists and is readable
+                if not os.path.exists(audio_path) or os.path.getsize(audio_path) < 100:
+                    print(f"  [WARN] Audio file {audio_path} is missing or too small, skipping segment")
+                    continue
+                    
+                try:
+                    audio_clip = AudioFileClip(audio_path)
+                    # Force read duration to catch errors early
+                    _ = audio_clip.duration
+                except Exception as clip_err:
+                    print(f"  [ERROR] MoviePy failed to read audio {audio_path}: {clip_err}")
+                    continue
+
+                duration = audio_clip.duration + 0.2
+                audio = add_background_music(audio_clip, duration)
+                temp_files.append(audio_path)
+                
+                # Give the TTS some "breathing room" (0.2s padding)
+                duration = duration + 0.2
+            except Exception as segment_audio_err:
+                print(f"  [SKIP] Skipping segment {i} due to audio error: {segment_audio_err}")
+                continue
             
             # Define niche and flags for visual processing
             niche = metadata.get('category', metadata.get('mode', 'fact'))
