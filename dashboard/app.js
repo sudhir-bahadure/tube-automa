@@ -50,7 +50,8 @@ async function triggerWorkflow(workflowId) {
         return;
     }
 
-    addLog(`Initiating trigger: ${workflowId}...`);
+    const tweak = document.getElementById('prompt-tweak').value.trim();
+    addLog(`Initiating trigger: ${workflowId}${tweak ? ' with tweak: "' + tweak + '"' : ''}...`);
 
     try {
         const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${workflowId}/dispatches`, {
@@ -60,12 +61,17 @@ async function triggerWorkflow(workflowId) {
                 'Accept': 'application/vnd.github.v3+json',
             },
             body: JSON.stringify({
-                ref: 'main'
+                ref: 'main',
+                inputs: {
+                    prompt_tweak: tweak
+                }
             })
         });
 
         if (response.status === 204) {
             addLog(`SUCCESS: ${workflowId} dispatched! Check your Actions tab.`);
+            // Clear tweak after successful trigger
+            document.getElementById('prompt-tweak').value = '';
         } else {
             const error = await response.json();
             addLog(`FAILURE: ${error.message}`);

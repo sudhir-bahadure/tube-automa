@@ -21,19 +21,21 @@ def main():
     parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
     parser.add_argument("--long", action="store_true", help="Generate 8-10 minute long video")
     parser.add_argument("--clone", action="store_true", help="Use voice cloning for curiosity shorts")
+    parser.add_argument("--avatar", action="store_true", help="Enable AI Hybrid Avatar intro/outro")
+    parser.add_argument("--tweak", default=None, help="Custom prompt tweak for AI generation")
     args = parser.parse_args()
     
     print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
     
     # 1. Fetch Content
     if args.long or args.category == "long":
-        metadata = get_long_video_metadata()
+        metadata = get_long_video_metadata(tweak=args.tweak)
         if metadata: metadata['orientation'] = 'landscape'
     elif args.category == "meme":
-        metadata = get_meme_metadata()
+        metadata = get_meme_metadata(tweak=args.tweak)
         if metadata: metadata['orientation'] = 'vertical'
     else:
-        metadata = get_video_metadata()
+        metadata = get_video_metadata(tweak=args.tweak)
         if metadata: metadata['orientation'] = 'vertical'
         
     if metadata is None:
@@ -42,6 +44,9 @@ def main():
         
     if args.clone:
         metadata['voice'] = "cloned"
+        
+    if args.avatar:
+        metadata['use_avatar'] = True
         
     print(f"Topic: {metadata['title']}")
     

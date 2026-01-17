@@ -34,14 +34,14 @@ class LLMWrapper:
                     raise e
         return None
 
-    def generate_script(self, topic, video_type="short", niche="curiosity"):
+    def generate_script(self, topic, video_type="short", niche="curiosity", tweak=None):
         if not self.api_key:
             return None
 
         if niche == "meme":
-            prompt = self._build_meme_prompt(topic)
+            prompt = self._build_meme_prompt(topic, tweak)
         else:
-            prompt = self._build_prompt(topic, video_type, niche)
+            prompt = self._build_prompt(topic, video_type, niche, tweak)
         
         try:
             response = self._call_gemini_with_retry(prompt)
@@ -66,8 +66,10 @@ class LLMWrapper:
             logger.error(f"Error generating script: {e}")
             return None
 
-    def _build_meme_prompt(self, topic):
+    def _build_meme_prompt(self, topic, tweak=None):
+        tweak_instr = f"USER TWEAK: {tweak}\n" if tweak else ""
         prompt = f"""
+        {tweak_instr}
         Generate a HILARIOUS and RELATABLE YouTube Shorts meme script about '{topic}'.
         Target: 10/10 Humor, High Shareability.
         
@@ -100,7 +102,8 @@ class LLMWrapper:
         """
         return prompt
 
-    def _build_prompt(self, topic, video_type, niche):
+    def _build_prompt(self, topic, video_type, niche, tweak=None):
+        tweak_instr = f"USER TWEAK: {tweak}\n" if tweak else ""
         # Target durations
         if video_type == "short":
             target_duration = "35-45 seconds"
@@ -120,6 +123,7 @@ class LLMWrapper:
             """
 
         prompt = f"""
+        {tweak_instr}
         Generate a VIRAL YouTube {'Shorts' if video_type == 'short' else 'Video'} script about '{topic}' for the '{niche}' niche.
         Target: High Audience Retention and Max CTR.
         POLICY: Must be ADVERTISER-FRIENDLY. No controversial topics, no fear-mongering.

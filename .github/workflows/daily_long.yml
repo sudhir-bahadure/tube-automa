@@ -4,7 +4,12 @@ on:
   schedule:
     # Run every 3 days at 4:30 AM IST (Prime Time Peak)
     - cron: '0 23 */3 * *'
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      prompt_tweak:
+        description: 'AI Command / Prompt Tweak'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -43,7 +48,7 @@ jobs:
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        python src/main.py --category long --avatar
+        python src/main.py --category long --avatar --tweak "${{ github.event.inputs.prompt_tweak }}"
 
     - name: Commit Tracking Data (Uniqueness)
       if: success()

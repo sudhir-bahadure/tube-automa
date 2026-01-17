@@ -331,7 +331,7 @@ def get_trending_facts_reddit():
     
     return facts
 
-def get_fact():
+def get_fact(tweak=None):
     """
     Generates a high-quality 'Did You Know' short using AI & VidIQ.
     Replaces old random fact API with narrative-driven content.
@@ -355,7 +355,7 @@ def get_fact():
     
     # 3. Generate Narrative Script (Human Style)
     # Using 'fact' niche triggers the 'Andrew' voice and analytical prompt
-    ai_script = llm.generate_script(subject, video_type="short", niche="fact")
+    ai_script = llm.generate_script(subject, video_type="short", niche="fact", tweak=tweak)
     
     if not ai_script:
         return None
@@ -403,7 +403,7 @@ def get_fact():
         "category": "fact" # Explicitly set for generator logic
     }
 
-def get_meme_metadata():
+def get_meme_metadata(tweak=None):
     print("\n[*] Fetching real-time trending meme topics...")
     
     # 1. Get viral meme topics/keywords from Reddit/Trends
@@ -425,7 +425,7 @@ def get_meme_metadata():
     print(f"  [OK] Selected Meme Topic: {selected_topic}")
     
     # 2. Let AI generate 100% unique viral meme script
-    ai_script = llm.generate_script(selected_topic, video_type="short", niche="meme")
+    ai_script = llm.generate_script(selected_topic, video_type="short", niche="meme", tweak=tweak)
     
     if ai_script:
         # POLICY CHECK
@@ -489,7 +489,7 @@ def get_meme_metadata():
     }
 
 
-def get_video_metadata():
+def get_video_metadata(tweak=None):
     """Get high-quality video metadata using AI (Shorts)"""
     print("\n[*] Generating high-quality metadata using AI...")
     topic_result = get_trending_video_topic()
@@ -514,7 +514,7 @@ def get_video_metadata():
         if not topic or str(topic).lower() in ["none", "null", "null hypothesis"]:
             topic = "the mystery of time"
             
-    ai_script = llm.generate_script(topic, video_type="short", niche=category)
+    ai_script = llm.generate_script(topic, video_type="short", niche=category, tweak=tweak)
     
     if ai_script:
         # POLICY CHECK
@@ -597,7 +597,7 @@ def get_video_metadata():
         "orientation": "vertical"
     }
 
-def get_long_video_metadata():
+def get_long_video_metadata(tweak=None):
     """Get high-retention long-form video metadata using AI"""
     print("\n[*] Generating high-retention long-form metadata using AI...")
     topic_result = get_trending_video_topic()
@@ -609,7 +609,7 @@ def get_long_video_metadata():
     if not topic:
         topic = "the evolution of intelligence"
 
-    ai_script = llm.generate_script(topic, video_type="long", niche=category)
+    ai_script = llm.generate_script(topic, video_type="long", niche=category, tweak=tweak)
     
     if ai_script:
         # POLICY CHECK
