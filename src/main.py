@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
     parser.add_argument("--long", action="store_true", help="Generate 8-10 minute long video")
     parser.add_argument("--avatar", action="store_true", help="Add AI avatar intro/outro")
+    parser.add_argument("--clone", action="store_true", help="Use voice cloning for curiosity shorts")
     args = parser.parse_args()
     
     print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
@@ -35,6 +36,9 @@ def main():
     else:
         metadata = get_video_metadata()
         metadata['orientation'] = 'vertical'
+        
+    if args.clone:
+        metadata['voice'] = "cloned"
         
     if metadata is None:
         print("[!] Error: No metadata generated. Exiting...")

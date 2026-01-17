@@ -6,6 +6,7 @@ import subprocess
 import edge_tts
 import json
 import math
+from cloning_engine import clone_voice
 import time
 from datetime import datetime, timedelta
 from moviepy.editor import *
@@ -149,6 +150,15 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
     if voice is None:
         voice = "en-US-AndrewNeural"
         
+    if voice == "cloned":
+        # SPECIAL: Use the custom voice cloning engine
+        cloned_audio = clone_voice(text, output_file)
+        if cloned_audio and os.path.exists(output_file):
+            return [] # Word metadata is not available for cloned voices yet
+        else:
+            print("  [WARN] Voice cloning failed, falling back to edge-tts (Andrew)")
+            voice = "en-US-AndrewNeural"
+
     word_metadata = []
     
     max_retries = 5
@@ -734,7 +744,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             is_meme = (metadata.get('mode') == 'meme' or metadata.get('category') == 'meme')
             
             # Use "Ryan" (British, Sarcastic/Funny) for Memes, "Andrew" (Warm/Professional) for Facts
-            voice_persona = "en-GB-RyanNeural" if is_meme else "en-US-AndrewNeural"
+            voice_persona = metadata.get('voice', "en-GB-RyanNeural" if is_meme else "en-US-AndrewNeural")
             
             # Use a more natural speed increase. Too fast = robotic/unpleasant.
             rate = "+10%" if is_meme else "+0%" 

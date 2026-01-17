@@ -30,6 +30,10 @@ jobs:
             sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
           fi
           pip install -r requirements.txt
+          # Prepare voice sample (convert to wav if needed)
+          if [ -f assets/voice_sample.mpeg ]; then
+            ffmpeg -i assets/voice_sample.mpeg -ar 22050 -ac 1 assets/voice_sample.wav -y
+          fi
 
       - name: Generate and Upload Video
         env:
@@ -43,7 +47,7 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PYTHONPATH: ${{ github.workspace }}
-        run: python src/main.py --category fact --avatar
+        run: python src/main.py --category fact --avatar --clone
 
       - name: Commit Tracking Data (Uniqueness)
         if: success()
