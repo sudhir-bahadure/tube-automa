@@ -326,5 +326,49 @@
   "competition_best What happened to the Library of Alexandria?": {
     "value": 30,
     "timestamp": "2026-01-17T11:27:38.640777"
+  },
+  "competition_The bloop: An unsolved ocean mystery": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:16.249265"
+  },
+  "volume_The bloop: An unsolved ocean mystery explained": {
+    "value": 1,
+    "timestamp": "2026-01-17T14:09:16.902532"
+  },
+  "competition_The bloop: An unsolved ocean mystery explained": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:17.621014"
+  },
+  "competition_how to The bloop: An unsolved ocean mystery": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:18.990892"
+  },
+  "competition_The bloop: An unsolved ocean mystery tutorial": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:20.440304"
+  },
+  "competition_The bloop: An unsolved ocean mystery for beginners": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:21.989063"
+  },
+  "volume_best The bloop: An unsolved ocean mystery": {
+    "value": 1,
+    "timestamp": "2026-01-17T14:09:22.682152"
+  },
+  "competition_best The bloop: An unsolved ocean mystery": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:23.371861"
+  },
+  "competition_why The bloop: An unsolved ocean mystery": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:24.864427"
+  },
+  "volume_what is The bloop: An unsolved ocean mystery": {
+    "value": 1,
+    "timestamp": "2026-01-17T14:09:25.403524"
+  },
+  "competition_what is The bloop: An unsolved ocean mystery": {
+    "value": 30,
+    "timestamp": "2026-01-17T14:09:26.134229"
   }
 }
