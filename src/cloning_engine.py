@@ -29,7 +29,8 @@ def clone_voice(text, output_path, reference_audio="assets/voice_sample.wav"):
         try:
             print(f"[*] Attempting voice cloning via {space}...")
             # Set a strict timeout to prevent GitHub Action hangs
-            client = Client(space)
+            hf_token = os.environ.get("HF_TOKEN")
+            client = Client(space, hf_token=hf_token)
             
             if "xtts-v2" in space.lower():
                 # XTTS-v2 standard API
