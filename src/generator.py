@@ -512,9 +512,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     try:
                         f1 = ImageClip(img1).set_duration(0.2)
                         f2 = ImageClip(img2).set_duration(0.2)
-                        # Watermark Guard: Crop bottom 35px
-                        f1 = crop(f1, y2=f1.h - 35)
-                        f2 = crop(f2, y2=f2.h - 35)
+                        # Watermark Guard: Crop bottom 50px
+                        f1 = crop(f1, y2=f1.h - 50)
+                        f2 = crop(f2, y2=f2.h - 50)
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
                         # HUMAN EXPERIENCE: Dynamic camera for documentary feel
                         clip = anim_loop.resize(lambda t: 1.0 + 0.1 * (t/duration))
@@ -527,7 +527,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 elif img1:
                     clip = ImageClip(img1).set_duration(duration)
                     # Watermark Guard
-                    clip = crop(clip, y2=clip.h - 35)
+                    clip = crop(clip, y2=clip.h - 50)
                     clip = clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
                     temp_bg_files.append(f"temp_long_bg_{i}_a.jpg")
@@ -780,8 +780,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         f1 = ImageClip(img1).set_duration(0.3)
                         f2 = ImageClip(img2).set_duration(0.3)
                         # Watermark Guard
-                        f1 = crop(f1, y2=f1.h - 35)
-                        f2 = crop(f2, y2=f2.h - 35)
+                        f1 = crop(f1, y2=f1.h - 50)
+                        f2 = crop(f2, y2=f2.h - 50)
                         
                         # Concatenate and loop to fill segment duration
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
@@ -806,7 +806,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     # Fallback to single frame with rocking animation
                     clip = ImageClip(img1).set_duration(duration)
                     # Watermark Guard
-                    clip = crop(clip, y2=clip.h - 35)
+                    clip = crop(clip, y2=clip.h - 50)
                     clip = clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
                     # Rocking animation
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
