@@ -419,6 +419,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             clip = clip.resize(lambda t: (1.0 + 0.04 * math.sin(t * 12))) 
             clip = clip.rotate(lambda t: 0.8 * math.sin(t * 4)) 
             
+            # Watermark Guard (Crop bottom 50px)
+            clip = crop(clip, y2=clip.h - 50).resize(newsize=(1080, 1920))
+            
             # Combine Meme Segment (Pure visual, no text/banners as requested)
             meme_segment = CompositeVideoClip([clip]).set_audio(audio)
             meme_clips.append(meme_segment.set_duration(duration))
