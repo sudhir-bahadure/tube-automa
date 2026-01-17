@@ -833,8 +833,24 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         clip = None
             
             if not clip:
-                # Light Gray background instead of pure white to distinguish between 'failure' and 'white image'
-                clip = ColorClip(size=(1080, 1920), color=(240, 240, 240), duration=duration)
+                # HUMAN EXPERIENCE: Programmatic Motion Background (Offline Fallback)
+                # Instead of a flat color, we create a 'Breathing' Gradient effect
+                print("  [BRAIN] Creating premium programmatic motion background (API Fallback)")
+                
+                # Base is a light aesthetic color (Ghost White / Lavender hint)
+                base_color = (248, 248, 255) 
+                clip = ColorClip(size=(1080, 1920), color=base_color, duration=duration)
+                
+                # Add a 'Breathing' Vignette/Pulse effect
+                def pulse(get_frame, t):
+                    frame = get_frame(t).copy()
+                    # Apply a subtle brightness pulse (98% to 102%)
+                    factor = 1.0 + 0.02 * math.sin(t * 2)
+                    return (frame * factor).clip(0, 255).astype('uint8')
+                
+                clip = clip.fl(pulse)
+                # Add a floating 'Particle' zoom effect
+                clip = clip.resize(lambda t: 1.0 + 0.05 * math.sin(t * 0.5))
             
             # Ensure proper orientation/resize
             w, h = clip.size

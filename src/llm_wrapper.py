@@ -2,6 +2,7 @@ import google.generativeai as genai
 import os
 import json
 import logging
+from local_brain import local_brain
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,10 +46,12 @@ class LLMWrapper:
         try:
             response = self._call_gemini_with_retry(prompt)
             if not response:
-                return None
+                # FALLBACK TO LOCAL BRAIN (Offline Mode)
+                return local_brain.generate_offline_script(topic, video_type, niche)
             data = self._parse_response(response.text)
             
-            # CLEANUP: Strip all parenthetical sound cues/stage directions
+            if not data:
+                return local_brain.generate_offline_script(topic, video_type, niche)
             # These cause the TTS to read things like "(whispering)" literally.
             if data and 'script_segments' in data:
                 import re
@@ -342,7 +345,7 @@ class LLMWrapper:
         try:
             response = self._call_gemini_with_retry(prompt)
             if not response:
-                return f"{topic[:max_chars]}"
+                return local_brain.generate_offline_title(topic)
             result = self._parse_response(response.text)
             if result and 'titles' in result:
                 # Sort by CTR score and return best
@@ -353,8 +356,8 @@ class LLMWrapper:
         except Exception as e:
             logger.error(f"Viral title generation error: {e}")
         
-        # Fallback
-        return f"{topic[:max_chars]}"
+        # Fallback to local brain
+        return local_brain.generate_offline_title(topic)
 
     def generate_thumbnail_text(self, topic, keywords=None):
         """
@@ -436,7 +439,7 @@ class LLMWrapper:
         try:
             response = self._call_gemini_with_retry(prompt)
             if not response:
-                return f"#{topic.replace(' ', '')} #shorts #viral"
+                return local_brain.generate_offline_tags(topic)
             result = self._parse_response(response.text)
             if result and 'tags' in result:
                 tags = result['tags'][:20]  # Max 20
@@ -452,7 +455,7 @@ class LLMWrapper:
             logger.error(f"Tag generation error: {e}")
         
         # Fallback
-        return f"#{topic.replace(' ', '')} #shorts #viral #trending"
+        return local_brain.generate_offline_tags(topic)
 
     def optimize_description(self, title, script_segments, keywords=None):
         """
@@ -486,7 +489,7 @@ class LLMWrapper:
         try:
             response = self._call_gemini_with_retry(prompt)
             if not response:
-                return f"{title}\n\nWatch to learn more!"
+                return local_brain.generate_offline_description(topic, title)
             description = response.text.strip()
             # Remove any markdown artifacts
             description = description.replace('```', '').strip()
@@ -496,6 +499,6 @@ class LLMWrapper:
             logger.error(f"Description optimization error: {e}")
         
         # Fallback
-        return f"{title}\n\nDiscover the truth about {keywords_str}.\n\n👍 Like and Subscribe for more!\n\nDISCLAIMER: Content generated with the help of AI."
+        return local_brain.generate_offline_description(topic, title)
 
 llm = LLMWrapper()
