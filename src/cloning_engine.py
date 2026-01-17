@@ -18,11 +18,13 @@ def clone_voice(text, output_path, reference_audio="assets/voice_sample.wav"):
 
     print(f"--- Cloning Voice for: '{text[:50]}...' ---")
     
-    # Updated spaces for high reliability without tokens
+    # Verified public spaces as of today. 
+    # Some spaces might become private, so we include multiple variations.
     spaces = [
-        "amansrivastava/XTTS-v2", # Frequently public
-        "tony-999/XTTS-v2-api",   # Good API space
-        "lucataco/xtts-v2",       # Fast and often public
+        "coqui/xtts-v2",           # Official (sometimes busy)
+        "daswer123/xtts-api",      # Very stable API endpoint
+        "R3gm/XTTS-v2",            # Reliable public fork
+        "mrfakename/E2-F5-TTS"      # Modern alternative (very fast)
     ]
     
     for space in spaces:

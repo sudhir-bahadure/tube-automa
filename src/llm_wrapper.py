@@ -489,7 +489,7 @@ class LLMWrapper:
         try:
             response = self._call_gemini_with_retry(prompt)
             if not response:
-                return local_brain.generate_offline_description(topic, title)
+                return local_brain.generate_offline_description(title, title)
             description = response.text.strip()
             # Remove any markdown artifacts
             description = description.replace('```', '').strip()
