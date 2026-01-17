@@ -17,6 +17,22 @@ class LLMWrapper:
             # Using gemini-flash-latest as it's the verified working version for this API key
             self.model = genai.GenerativeModel('gemini-flash-latest')
 
+    def _call_gemini_with_retry(self, prompt, retries=5, base_delay=5):
+        """Calls Gemini with exponential backoff to handle quota/rate limits."""
+        import time
+        import random
+        for i in range(retries):
+            try:
+                return self.model.generate_content(prompt)
+            except Exception as e:
+                if "429" in str(e) or "quota" in str(e).lower():
+                    delay = base_delay * (2 ** i) + random.uniform(0, 1)
+                    logger.warning(f"Quota exceeded. Retrying in {delay:.1f}s... (Attempt {i+1}/{retries})")
+                    time.sleep(delay)
+                else:
+                    raise e
+        return None
+
     def generate_script(self, topic, video_type="short", niche="curiosity"):
         if not self.api_key:
             return None
@@ -27,7 +43,9 @@ class LLMWrapper:
             prompt = self._build_prompt(topic, video_type, niche)
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return None
             data = self._parse_response(response.text)
             
             # CLEANUP: Strip all parenthetical sound cues/stage directions
@@ -181,7 +199,9 @@ class LLMWrapper:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return True, "API Failure, failing open (safe)"
             result = self._parse_response(response.text)
             if result:
                 return result.get("passed", False), result.get("reason", "Unknown")
@@ -217,7 +237,9 @@ class LLMWrapper:
         }}
         """
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return True # Fallback
             result = self._parse_response(response.text)
             
             # Safety check first
@@ -268,7 +290,9 @@ class LLMWrapper:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return script_json
             result = self._parse_response(response.text)
             if result:
                 logger.info("Script refined for quality successfully.")
@@ -316,7 +340,9 @@ class LLMWrapper:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return f"{topic[:max_chars]}"
             result = self._parse_response(response.text)
             if result and 'titles' in result:
                 # Sort by CTR score and return best
@@ -362,7 +388,9 @@ class LLMWrapper:
         }}
         """
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return topic.upper()[:20]
             result = self._parse_response(response.text)
             if result and 'texts' in result:
                 import random
@@ -406,7 +434,9 @@ class LLMWrapper:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return f"#{topic.replace(' ', '')} #shorts #viral"
             result = self._parse_response(response.text)
             if result and 'tags' in result:
                 tags = result['tags'][:20]  # Max 20
@@ -454,7 +484,9 @@ class LLMWrapper:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self._call_gemini_with_retry(prompt)
+            if not response:
+                return f"{title}\n\nWatch to learn more!"
             description = response.text.strip()
             # Remove any markdown artifacts
             description = description.replace('```', '').strip()

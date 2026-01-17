@@ -561,20 +561,41 @@ def get_video_metadata():
         }
     
     # Fallback if AI fails
-    print("  [WARN] AI generation failed, using fallback templates")
-    import wikipedia
+    print("  [WARN] AI generation failed, using fallback templates and Wikipedia")
     try:
-        page = wikipedia.page(topic, auto_suggest=False)
-        sentences = page.summary.split('.')
-        script = generate_ypp_safe_script(topic, sentences)
-        return {
-            "title": f"The Untold Story of {topic}",
-            "topic": topic,
-            "script": script,
-            "tags": f"#facts #{topic.replace(' ', '')} #education"
-        }
-    except:
-        return None
+        from ypp_script_template import generate_ypp_safe_script
+        wiki_content = fetch_wikipedia_content(topic)
+        if wiki_content:
+            sentences = wiki_content['sentences']
+            script_data = generate_ypp_safe_script(topic, sentences)
+            return {
+                "niche": category,
+                "title": f"The Untold Story of {topic}",
+                "topic": topic,
+                "script": [
+                    {
+                        "text": s["text"],
+                        "keyword": topic,
+                        "stickman_poses": ["standing normally"]
+                    } for s in script_data
+                ],
+                "description": f"The fascinating history of {topic}. #facts #history",
+                "tags": f"#facts #{topic.replace(' ', '')} #education",
+                "orientation": "vertical"
+            }
+    except Exception as e:
+        print(f"  [ERROR] Wikipedia fallback failed: {e}")
+    
+    # Absolute last resort fallback
+    return {
+        "niche": "fact",
+        "title": "The Mystery of Time",
+        "topic": "the mystery of time",
+        "script": [{"text": "Time is the most mysterious force in our universe, moving only in one direction.", "keyword": "clock", "stickman_poses": ["standing"]}],
+        "description": "A quick look at time.",
+        "tags": "#time #mystery",
+        "orientation": "vertical"
+    }
 
 def get_long_video_metadata():
     """Get high-retention long-form video metadata using AI"""

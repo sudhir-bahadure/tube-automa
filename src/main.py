@@ -28,20 +28,20 @@ def main():
     # 1. Fetch Content
     if args.long or args.category == "long":
         metadata = get_long_video_metadata()
-        metadata['orientation'] = 'landscape' # Force landscape for long form
+        if metadata: metadata['orientation'] = 'landscape'
     elif args.category == "meme":
         metadata = get_meme_metadata()
-        metadata['orientation'] = 'vertical'
+        if metadata: metadata['orientation'] = 'vertical'
     else:
         metadata = get_video_metadata()
-        metadata['orientation'] = 'vertical'
-        
-    if args.clone:
-        metadata['voice'] = "cloned"
+        if metadata: metadata['orientation'] = 'vertical'
         
     if metadata is None:
         print("[!] Error: No metadata generated. Exiting...")
         return
+        
+    if args.clone:
+        metadata['voice'] = "cloned"
         
     print(f"Topic: {metadata['title']}")
     
