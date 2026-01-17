@@ -128,9 +128,36 @@ async function fetchUsageMetrics() {
         else if (percent > 50) tag.className = 'pill warning';
         else tag.className = 'pill success';
 
+        updateRecommendations(usedMinutes);
+
     } catch (e) {
         console.error("Usage fetch error:", e);
     }
+}
+
+function updateRecommendations(usedMinutes, wfData) {
+    const list = document.getElementById('recommendations-list');
+    list.innerHTML = ''; // Clear defaults
+
+    const recs = [];
+
+    // Usage-based recommendations
+    if (usedMinutes > 1500) {
+        recs.push({ title: "Minutes Critical", text: "Usage at 75%. Switch to every 3 days to stay free." });
+    } else {
+        recs.push({ title: "Resource Status", text: "Healthy quota. Safe to run daily documentary." });
+    }
+
+    // Performance-based
+    recs.push({ title: "Content Strategy", text: "Curiosity is trending. Try 'Space Facts' tweak." });
+    recs.push({ title: "System Tip", text: "Link PAT with 'billing' scope for precise tracking." });
+
+    recs.forEach(rec => {
+        const div = document.createElement('div');
+        div.className = 'rec-card';
+        div.innerHTML = `<small>${rec.title}</small><p>${rec.text}</p>`;
+        list.appendChild(div);
+    });
 }
 
 // Auth Logic
