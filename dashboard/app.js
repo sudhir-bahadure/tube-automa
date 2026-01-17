@@ -135,27 +135,52 @@ async function fetchUsageMetrics() {
     }
 }
 
+function applyTweak(text) {
+    const input = document.getElementById('prompt-tweak');
+    input.value = text;
+    input.scrollIntoView({ behavior: 'smooth' });
+    input.classList.add('pulse-highlight');
+    setTimeout(() => input.classList.remove('pulse-highlight'), 1000);
+    addLog(`Protocol updated: "${text}" applied to buffer.`);
+}
+
 function updateRecommendations(usedMinutes, wfData) {
     const list = document.getElementById('recommendations-list');
-    list.innerHTML = ''; // Clear defaults
+    list.innerHTML = '';
 
     const recs = [];
 
-    // Usage-based recommendations
+    // Usage-based
     if (usedMinutes > 1500) {
         recs.push({ title: "Minutes Critical", text: "Usage at 75%. Switch to every 3 days to stay free." });
     } else {
         recs.push({ title: "Resource Status", text: "Healthy quota. Safe to run daily documentary." });
     }
 
-    // Performance-based
-    recs.push({ title: "Content Strategy", text: "Curiosity is trending. Try 'Space Facts' tweak." });
-    recs.push({ title: "System Tip", text: "Link PAT with 'billing' scope for precise tracking." });
+    // Performance-based with Action Buttons
+    recs.push({
+        title: "Virality Boost",
+        text: "Curiosity is trending. Apply 'Space Explorations' upgrade.",
+        tweak: "Focus on mysterious space discoveries and deep-sea mysteries"
+    });
+
+    recs.push({
+        title: "Humor Engine",
+        text: "Memes need fresh energy. Apply 'Gen-Z Satire' tweak.",
+        tweak: "Use heavy Gen-Z slang and fast-paced surrealist humor"
+    });
 
     recs.forEach(rec => {
         const div = document.createElement('div');
         div.className = 'rec-card';
-        div.innerHTML = `<small>${rec.title}</small><p>${rec.text}</p>`;
+        let actionBtn = rec.tweak ? `<button onclick="applyTweak('${rec.tweak}')" class="btn-mini">Apply Tweak</button>` : '';
+        div.innerHTML = `
+            <div>
+                <small>${rec.title}</small>
+                <p>${rec.text}</p>
+            </div>
+            ${actionBtn}
+        `;
         list.appendChild(div);
     });
 }

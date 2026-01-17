@@ -270,27 +270,75 @@ h1 {
 #prompt-tweak {
     width: 100%;
     height: 80px;
-    background: rgba(0, 0, 0, 0.3);
+}
+
+.rec-card {
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
-    padding: 12px;
-    color: white;
-    resize: none;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.3s;
+    padding: 16px;
+    transition: all 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
 }
 
-#prompt-tweak:focus {
+.rec-card:hover {
+    background: rgba(0, 242, 255, 0.05);
     border-color: var(--neon-blue);
+    transform: translateX(5px);
 }
 
-/* Command Grid */
-.command-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-bottom: 40px;
+.rec-card small {
+    display: block;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.rec-card p {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.btn-mini {
+    background: var(--neon-blue);
+    color: #000;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.2s;
+}
+
+.btn-mini:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px var(--neon-blue);
+}
+
+.pulse-highlight {
+    animation: border-pulse 0.5s 2;
+}
+
+@keyframes border-pulse {
+    0% {
+        border-color: var(--glass-border);
+    }
+
+    50% {
+        border-color: var(--neon-blue);
+        box-shadow: 0 0 15px var(--neon-blue);
+    }
+
+    100% {
+        border-color: var(--glass-border);
+    }
 }
 
 .trigger-card {
