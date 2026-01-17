@@ -62,17 +62,38 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
             
             response = requests.get(url, timeout=timeout)
             if response.status_code == 200:
-                # GUARD: Detect Pollinations Rate Limit Image
-                # The rate limit image is identifiable by characteristic strings in the response content
-                # even though it's technically a binary JPG.
+                # GUARD 1: Byte Pattern Check (Detects some error masquerades)
                 if b"RATE LIMIT REACHED" in response.content or b"anonymous tier" in response.content:
-                    print(f"  [WARN] Pollinations rate limit detected in response. Waiting for cooldown...")
-                    import time
-                    time.sleep(10)
+                    print(f"  [WARN] Pollinations rate limit detected (text). Retrying...")
+                    time.sleep(15)
                     continue
 
                 with open(output_path, "wb") as file:
                     file.write(response.content)
+                
+                # GUARD 2: Visual Validation (The most robust check)
+                try:
+                    from PIL import Image
+                    with Image.open(output_path) as img:
+                        # Check top-left pixel. Our prompt requests White background.
+                        # The Error Image is Brown/Dark.
+                        tl_pixel = img.getpixel((5, 5))
+                        # If RGB, it's a tuple. If grayscale, it's an int.
+                        if isinstance(tl_pixel, tuple):
+                            # The error image top-left is brownish (~60, 40, 20)
+                            # White/Light should be > 200 for all channels
+                            is_light = all(c > 180 for c in tl_pixel[:3])
+                        else:
+                            is_light = tl_pixel > 180
+                            
+                        if not is_light:
+                            print(f"  [WARN] Image failed visual check (dark background detected). Likely error banner. Retrying...")
+                            os.remove(output_path)
+                            time.sleep(15)
+                            continue
+                            
+                except Exception as eval_err:
+                    print(f"  [DEBUG] Pixel check failed: {eval_err}")
                 
                 if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
                     return output_path

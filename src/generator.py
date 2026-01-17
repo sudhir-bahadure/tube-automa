@@ -419,8 +419,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             clip = clip.resize(lambda t: (1.0 + 0.04 * math.sin(t * 12))) 
             clip = clip.rotate(lambda t: 0.8 * math.sin(t * 4)) 
             
-            # Watermark Guard (Crop bottom 50px)
-            clip = crop(clip, y2=clip.h - 50).resize(newsize=(1080, 1920))
+            # Watermark Guard (Crop bottom 150px)
+            clip = crop(clip, y2=clip.h - 150).resize(newsize=(1080, 1920))
             
             # Combine Meme Segment (Pure visual, no text/banners as requested)
             meme_segment = CompositeVideoClip([clip]).set_audio(audio)
@@ -515,9 +515,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     try:
                         f1 = ImageClip(img1).set_duration(0.2)
                         f2 = ImageClip(img2).set_duration(0.2)
-                        # Watermark Guard: Crop bottom 50px
-                        f1 = crop(f1, y2=f1.h - 50)
-                        f2 = crop(f2, y2=f2.h - 50)
+                        # Watermark Guard: Crop bottom 150px
+                        f1 = crop(f1, y2=f1.h - 150)
+                        f2 = crop(f2, y2=f2.h - 150)
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
                         # HUMAN EXPERIENCE: Dynamic camera for documentary feel
                         clip = anim_loop.resize(lambda t: 1.0 + 0.1 * (t/duration))
@@ -530,7 +530,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 elif img1:
                     clip = ImageClip(img1).set_duration(duration)
                     # Watermark Guard
-                    clip = crop(clip, y2=clip.h - 50)
+                    clip = crop(clip, y2=clip.h - 150)
                     clip = clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
                     temp_bg_files.append(f"temp_long_bg_{i}_a.jpg")
@@ -654,7 +654,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             if avatar_path:
                 intro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
                 # Watermark Guard
-                intro_clip = crop(intro_clip, y2=intro_clip.h - 50).resize(newsize=(1920, 1080))
+                intro_clip = crop(intro_clip, y2=intro_clip.h - 150).resize(newsize=(1920, 1080))
                 segment_clips.insert(0, intro_clip)
                 temp_audio_files.append(intro_audio)
                 temp_bg_files.append(intro_video)
@@ -668,7 +668,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             if avatar_path:
                 outro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
                 # Watermark Guard
-                outro_clip = crop(outro_clip, y2=outro_clip.h - 50).resize(newsize=(1920, 1080))
+                outro_clip = crop(outro_clip, y2=outro_clip.h - 150).resize(newsize=(1920, 1080))
                 segment_clips.append(outro_clip)
                 temp_audio_files.append(outro_audio)
                 temp_bg_files.append(outro_video)
@@ -804,8 +804,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         f1 = ImageClip(img1).set_duration(0.3)
                         f2 = ImageClip(img2).set_duration(0.3)
                         # Watermark Guard
-                        f1 = crop(f1, y2=f1.h - 50)
-                        f2 = crop(f2, y2=f2.h - 50)
+                        f1 = crop(f1, y2=f1.h - 150)
+                        f2 = crop(f2, y2=f2.h - 150)
                         
                         # Concatenate and loop to fill segment duration
                         anim_loop = concatenate_videoclips([f1, f2]).loop(duration=duration)
@@ -830,7 +830,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     # Fallback to single frame with rocking animation
                     clip = ImageClip(img1).set_duration(duration)
                     # Watermark Guard
-                    clip = crop(clip, y2=clip.h - 50)
+                    clip = crop(clip, y2=clip.h - 150)
                     clip = clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
                     # Rocking animation
                     clip = clip.rotate(lambda t: 2 * math.sin(t * 5))
@@ -911,7 +911,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 avatar_size = (1080, 1920) if metadata.get('orientation') == 'vertical' else (1920, 1080)
                 intro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
                 # Watermark Guard
-                intro_clip = crop(intro_clip, y2=intro_clip.h - 50).resize(newsize=avatar_size)
+                intro_clip = crop(intro_clip, y2=intro_clip.h - 150).resize(newsize=avatar_size)
                 final_clips.insert(0, intro_clip)
                 temp_files.extend([intro_audio, intro_video])
             
@@ -925,7 +925,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 avatar_size = (1080, 1920) if metadata.get('orientation') == 'vertical' else (1920, 1080)
                 outro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
                 # Watermark Guard
-                outro_clip = crop(outro_clip, y2=outro_clip.h - 50).resize(newsize=avatar_size)
+                outro_clip = crop(outro_clip, y2=outro_clip.h - 150).resize(newsize=avatar_size)
                 final_clips.append(outro_clip)
                 temp_files.extend([outro_audio, outro_video])
 
