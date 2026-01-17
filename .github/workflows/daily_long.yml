@@ -43,7 +43,7 @@ jobs:
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        python src/main.py --category long
+        python src/main.py --category long --avatar
 
     - name: Commit Tracking Data (Uniqueness)
       if: success()
