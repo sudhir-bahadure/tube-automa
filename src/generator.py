@@ -705,15 +705,25 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
         final_clips = []
         temp_files = []
-        current_total_duration = 0 # Track duration for shorts limit
+        
+        # --- SHORTS DURATION BUDGET ---
+        # Intro (~4s), Outro (~4s), Hook (~2s) = 10s overhead
+        # We must keep content under 48s to stay safe within 58s total
+        MAX_SHORTS_DURATION = 58.0
+        overhead = 0
+        if metadata.get('use_avatar'): overhead += 8.5 # Intro + Outro
+        overhead += 2.2 # Subscribe Hook fallback/padding
+        
+        content_budget = MAX_SHORTS_DURATION - overhead
+        current_total_duration = 0
         
         print(f"Generating enhanced sync video with {len(script_segments)} segments...")
+        print(f"  [BUDGET] Content limit: {content_budget:.1f}s (Total limit: {MAX_SHORTS_DURATION}s)")
         
         for i, seg in enumerate(script_segments):
             # --- SHORTS DURATION GUARD ---
-            # Check if adding this segment would exceed the 58-second limit for Shorts
-            if current_total_duration >= 58:
-                print(f"  [!] Shorts limit reached (58s). Skipping remaining {len(script_segments)-i} segments.")
+            if current_total_duration >= content_budget:
+                print(f"  [!] Content budget reached ({current_total_duration:.1f}s). Skipping remaining segments.")
                 break
                 
             text = seg['text']
@@ -748,6 +758,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     continue
 
                 duration = audio_clip.duration + 0.2
+                
+                # FINAL BUDGET CHECK (Trim if needed or skip)
+                if current_total_duration + duration > content_budget:
+                    print(f"  [!] Segment would exceed content budget. Skipping.")
+                    audio_clip.close()
+                    break
+                    
                 audio = add_background_music(audio_clip, duration)
                 temp_files.append(audio_path)
                 

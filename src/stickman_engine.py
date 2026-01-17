@@ -62,10 +62,19 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
             
             response = requests.get(url, timeout=timeout)
             if response.status_code == 200:
-                with open(output_path, "wb") as f:
-                    f.write(response.content)
+                # GUARD: Detect Pollinations Rate Limit Image
+                # The rate limit image is identifiable by characteristic strings in the response content
+                # even though it's technically a binary JPG.
+                if b"RATE LIMIT REACHED" in response.content or b"anonymous tier" in response.content:
+                    print(f"  [WARN] Pollinations rate limit detected in response. Waiting for cooldown...")
+                    import time
+                    time.sleep(10)
+                    continue
+
+                with open(output_path, "wb") as file:
+                    file.write(response.content)
                 
-                if os.path.exists(output_path) and os.path.getsize(output_path) > 100:
+                if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
                     return output_path
             else:
                 print(f"  [WARN] Attempt {attempt+1} failed with status {response.status_code}")
