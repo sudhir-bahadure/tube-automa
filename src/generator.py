@@ -156,8 +156,8 @@ async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz"
         if cloned_audio and os.path.exists(output_file):
             return [] # Word metadata is not available for cloned voices yet
         else:
-            print("  [WARN] Voice cloning failed, falling back to edge-tts (Andrew)")
-            voice = "en-US-AndrewNeural"
+            # NO FALLBACK: Raise exception as requested for "Original Voice" channels
+            raise Exception("CRITICAL: Voice cloning failed and fallback is disabled. Stopping workflow.")
 
     word_metadata = []
     

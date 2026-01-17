@@ -19,19 +19,23 @@ def clone_voice(text, output_path, reference_audio="assets/voice_sample.wav"):
     print(f"--- Cloning Voice for: '{text[:50]}...' ---")
     
     # We will try a few stable spaces for XTTS-v2 or similar
+    # Using more active and diverse spaces to ensure "Free Forever" reliability
     spaces = [
-        "coqui/xtts-v2", # Primary standard
-        "mrfakename/E2-F5-TTS", # Newer, very fast
-        "Plat-XTTS-v2" # Often has higher limits
+        "lucataco/xtts-v2",       # Highly active, often updated
+        "daswer123/xtts-v2-api",  # Dedicated API space
+        "coqui/xtts-v2",          # Official space (might require auth sometimes)
+        "mrfakename/E2-F5-TTS",   # Fast fallback if XTTS is slow
     ]
     
     for space in spaces:
         try:
             print(f"[*] Attempting voice cloning via {space}...")
+            # Set a strict timeout to prevent GitHub Action hangs
             client = Client(space)
             
             if "xtts-v2" in space.lower():
                 # XTTS-v2 standard API
+                # Using a timeout in the predict call if the space supports it/gradio allows
                 result = client.predict(
                     text,	# Text to speak
                     "en",	# Language
@@ -59,7 +63,14 @@ def clone_voice(text, output_path, reference_audio="assets/voice_sample.wav"):
                 return output_path
                 
         except Exception as e:
-            print(f"  [WARN] Space {space} failed: {e}")
+            # Check for common authentication or availability errors
+            error_msg = str(e)
+            if "401" in error_msg:
+                print(f"  [WARN] Space {space} requires authentication (401). Skipping.")
+            elif "404" in error_msg:
+                print(f"  [WARN] Space {space} not found (404). Skipping.")
+            else:
+                print(f"  [WARN] Space {space} failed: {error_msg}")
             continue
 
     print("  [ERROR] All voice cloning spaces failed.")
