@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeAutoma Command Deck</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <span>TubeAutoma</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active"><button><span class="icon">📺</span> Videos</button></li>
+                <li><button><span class="icon">📊</span> Analytics</button></li>
+                <li><button><span class="icon">🧠</span> AI Brain</button></li>
+                <li><button><span class="icon">⚙️</span> Settings</button></li>
+            </ul>
+            <div class="nav-footer">
+                <span class="status-indicator online"></span>
+                <span>AI System: ONLINE</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <h1>Command Deck</h1>
+                <div class="header-actions">
+                    <div class="optimization-tag">Optimization Protocol: ACTIVE</div>
+                    <button id="auth-btn" class="btn-secondary">Link GitHub</button>
+                </div>
+            </header>
+
+            <section class="telemetry-grid">
+                <div class="card glass">
+                    <h3>Video Performance</h3>
+                    <div class="chart-placeholder">
+                        <div class="bar" style="height: 40%"></div>
+                        <div class="bar" style="height: 60%"></div>
+                        <div class="bar" style="height: 55%"></div>
+                        <div class="bar" style="height: 80%"></div>
+                        <div class="bar" style="height: 70%"></div>
+                    </div>
+                </div>
+                <div class="card glass">
+                    <h3>AI Brain Activity</h3>
+                    <div class="chart-placeholder line">
+                        <svg viewBox="0 0 100 40" class="line-chart">
+                            <path d="M0,35 Q10,10 20,30 T40,15 T60,25 T80,5 T100,20" fill="none"
+                                stroke="var(--neon-blue)" stroke-width="2" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="card glass usage-card">
+                    <h3>Actions Usage</h3>
+                    <div class="usage-container">
+                        <div class="usage-info">
+                            <span id="used-minutes">0</span> / <span id="total-minutes">2000</span>
+                            <small>Minutes Used</small>
+                        </div>
+                        <div class="usage-progress-bg">
+                            <div id="usage-bar" class="usage-bar" style="width: 0%"></div>
+                        </div>
+                        <div id="remaining-minutes-tag" class="pill success">Calculated: -- left</div>
+                    </div>
+                </div>
+                <div class="card glass">
+                    <h3>Trigger Events</h3>
+                    <div class="stats-pills">
+                        <div class="pill">24h: <span id="runs-count">--</span> Runs</div>
+                        <div class="pill">Success: <span id="success-rate">--</span>%</div>
+                    </div>
+                    <div id="last-run-time" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 15px;">Last
+                        Run: --</div>
+                </div>
+            </section>
+
+            <section class="prompt-tweak-container glass">
+                <div class="input-header">
+                    <span class="icon">✨</span> AI Command / Prompt Tweak
+                </div>
+                <textarea id="prompt-tweak"
+                    placeholder="Ex: Make it more sarcastic, focus on the 20th century, or add more emojis..."></textarea>
+            </section>
+
+            <section class="command-grid">
+                <div class="trigger-card glass" id="workflow-daily_meme.yml">
+                    <div class="status-indicator-mini" title="Status: Unknown"></div>
+                    <div class="trigger-info">
+                        <h2>Meme Therapy</h2>
+                        <p>Generate viral funny shorts</p>
+                        <small class="wf-status">Last: --</small>
+                    </div>
+                    <button onclick="triggerWorkflow('daily_meme.yml')" class="btn-trigger neon-pink">Run Now</button>
+                </div>
+                <div class="trigger-card glass" id="workflow-daily_curiosity.yml">
+                    <div class="status-indicator-mini" title="Status: Unknown"></div>
+                    <div class="trigger-info">
+                        <h2>CurioByte Fact</h2>
+                        <p>Historical curiosity & AI Voice</p>
+                        <small class="wf-status">Last: --</small>
+                    </div>
+                    <button onclick="triggerWorkflow('daily_curiosity.yml')" class="btn-trigger neon-blue">Run
+                        Now</button>
+                </div>
+                <div class="trigger-card glass" id="workflow-daily_long.yml">
+                    <div class="status-indicator-mini" title="Status: Unknown"></div>
+                    <div class="trigger-info">
+                        <h2>Documentary</h2>
+                        <p>Long form AI Storytelling</p>
+                        <small class="wf-status">Last: --</small>
+                    </div>
+                    <button onclick="triggerWorkflow('daily_long.yml')" class="btn-trigger neon-purple">Run Now</button>
+                </div>
+            </section>
+
+            <section class="recommendations-container glass">
+                <div class="input-header">
+                    <span class="icon">💡</span> AI System Recommendations
+                </div>
+                <div id="recommendations-list" class="rec-grid">
+                    <div class="rec-card">
+                        <small>Minutes Optimizer</small>
+                        <p>Switch curiosity to "Odd Days" to save 30% minutes.</p>
+                    </div>
+                    <div class="rec-card">
+                        <small>Virality Boost</small>
+                        <p>Add "Surprising Fact" tweak to next CurioByte run.</p>
+                    </div>
+                </div>
+            </section>
+
+            <footer id="logs-area" class="glass">
+                <div class="logs-header">System Logs</div>
+                <div id="logs-container">
+                    <div class="log-entry">[SYSTEM] Initializing Command Deck...</div>
+                    <div class="log-entry">[BRAIN] Checking API Quotas... OK</div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal glass">
+            <h2>Link Your GitHub</h2>
+            <p>To stay "Forever Free", we use your GitHub Token. This is stored ONLY on your computer.</p>
+            <input type="password" id="gh-token" placeholder="GitHub Personal Access Token">
+            <div class="modal-actions">
+                <button onclick="saveToken()" class="btn-primary">Save Token</button>
+                <button onclick="closeModal()" class="btn-flat">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
