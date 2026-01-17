@@ -18,13 +18,11 @@ def clone_voice(text, output_path, reference_audio="assets/voice_sample.wav"):
 
     print(f"--- Cloning Voice for: '{text[:50]}...' ---")
     
-    # We will try a few stable spaces for XTTS-v2 or similar
-    # Using more active and diverse spaces to ensure "Free Forever" reliability
+    # Updated spaces for high reliability without tokens
     spaces = [
-        "lucataco/xtts-v2",       # Highly active, often updated
-        "daswer123/xtts-v2-api",  # Dedicated API space
-        "coqui/xtts-v2",          # Official space (might require auth sometimes)
-        "mrfakename/E2-F5-TTS",   # Fast fallback if XTTS is slow
+        "amansrivastava/XTTS-v2", # Frequently public
+        "tony-999/XTTS-v2-api",   # Good API space
+        "lucataco/xtts-v2",       # Fast and often public
     ]
     
     for space in spaces:
@@ -69,8 +67,9 @@ def clone_voice(text, output_path, reference_audio="assets/voice_sample.wav"):
                 print(f"  [WARN] Space {space} requires authentication (401). Skipping.")
             elif "404" in error_msg:
                 print(f"  [WARN] Space {space} not found (404). Skipping.")
-            else:
-                print(f"  [WARN] Space {space} failed: {error_msg}")
+            print(f"  [RETRY] Space {space} failed, trying next in 5s...")
+            import time
+            time.sleep(5)
             continue
 
     print("  [ERROR] All voice cloning spaces failed.")

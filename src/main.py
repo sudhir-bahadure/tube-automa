@@ -20,7 +20,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
     parser.add_argument("--long", action="store_true", help="Generate 8-10 minute long video")
-    parser.add_argument("--avatar", action="store_true", help="Add AI avatar intro/outro")
     parser.add_argument("--clone", action="store_true", help="Use voice cloning for curiosity shorts")
     args = parser.parse_args()
     
@@ -59,11 +58,7 @@ def main():
     
     output_file = f"viral_{args.category}.mp4"
     
-    # Configure metadata for avatar/long form if flags are set
-    if args.avatar:
-        metadata['use_avatar'] = True
-        metadata['avatar_intro'] = f"Welcome to CurioByte. Today we examine the fascinating significance of {metadata['title']}."
-        metadata['avatar_outro'] = f"The deeper meaning of these discoveries changes how we view our world. Subscribe to CurioByte for more professional analysis."
+    # Avatar logic removed
 
     # Pass entire metadata object to generator now
     final_video_path = create_video(metadata, output_file, pexels_key)

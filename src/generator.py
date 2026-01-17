@@ -11,7 +11,6 @@ import time
 from datetime import datetime, timedelta
 from moviepy.editor import *
 from moviepy.video.fx.all import crop, resize
-from avatar_engine import generate_avatar_video
 from stickman_engine import generate_stickman_image
 from captions import generate_word_level_captions
 from thumbnail import create_thumbnail
@@ -651,37 +650,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # Progress indicator
             print(f"  ✓ Segment {i+1}/{len(segments)} complete ({duration:.1f}s)")
 
-        # --- HYBRID AVATAR: Intro/Outro Injection ---
-        use_avatar = metadata.get('use_avatar', False)
-        if use_avatar:
-            print("[*] Generating AI Avatar Intro/Outro...")
-            # Intro Avatar
-            intro_audio = "temp_avatar_intro.mp3"
-            intro_video = "temp_avatar_intro.mp4"
-            intro_text = metadata.get('avatar_intro', "Welcome to another curiosity deep dive.")
-            asyncio.run(generate_audio(intro_text, intro_audio, rate="-5%", pitch="-10Hz")) 
-            avatar_path = generate_avatar_video(intro_audio, intro_video)
-            if avatar_path:
-                intro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
-                # Watermark Guard
-                intro_clip = crop(intro_clip, y2=intro_clip.h - 150).resize(newsize=(1920, 1080))
-                segment_clips.insert(0, intro_clip)
-                temp_audio_files.append(intro_audio)
-                temp_bg_files.append(intro_video)
-            
-            # Outro Avatar
-            outro_audio = "temp_avatar_outro.mp3"
-            outro_video = "temp_avatar_outro.mp4"
-            outro_text = metadata.get('avatar_outro', "Thanks for watching. Subscribe for more curiosity.")
-            asyncio.run(generate_audio(outro_text, outro_audio, rate="-5%", pitch="-10Hz"))
-            avatar_path = generate_avatar_video(outro_audio, outro_video)
-            if avatar_path:
-                outro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
-                # Watermark Guard
-                outro_clip = crop(outro_clip, y2=outro_clip.h - 150).resize(newsize=(1920, 1080))
-                segment_clips.append(outro_clip)
-                temp_audio_files.append(outro_audio)
-                temp_bg_files.append(outro_video)
+        # Avatar logic removed
 
         # Final Concatenation
         final_video = concatenate_videoclips(segment_clips, method="compose")
