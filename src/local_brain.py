@@ -15,14 +15,22 @@ class LocalBrain:
                 "Wait, tell me this hasn't happened to you...",
                 "Am I the only one who thinks this is weird?",
                 "The actual audacity of this situation...",
-                "My brain at 3 AM is just built different."
+                "My brain at 3 AM is just built different.",
+                "POV: You finally understand why your parents were always tired.",
+                "I don't know who needs to hear this, but we're all just winging it.",
+                "That mini heart attack when you feel your pocket and your phone isn't there.",
+                "Me trying to be a functional adult for 5 minutes."
             ],
             "curiosity": [
                 "You probably think you understand this, but you don't.",
                 "Everything we know about this might be a lie.",
                 "Imagine for a second that reality is just a simulation.",
                 "This discovery could change the history books forever.",
-                "There is a hidden truth about this that no one talks about."
+                "There is a hidden truth about this that no one talks about.",
+                "What if the most common thing in your house is actually an ancient mystery?",
+                "They told us this was impossible, until it happened.",
+                "Hidden in plain sight, right under our noses, lies a secret.",
+                "The world is not what it seems. Listen closely."
             ]
         }
 
@@ -31,7 +39,11 @@ class LocalBrain:
             "But here is the part that actually blows my mind.",
             "Think about it for a second.",
             "Honestly, it's just one of those things you can't explain.",
-            "But wait, there's more to the story."
+            "But wait, there's more to the story.",
+            "This is where the logic starts to break down.",
+            "If you look at the data, it makes zero sense.",
+            "And yet, we still pretend this is okay.",
+            "It gets even weirder when you realize the timing."
         ]
 
         self.punchlines = {
@@ -40,14 +52,20 @@ class LocalBrain:
                 "Moral of the story? Don't even try. Just stay in bed.",
                 "I'm not crying, you're crying. Okay, we're both crying.",
                 "Anyway, that's my personality now. Hope you enjoyed it.",
-                "If you relate to this, we are officially best friends."
+                "If you relate to this, we are officially best friends.",
+                "In conclusion: My life is a sitcom but the writers are on strike.",
+                "Send this to someone who definitely does this.",
+                "I'm going to go hide under my blanket now. Bye."
             ],
             "curiosity": [
                 "The universe is much stranger than we can imagine. Subscribe for more.",
                 "Sometimes, the questions are more important than the answers.",
                 "We are just scratching the surface of what's possible.",
                 "What do you think? Is this real or just a glitch in the matrix?",
-                "The truth is out there. We just have to look closer."
+                "The truth is out there. We just have to look closer.",
+                "So the next time you see this, remember what we found.",
+                "Is it a coincidence? Or is it something more? You decide.",
+                "Stay curious, my friends. The answers are coming."
             ]
         }
 

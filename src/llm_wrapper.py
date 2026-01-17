@@ -18,7 +18,7 @@ class LLMWrapper:
             # Using gemini-flash-latest as it's the verified working version for this API key
             self.model = genai.GenerativeModel('gemini-flash-latest')
 
-    def _call_gemini_with_retry(self, prompt, retries=5, base_delay=5):
+    def _call_gemini_with_retry(self, prompt, retries=2, base_delay=5):
         """Calls Gemini with exponential backoff to handle quota/rate limits."""
         import time
         import random
