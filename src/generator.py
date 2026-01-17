@@ -650,6 +650,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             avatar_path = generate_avatar_video(intro_audio, intro_video)
             if avatar_path:
                 intro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
+                # Watermark Guard
+                intro_clip = crop(intro_clip, y2=intro_clip.h - 50).resize(newsize=(1920, 1080))
                 segment_clips.insert(0, intro_clip)
                 temp_audio_files.append(intro_audio)
                 temp_bg_files.append(intro_video)
@@ -662,6 +664,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             avatar_path = generate_avatar_video(outro_audio, outro_video)
             if avatar_path:
                 outro_clip = VideoFileClip(avatar_path).resize(newsize=(1920, 1080))
+                # Watermark Guard
+                outro_clip = crop(outro_clip, y2=outro_clip.h - 50).resize(newsize=(1920, 1080))
                 segment_clips.append(outro_clip)
                 temp_audio_files.append(outro_audio)
                 temp_bg_files.append(outro_video)
@@ -886,6 +890,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             if avatar_path:
                 avatar_size = (1080, 1920) if metadata.get('orientation') == 'vertical' else (1920, 1080)
                 intro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
+                # Watermark Guard
+                intro_clip = crop(intro_clip, y2=intro_clip.h - 50).resize(newsize=avatar_size)
                 final_clips.insert(0, intro_clip)
                 temp_files.extend([intro_audio, intro_video])
             
@@ -898,6 +904,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             if avatar_path:
                 avatar_size = (1080, 1920) if metadata.get('orientation') == 'vertical' else (1920, 1080)
                 outro_clip = VideoFileClip(avatar_path).resize(newsize=avatar_size)
+                # Watermark Guard
+                outro_clip = crop(outro_clip, y2=outro_clip.h - 50).resize(newsize=avatar_size)
                 final_clips.append(outro_clip)
                 temp_files.extend([outro_audio, outro_video])
 
