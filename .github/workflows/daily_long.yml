@@ -2,8 +2,8 @@ name: Daily TubeAutoma Documentary
 
 on:
   schedule:
-    # Run at 4:30 AM IST on the 1st of every month
-    - cron: '0 23 1 * *'
+    # Run monthly (1st) starting February
+    - cron: '0 23 1 2-12 *'
   workflow_dispatch:
     inputs:
       prompt_tweak:

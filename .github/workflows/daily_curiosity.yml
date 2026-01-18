@@ -2,8 +2,8 @@ name: Daily Curiosity (New Channel)
 
 on:
   schedule:
-    # Run at 12:30 AM IST on Saturdays only (Prioritizing Meme minutes)
-    - cron: '0 19 * * 6'
+    # Run weekly (Saturdays) starting February
+    - cron: '0 19 * 2-12 6'
   workflow_dispatch:
     inputs:
       prompt_tweak:
