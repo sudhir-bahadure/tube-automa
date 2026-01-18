@@ -2,8 +2,8 @@ name: Daily TubeAutoma Video
 
 on:
   schedule:
-    # Run at 10:00 PM IST on EVEN days only (Reduced frequency for Free Tier)
-    - cron: '30 16 2,4,6,8,10,12,14,16,18,20,22,24,26,28,30 * *'
+    # Run at 10:00 PM IST on Sundays only (Prioritizing Meme minutes)
+    - cron: '30 16 * * 0'
   workflow_dispatch: # Allow manual trigger
 
 permissions:

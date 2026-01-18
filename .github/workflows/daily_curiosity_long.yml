@@ -2,8 +2,8 @@ name: Daily Curiosity (Long-Form)
 
 on:
   schedule:
-    # Run at 6:30 AM IST on EVEN days only (New Channel - Long Form)
-    - cron: '0 1 2,4,6,8,10,12,14,16,18,20,22,24,26,28,30 * *'
+    # Run at 6:30 AM IST on the 1st and 15th (Prioritizing Meme minutes)
+    - cron: '0 1 1,15 * *'
   workflow_dispatch:
 
 permissions:
