@@ -92,10 +92,11 @@ def main():
             print(f"[WARN] Thumbnail generation failed: {e}")
 
         # 3. Upload to YouTube
-        print("Uploading to YouTube...")
-        youtube_id = upload_video(final_video_path, metadata['title'], metadata['description'], metadata['tags'], metadata.get('youtube_category', '27'), thumbnail_path)
-    except Exception as e:
-        print(f"YouTube Upload Module Error: {e}")
+        try:
+            print("Uploading to YouTube...")
+            youtube_id = upload_video(final_video_path, metadata['title'], metadata['description'], metadata['tags'], metadata.get('youtube_category', '27'), thumbnail_path)
+        except Exception as e:
+            print(f"YouTube Upload Module Error: {e}")
 
     # 4. Delivery / Notification to Telegram
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
