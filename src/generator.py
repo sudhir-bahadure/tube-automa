@@ -199,8 +199,15 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
         ]
         
         print(f"  [FFmpeg] Running template {template_name}...")
-        subprocess.run(cmd, check=True, capture_output=True)
-        return True
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, timeout=60)
+            return True
+        except subprocess.TimeoutExpired:
+            print(f"  [ERROR] FFmpeg template timed out after 60s")
+            return False
+        except subprocess.CalledProcessError as e:
+            print(f"  [ERROR] FFmpeg execution failed: {e}")
+            return False
     except Exception as e:
         print(f"  [ERROR] FFmpeg template failed: {e}")
         return False
@@ -496,19 +503,19 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                 '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
                 hook_path
              ]
-             subprocess.run(cmd_hook, check=True, capture_output=True)
+             subprocess.run(cmd_hook, check=True, capture_output=True, timeout=30)
              
              if os.path.exists(hook_path):
                  # Hook has no audio, generate silence
                  hook_audio = "temp_silence.mp3"
-                 subprocess.run([ffmpeg_exe, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-t', '2', hook_audio], stdout=subprocess.DEVNULL)
+                 subprocess.run([ffmpeg_exe, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-t', '2', hook_audio], stdout=subprocess.DEVNULL, timeout=10)
                  
                  # Merge silence to hook
                  hook_with_audio = "temp_subscribe_final.mp4"
                  subprocess.run([
                      ffmpeg_exe, '-y', '-i', hook_path, '-i', hook_audio, 
                      '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-shortest', hook_with_audio
-                 ], stdout=subprocess.DEVNULL)
+                 ], stdout=subprocess.DEVNULL, timeout=20)
                  
                  segment_files.append(hook_with_audio)
                  temp_files_to_clean.extend([hook_path, hook_audio, hook_with_audio])
@@ -537,7 +544,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             '-c', 'copy', output_path
         ]
         
-        subprocess.run(cmd_concat, check=True)
+        subprocess.run(cmd_concat, check=True, timeout=120)
         
         # Cleanup
         for f in temp_files_to_clean:
