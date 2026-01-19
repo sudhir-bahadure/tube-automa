@@ -74,9 +74,8 @@ def main():
     # 3. Upload to YouTube (Primary)
     youtube_id = None
     if final_video_path and os.path.exists(final_video_path):
-        try:
-            # Generate Thumbnail (Phase 2)
-            thumbnail_path = None
+        # Generate Thumbnail (Phase 2)
+        thumbnail_path = None
         try:
             print("[*] Generating Thumbnail...")
             # Extract frame
