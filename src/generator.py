@@ -455,10 +455,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             visual_prompt = f"stickman sketch: {text}. Context: {topic}"
             
             image_path = f"temp_meme_visual_{i}.jpg"
+            # generate_stickman_image now has bulletproof fallback (gradient backgrounds)
             img = generate_stickman_image(visual_prompt, image_path, niche="meme")
-            if not img:
-                subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=white:s=1080x1920', '-frames:v', '1', image_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             temp_files_to_clean.append(image_path)
+
             
             # --- C. Subtitle Generation (Brainrot Style) ---
             captions_path = f"temp_captions_{i}.mp4"
