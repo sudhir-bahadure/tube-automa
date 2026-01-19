@@ -578,8 +578,65 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         ]
         
         # TIMEOUT 120s
+        # TIMEOUT 120s
         try:
             subprocess.run(cmd_concat, check=True, timeout=120)
+            
+            # --- F. Audio Engineering (Background Music) ---
+            print("  [*] Applying Professional Audio Mixing...")
+            mixed_output = "final_video_mixed.mp4"
+            
+            # 1. Ensure we have music
+            music_dir = "assets/music"
+            if not os.path.exists(music_dir): os.makedirs(music_dir)
+            
+            # Download safe royalty-free tracks if empty
+            if not os.listdir(music_dir):
+                print("    [INFO] Downloading royalty-free music library...")
+                # Using known safe direct links to CC0/Royalty Free assets
+                music_urls = {
+                    "sneaky.mp3": "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Kevin_MacLeod/Oddities/Kevin_MacLeod_-_Sneaky_Snitch.mp3",
+                    "monkeys.mp3": "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Kevin_MacLeod/Jazz_Sampler/Kevin_MacLeod_-_Monkeys_Spinning_Monkeys.mp3"
+                }
+                for name, url in music_urls.items():
+                    try:
+                        r = requests.get(url, timeout=30)
+                        if r.status_code == 200:
+                            with open(os.path.join(music_dir, name), "wb") as f:
+                                f.write(r.content)
+                    except: pass
+
+            music_files = [f for f in os.listdir(music_dir) if f.endswith(".mp3")]
+            
+            if music_files:
+                chosen_music = os.path.join(music_dir, random.choice(music_files))
+                
+                # FFMPEG Audio Mixing Command
+                # 1. Loop music stream
+                # 2. Volume 0.15 (Low background)
+                # 3. Mix with original audio (amix)
+                # 4. Shortest (end when video ends)
+                cmd_mix = [
+                    ffmpeg_exe, '-y',
+                    '-i', output_path,
+                    '-stream_loop', '-1', '-i', chosen_music,
+                    '-filter_complex', "[1:a]volume=0.15[bg];[0:a][bg]amix=inputs=2:duration=first[a]",
+                    '-map', '0:v', '-map', '[a]',
+                    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+                    '-shortest',
+                    mixed_output
+                ]
+                
+                try:
+                     subprocess.run(cmd_mix, check=True, timeout=120)
+                     # Swap files
+                     if os.path.exists(mixed_output):
+                         os.remove(output_path)
+                         os.rename(mixed_output, output_path)
+                         print("    [OK] Background music mixed successfully")
+                except Exception as e:
+                     print(f"    [WARN] Music mixing failed: {e}")
+            
         except Exception as e:
              print(f"  [ERROR] Final concat failed: {e}")
              return None
