@@ -394,164 +394,125 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
     temp_bg_files = [] # Initialize globally for thumbnail fallback
     
     if metadata.get('visual_style') == 'sketch_static':
-        # --- NEW FFmpeg MEME PIPELINE (Multi-Segment) ---
-        print("[*] Running FFmpeg optimized meme pipeline (Multi-Segment)...")
+        # --- STABLE SINGLE-IMAGE MEME PIPELINE ---
+        print("[*] Running Stable Single-Image Meme Pipeline...")
         
-        script_segments = metadata.get('script', [])
-        segment_files = []
-        temp_files_to_clean = []
+        # 1. Generate Full Audio (One file, seamless)
+        voice_config = metadata.get('voice_config', {})
+        voice = voice_config.get('voice', 'en-US-GuyNeural')
+        rate = voice_config.get('rate', '+8%')
+        pitch = voice_config.get('pitch', '-2Hz')
         
-        # 1. Process each segment
-        for i, seg in enumerate(script_segments):
-            text = seg.get("text", "")
-            if not text: continue
-            
-            print(f"  Processing segment {i+1}/{len(script_segments)}: {text[:30]}...")
-            
-            # --- A. Audio Generation (Varied for human touch) ---
-            audio_path = f"temp_meme_audio_{i}.mp3"
-            
-            # Dynamic Prosody: Vary pitch/rate slightly per line to break "robot" monotony
-            # Hook/Punchline = punchier. Setup = neutral.
-            base_pitch_val = -2
-            base_rate_val = 8
-            
-            if i == 0: # Hook
-                pitch = f"{base_pitch_val+2}Hz" 
-                rate = f"{base_rate_val+2}%"
-            elif i == len(script_segments) - 1: # CTA
-                 pitch = f"{base_pitch_val}Hz"
-                 rate = f"{base_rate_val}%"
-            elif i % 2 == 0: # Varied
-                 pitch = f"{base_pitch_val-2}Hz"
-                 rate = f"{base_rate_val-2}%"
-            else:
-                 pitch = f"{base_pitch_val}Hz"
-                 rate = f"{base_rate_val}%"
-
-            voice_config = metadata.get('voice_config', {})
-            voice = voice_config.get('voice', 'en-US-GuyNeural')
-            
-            asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice))
-            
-            if os.path.exists(audio_path):
-                temp_files_to_clean.append(audio_path)
-            else:
-                print(f"    [WARN] Audio failed for segment {i}, using silence")
-                # Fallback to silent MP3 if needed (logic omitted for brevity, generator handles it)
-                continue
-
-            # Get duration
-            try:
-                from moviepy.audio.AudioClip import AudioFileClip
-                ac = AudioFileClip(audio_path)
-                duration = ac.duration
-                ac.close()
-            except:
-                duration = 3.0
-            
-            # --- B. Visual Generation (Unique per segment) ---
-            # Extract core topic but focus on THIS line's context
-            topic = metadata.get('topic', 'meme')
-            visual_prompt = f"stickman sketch: {text}. Context: {topic}"
-            
-            image_path = f"temp_meme_visual_{i}.jpg"
-            img = generate_stickman_image(visual_prompt, image_path, niche="meme")
-            
-            if not img:
-                # Fallback
-                subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=white:s=1080x1920', '-frames:v', '1', image_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            
-            temp_files_to_clean.append(image_path)
-            
-            # --- C. Create Segment Video with FFmpeg ---
-            files_list_path = f"inputs_{i}.txt"
-            seg_output_path = f"temp_seg_{i}.mp4"
-            
-            # Apply template (randomize slightly)
-            templates = ["slow_zoom", "micro_shake"] # pan_lr can look weird on short segments
-            template = random.choice(templates)
-            
-            apply_ffmpeg_template(template, image_path, audio_path, seg_output_path, duration)
-            
-            if os.path.exists(seg_output_path):
-                segment_files.append(seg_output_path)
-                temp_files_to_clean.append(seg_output_path)
-            else:
-                print(f"    [ERROR] FFmpeg segment {i} failed")
-
-        if not segment_files:
+        # Combine script segments into one full text
+        full_text = " ".join([seg.get("text", "") for seg in metadata.get('script', [])])
+        print(f"  [Script] {full_text[:50]}...")
+        
+        audio_path = "temp_meme_voice.mp3"
+        # Use simpler asyncio run
+        asyncio.run(generate_audio(full_text, audio_path, rate=rate, pitch=pitch, voice=voice))
+        
+        if not os.path.exists(audio_path):
+            print("  [ERROR] Failed to generate meme audio")
             return None
-
-        # --- D. Subscribe Hook (Visual Only) ---
-        print("  [*] Generating Subscribe Hook...")
-        hook_path = "temp_subscribe.mp4"
-        # Create a simple FFmpeg subscribe card (White background, Red Text)
-        # We use a simple drawtext command here for speed/reliability over MoviePy
+            
+        # Get audio duration
+        duration = 15.0 # Default
         try:
-             # Create red background with text
+            from moviepy.audio.AudioClip import AudioFileClip
+            ac = AudioFileClip(audio_path)
+            duration = ac.duration
+            ac.close()
+        except:
+            pass
+            
+        # 2. Generate Visual (One Key Image)
+        topic = metadata.get('topic', 'meme')
+        # Extract situation from topic if formatted as "Emotion + Situation"
+        visual_prompt = topic.split('+')[-1].strip() if '+' in topic else topic
+        visual_prompt = f"stickman sketch about {visual_prompt}"
+        
+        image_path = "temp_meme_visual.jpg"
+        img = generate_stickman_image(visual_prompt, image_path, niche="meme")
+        
+        if not img:
+            print("  [WARN] Visual generation failed, using blank canvas")
+            # Fallback
+            subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=white:s=1080x1920', '-frames:v', '1', image_path], stdout=subprocess.DEVNULL)
+            
+        # 3. Main Video Body
+        body_output = "temp_body.mp4"
+        template = metadata.get('ffmpeg_template', 'slow_zoom')
+        
+        # Explicitly apply template with correct audio mapping
+        success = apply_ffmpeg_template(template, image_path, audio_path, body_output, duration)
+        
+        if not success or not os.path.exists(body_output):
+             print("  [ERROR] Main body rendering failed")
+             return None
+
+        # 4. Subscribe Hook (Visual Only)
+        print("  [*] Adding Subscribe Hook...")
+        hook_path = "temp_subscribe.mp4"
+        final_hook = "temp_subscribe_final.mp4"
+        
+        try:
              ffmpeg_exe = "ffmpeg"
              if os.name == 'nt':
                  try: import imageio_ffmpeg; ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
                  except: pass
 
+             # Generate Red Text Card
              cmd_hook = [
                 ffmpeg_exe, '-y',
                 '-f', 'lavfi', '-i', 'color=c=red:s=1080x1920:d=2',
-                # Reduced font size slightly to fit "SUBSCRIBE FOR MORE" width
-                '-vf', "drawtext=text='SUBSCRIBE FOR MORE':fontcolor=white:fontsize=120:x=(w-text_w)/2:y=(h-text_h)/2",
+                '-vf', "drawtext=text='SUBSCRIBE FOR MORE':fontcolor=white:fontsize=100:x=(w-text_w)/2:y=(h-text_h)/2",
                 '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
                 hook_path
              ]
              subprocess.run(cmd_hook, check=True, capture_output=True, timeout=30)
              
+             # Add silence to hook to prevent audio stream issues during concat
              if os.path.exists(hook_path):
-                 # Hook has no audio, generate silence
                  hook_audio = "temp_silence.mp3"
                  subprocess.run([ffmpeg_exe, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-t', '2', hook_audio], stdout=subprocess.DEVNULL, timeout=10)
                  
-                 # Merge silence to hook
-                 hook_with_audio = "temp_subscribe_final.mp4"
                  subprocess.run([
                      ffmpeg_exe, '-y', '-i', hook_path, '-i', hook_audio, 
-                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-shortest', hook_with_audio
+                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-shortest', final_hook
                  ], stdout=subprocess.DEVNULL, timeout=20)
-                 
-                 segment_files.append(hook_with_audio)
-                 temp_files_to_clean.extend([hook_path, hook_audio, hook_with_audio])
         except Exception as e:
-            print(f"  [WARN] Subscribe hook generation failed: {e}")
+            print(f"  [WARN] Hook failed: {e}")
+            final_hook = None
 
-        # --- E. Concatenate All Segments ---
-        print("  [*] Concatenating segments...")
-        concat_list_path = "concat_list.txt"
-        with open(concat_list_path, "w") as f:
-            for seg in segment_files:
-                # Ffmpeg concat requires: file 'path'
-                # Path must be escaped
-                clean_path = seg.replace("\\", "/")
-                f.write(f"file '{clean_path}'\n")
-        
-        temp_files_to_clean.append(concat_list_path)
-        
-        ffmpeg_exe = "ffmpeg"
-        if os.name == 'nt':
-             try: import imageio_ffmpeg; ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-             except: pass
-             
-        cmd_concat = [
-            ffmpeg_exe, '-y', '-f', 'concat', '-safe', '0', '-i', concat_list_path,
-            '-c', 'copy', output_path
-        ]
-        
-        subprocess.run(cmd_concat, check=True, timeout=120)
-        
-        # Cleanup
-        for f in temp_files_to_clean:
-            try:
-                if os.path.exists(f): os.remove(f)
-            except: pass
+        # 5. Concatenate Body + Hook
+        if final_hook and os.path.exists(final_hook):
+            concat_list = "concat.txt"
+            with open(concat_list, "w") as f:
+                f.write(f"file '{body_output}'\n")
+                f.write(f"file '{final_hook}'\n")
             
+            # Concat with re-encoding to safely merge streams
+            cmd_concat = [
+                ffmpeg_exe, '-y', '-f', 'concat', '-safe', '0', '-i', concat_list,
+                '-c', 'copy', output_path
+            ]
+            subprocess.run(cmd_concat, check=True, timeout=60)
+            try: os.remove(concat_list)
+            except: pass
+        else:
+            # Just move body to output if hook failed
+            try: os.rename(body_output, output_path)
+            except: 
+                import shutil
+                shutil.copy(body_output, output_path)
+
+        # Cleanup
+        try:
+            files_to_remove = [audio_path, image_path, body_output, hook_path, final_hook, "temp_silence.mp3"]
+            for f in files_to_remove:
+                if f and os.path.exists(f): os.remove(f)
+        except: pass
+        
         return output_path
 
     if mode == 'meme' and 'memes' in metadata: # Legacy list-based meme fallback
