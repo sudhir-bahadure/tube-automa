@@ -1,62 +1,58 @@
-name: Daily TubeAutoma Meme
+name: Daily Meme Shorts (High CTR)
 
 on:
   schedule:
-    - cron: '0 */4 * * *'  # Run every 4 hours (High Volume Strategy)
+    # 3 Times Daily (NY Time: 10am, 2pm, 6pm) -> approx 14:00, 18:00, 22:00 UTC
+    - cron: '0 14,18,22 * * *'
   workflow_dispatch:
-    inputs:
-      prompt_tweak:
-        description: 'AI Command / Prompt Tweak'
-        required: false
-        default: ''
-
-permissions:
-  contents: write
 
 jobs:
-  build-and-post:
+  meme_automation:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+      
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-        cache: 'pip' # Enable pip caching
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Install system dependencies (ImageMagick & FFmpeg)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y imagemagick ffmpeg fonts-liberation libjpeg-dev zlib1g-dev
-        # Fix ImageMagick policy for text rendering
-        sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libespeak-ng1
 
-    - name: Install Python dependencies
-      run: |
-        pip install -r requirements.txt
+      - name: Install Python Libraries
+        run: |
+          pip install -r requirements.txt
+          pip install google-generativeai edge-tts moviepy feedparser
 
-    - name: Generate and Upload Meme Video
-      env:
-        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-        YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        GEMINI_VISUAL_KEY: ${{ secrets.GEMINI_VISUAL_KEY }}
-      run: |
-        python src/main.py --category meme --tweak "${{ github.event.inputs.prompt_tweak }}"
+      - name: Generate Viral Meme Short
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_VISUAL_KEY: ${{ secrets.GEMINI_API_KEY }} # Use same key if distinct one not provided
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python src/main.py --category meme
 
-    - name: Commit Tracking Data (Uniqueness)
-      if: success()
-      run: |
-        git config --global user.name "TubeAutoma Bot"
-        git config --global user.email "bot@tubeautoma.com"
-        git add assets/*.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Update tracking data [skip ci]")
-        git pull origin main --rebase
-        git push origin main
+      - name: Commit & Push Tracking Data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "TubeAutoma Bot"
+          git config --global user.email "bot@tubeautoma.com"
+          git add assets/*.json
+          git commit -m "Update tracking data [skip ci]" || echo "No changes to commit"
+          git push
