@@ -165,5 +165,25 @@ def generate_content_metadata(mode="meme", tweak=""):
     # Legacy/Long-form support would go here if needed, but we are focusing on MEMES.
     return None
 
+# ============================================================================
+# ALIASES FOR COMPATIBILITY WITH main.py
+# ============================================================================
+def get_meme_metadata(tweak=None):
+    return generate_content_metadata(mode="meme", tweak=tweak)
+
+def get_fact(tweak=None):
+    # Stub: User only authorized MEME workflow changes.
+    print("[WARN] Fact mode not fully implemented in robust overhaul.")
+    return None
+
+def get_video_metadata(tweak=None):
+    # Stub
+    return None
+
+def get_long_video_metadata(tweak=None):
+    # Stub
+    print("[WARN] Long mode not fully implemented in robust overhaul.")
+    return None
+
 if __name__ == "__main__":
     print(generate_content_metadata(mode="meme"))
