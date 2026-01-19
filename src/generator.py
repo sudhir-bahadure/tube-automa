@@ -183,7 +183,7 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
             d_frames = int(duration * 25)
             filter_complex = (
                 f"zoompan=z='1.0':d={d_frames}:"
-                f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)+50*sin(2*PI*t/{duration})',"
+                f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)+50*sin(2*PI*t/{duration})",
                 "scale=1080:1920"
             )
         elif template_name == "slide_in":
@@ -191,30 +191,20 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
             d_frames = int(duration * 25)
             filter_complex = (
                 f"zoompan=z='1.0':d={d_frames}:"
-                f"x='iw/2-(iw/zoom/2)+(iw*(1-t/{duration}))':y='ih/2-(ih/zoom/2)',"
+                f"x='iw/2-(iw/zoom/2)+(iw*(1-t/{duration}))':y='ih/2-(ih/zoom/2)'",
                 "scale=1080:1920"
             )
         elif template_name == "rotate_subtle":
-            # Gentle rotation (like a phone tilt)
-            filter_complex = (
-                "scale=1200:2100,"
-                f"rotate='5*sin(2*PI*t/{duration})*PI/180':c=none,"
-                "crop=1080:1920:(iw-1080)/2:(ih-1920)/2"
-            )
+            # Gentle rotation (like a phone tilt) - DISABLED (too complex)
+            filter_complex = "scale=1080:1920"
         elif template_name == "pulse":
-            # Pulsing zoom effect
+            # Pulsing zoom effect - SIMPLIFIED
             d_frames = int(duration * 25)
-            filter_complex = (
-                f"zoompan=z='1.0+0.05*sin(4*PI*t/{duration})':d={d_frames}:"
-                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
-            )
+            filter_complex = f"zoompan=z='1.0+0.03*sin(t)':d={d_frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
         elif template_name == "zoom_out":
-            # Zoom out effect (starts close, pulls back)
+            # Zoom out effect (starts close, pulls back) - SIMPLIFIED
             d_frames = int(duration * 25)
-            filter_complex = (
-                f"zoompan=z='max(1.15-0.15*t/{duration},1.0)':d={d_frames}:"
-                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
-            )
+            filter_complex = f"zoompan=z='if(lte(zoom,1.0),1.0,max(1.15-0.002*on,1))':d={d_frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
         else:
             # Default static scale
             filter_complex = "scale=1080:1920"
