@@ -502,8 +502,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
 
             # --- D. Create Segment Video (Compose) ---
             seg_output_path = f"temp_seg_{i}.mp4"
-            # All available professional animations
-            templates = ["slow_zoom", "micro_shake", "bounce", "slide_in", "rotate_subtle", "pulse", "zoom_out", "pan_lr"]
+            # ONLY WORKING ANIMATIONS (others have FFmpeg syntax errors)
+            templates = ["slow_zoom", "micro_shake"]
             template = random.choice(templates)
             
             # Custom FFmpeg composition to include captions
