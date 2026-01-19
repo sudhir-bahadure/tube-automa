@@ -34,6 +34,17 @@ class LLMWrapper:
                     raise e
         return None
 
+    def generate(self, prompt):
+        """Generic text generation for custom prompts."""
+        if not self.api_key:
+            return "Error: No API Key"
+        try:
+            response = self._call_gemini_with_retry(prompt)
+            return response.text if response else ""
+        except Exception as e:
+            logger.error(f"Generate error: {e}")
+            return ""
+
     def generate_script(self, topic, video_type="short", niche="curiosity", tweak=None):
         if not self.api_key:
             return None

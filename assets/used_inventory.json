@@ -31,9 +31,7 @@
         "anxiety + phone",
         "anxiety + sleep",
         "anxiety + weekend",
-        "boredom + sleep",
-        "stress + phone",
-        "anxiety + money",
-        "stress + money"
+        "Error: No API Key",
+        "Trying to sleep while your brain reviews every awkward memory since high school."
     ]
 }

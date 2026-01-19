@@ -1,7 +1,7 @@
 {
     "automation_name": "yoDailyMemeDose_1Year_CTR_Max",
     "runtime_days": 365,
-    "shorts_per_day": 2,
+    "shorts_per_day": 3,
     "fully_automated": true,
     "time_control": {
         "timezone": "UTC",

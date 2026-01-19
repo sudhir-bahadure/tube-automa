@@ -64,6 +64,10 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         
     print(f"Uploading to YouTube: {title}")
     
+    import datetime
+    # Schedule for 30 minutes from now (UTC)
+    publish_time = (datetime.datetime.utcnow() + datetime.timedelta(minutes=30)).isoformat("T") + "Z"
+    
     body = {
         "snippet": {
             "title": title[:100], # Max 100 chars
@@ -72,7 +76,8 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
             "categoryId": category_id
         },
         "status": {
-            "privacyStatus": "public", 
+            "privacyStatus": "private", # Must be private to support publishAt
+            "publishAt": publish_time,
             "selfDeclaredMadeForKids": False
         },
         "recordingDetails": {

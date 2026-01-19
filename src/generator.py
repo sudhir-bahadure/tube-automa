@@ -435,6 +435,10 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         # --- HIGH RETENTION MULTI-SEGMENT PIPELINE (Target: 1M Views) ---
         print("[*] Running Multi-Segment Viral Pipeline...")
         
+        ffmpeg_templates = CHANNEL_CONFIG.get("ffmpeg_templates", {
+            "slow_zoom": "zoompan=z='min(zoom+0.0008,1.08)':d=25*fps:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
+        })
+        
         script_segments = metadata.get('script', [])
         segment_files = []
         temp_files_to_clean = []
