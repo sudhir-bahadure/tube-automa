@@ -136,7 +136,7 @@
         "resolution": "1080x1920"
     },
     "ffmpeg_templates": {
-        "slow_zoom": "zoompan=z='min(zoom+0.0008,1.08)':d=25*fps:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920",
+        "slow_zoom": "zoompan=z='min(zoom+0.001,1.1)':d=125:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920",
         "micro_shake": "scale=1080:1920,tmix=frames=2",
         "pan_lr": "crop=ih*9/16:ih:x='t*10':y=0,scale=1080:1920"
     },

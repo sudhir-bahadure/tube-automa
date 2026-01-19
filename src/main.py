@@ -102,7 +102,8 @@ def main():
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     
-    if os.path.exists(final_video_path):
+    
+    if final_video_path and os.path.exists(final_video_path):
         caption = f"{metadata['title']}\n\n{metadata['tags']}"
         if youtube_id:
             caption += f"\n\n✅ Uploaded to YouTube: https://youtu.be/{youtube_id}"
