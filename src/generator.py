@@ -229,7 +229,7 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
             '-map', '1:a', # Explicitly map audio from input 1
             '-t', str(duration),
             '-c:v', 'libx264', '-preset', 'veryfast', 
-            '-c:a', 'aac', '-b:a', '128k',
+            '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2',
             '-pix_fmt', 'yuv420p',
             '-movflags', '+faststart', # Good for web/youtube playback
             output_path
@@ -539,7 +539,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         '-map', '[v]', '-map', '1:a',
                         '-t', str(duration),
                         '-c:v', 'libx264', '-preset', 'veryfast',
-                        '-c:a', 'aac', '-b:a', '128k',
+                        '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2',
                         seg_output_path
                     ]
                     subprocess.run(cmd, check=True, capture_output=True, timeout=60)
@@ -563,7 +563,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         '-map', '[v]', '-map', '1:a',
                         '-t', str(duration),
                         '-c:v', 'libx264', '-preset', 'veryfast',
-                        '-c:a', 'aac', '-b:a', '128k',
+                        '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-ac', '2',
                         seg_output_path
                     ]
                     subprocess.run(cmd, check=True, capture_output=True, timeout=60)
@@ -676,9 +676,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     ffmpeg_exe, '-y',
                     '-i', output_path,
                     '-stream_loop', '-1', '-i', chosen_music,
-                    '-filter_complex', "[1:a]volume=0.15[bg];[0:a][bg]amix=inputs=2:duration=first[a]",
+                    '-filter_complex', "[1:a]volume=0.10[bg];[0:a][bg]amix=inputs=2:duration=first[a]",
                     '-map', '0:v', '-map', '[a]',
-                    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+                    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-ac', '2',
                     '-shortest',
                     mixed_output
                 ]
