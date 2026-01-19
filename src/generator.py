@@ -178,14 +178,17 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
 
         # Construct command
         # Note: We use -shortest to end when audio ends (plus loop image)
+        # We explicitly map input 1 (audio) to audio stream, and filter output to video stream
         cmd = [
             ffmpeg_exe, '-y', 
         ] + inputs + [
             '-filter_complex', filter_complex,
+            '-map', '1:a', # Explicitly map audio from input 1
             '-t', str(duration),
             '-c:v', 'libx264', '-preset', 'veryfast', 
             '-c:a', 'aac', '-b:a', '128k',
             '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart', # Good for web/youtube playback
             output_path
         ]
         
