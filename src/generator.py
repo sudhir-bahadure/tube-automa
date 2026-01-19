@@ -139,6 +139,63 @@ def create_subscribe_hook(duration=2.0):
         print(f"  [WARN] Failed to create subscribe hook: {e}")
         return None
 
+def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, duration):
+    """
+    Applies the requested FFmpeg template to generate the final video.
+    """
+    try:
+        # Resolve FFmpeg binary
+        import imageio_ffmpeg
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        
+        # Calculate dynamic parameters
+        # duration is passed in seconds
+        
+        # Base input args
+        inputs = ['-loop', '1', '-i', image_path, '-i', audio_path]
+        
+        # Select filter complex based on template
+        if template_name == "slow_zoom":
+            # zoompan needs d expressed in frames, assuming fps=25
+            d_frames = int(duration * 25)
+            # Gentle zoom in
+            filter_complex = (
+                 f"zoompan=z='min(zoom+0.0008,1.08)':d={d_frames}:"
+                 "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
+            )
+        elif template_name == "micro_shake":
+            # Subtle vibration using crop
+            filter_complex = (
+                "scale=1080:1920,"
+                "crop=w=iw-20:h=ih-20:x='(iw-ow)/2+((random(0)-0.5)*10)':y='(ih-oh)/2+((random(0)-0.5)*10)'"
+            )
+        elif template_name == "pan_lr":
+            # Slowly pan from left to right center
+            filter_complex = "scale=1920:1920,crop=1080:1920:x='(t/duration)*(iw-ow)':y=0"
+        else:
+            # Default static scale
+            filter_complex = "scale=1080:1920"
+
+        # Construct command
+        # Note: We use -shortest to end when audio ends (plus loop image)
+        cmd = [
+            ffmpeg_exe, '-y', 
+        ] + inputs + [
+            '-filter_complex', filter_complex,
+            '-t', str(duration),
+            '-c:v', 'libx264', '-preset', 'veryfast', 
+            '-c:a', 'aac', '-b:a', '128k',
+            '-pix_fmt', 'yuv420p',
+            output_path
+        ]
+        
+        print(f"  [FFmpeg] Running template {template_name}...")
+        subprocess.run(cmd, check=True, capture_output=True)
+        return True
+    except Exception as e:
+        print(f"  [ERROR] FFmpeg template failed: {e}")
+        return False
+
 async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz", voice="en-US-AndrewNeural"):
     # Voice Mapping for "Human Persona"
     # Andrew: Balanced, warm, good for general facts.
@@ -320,7 +377,66 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
     mode = metadata.get('category', metadata.get('mode', 'fact'))
     temp_bg_files = [] # Initialize globally for thumbnail fallback
     
-    if mode == 'meme' and 'memes' in metadata:
+    if metadata.get('visual_style') == 'sketch_static':
+        # --- NEW FFmpeg MEME PIPELINE ---
+        print("[*] Running FFmpeg optimized meme pipeline...")
+        
+        # 1. Generate Full Audio
+        voice_config = metadata.get('voice_config', {})
+        voice = voice_config.get('voice', 'en-US-GuyNeural')
+        rate = voice_config.get('rate', '+8%')
+        pitch = voice_config.get('pitch', '-2Hz')
+        
+        # Combine script segments into one full text for seamless flow
+        full_text = " ".join([seg.get("text", "") for seg in metadata.get('script', [])])
+        
+        audio_path = "temp_meme_voice.mp3"
+        asyncio.run(generate_audio(full_text, audio_path, rate=rate, pitch=pitch, voice=voice))
+        
+        if not os.path.exists(audio_path):
+            print("  [ERROR] Failed to generate meme audio")
+            return None
+            
+        # Get audio duration for FFmpeg
+        try:
+            from moviepy.audio.AudioClip import AudioFileClip
+            ac = AudioFileClip(audio_path)
+            duration = ac.duration
+            ac.close()
+        except:
+            duration = 15 # Fallback
+            
+        # 2. Generate Visual (Sketch Stickman)
+        topic = metadata.get('topic', 'meme')
+        # Extract situation from topic if formatted as "Emotion + Situation"
+        visual_prompt = topic.split('+')[-1].strip() if '+' in topic else topic
+        visual_prompt = f"stickman sketch about {visual_prompt}"
+        
+        image_path = "temp_meme_visual.jpg"
+        img = generate_stickman_image(visual_prompt, image_path, niche="meme")
+        
+        if not img:
+            # Fallback black/white image creation if AI fails
+            print("  [WARN] Visual generation failed, using blank canvas")
+            subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=white:s=1080x1920', '-frames:v', '1', image_path])
+            
+        # 3. Render with FFmpeg Template
+        template = metadata.get('ffmpeg_template', 'slow_zoom')
+        success = apply_ffmpeg_template(template, image_path, audio_path, output_path, duration)
+        
+        # 4. Cleanup
+        try:
+            if os.path.exists(audio_path): os.remove(audio_path)
+            if os.path.exists(image_path): os.remove(image_path)
+        except: pass
+        
+        if success:
+            return output_path
+        else:
+            print("  [ERROR] FFmpeg pipeline failed, returning None")
+            return None
+
+    if mode == 'meme' and 'memes' in metadata: # Legacy list-based meme fallback
         memes = metadata.get('memes', [])
         meme_clips = []
         temp_audio_files = []

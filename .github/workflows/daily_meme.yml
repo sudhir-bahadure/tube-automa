@@ -2,14 +2,8 @@ name: Daily TubeAutoma Meme
 
 on:
   schedule:
-    # January Survival: Run 1/day at 8:30 PM IST
-    - cron: '0 15 19-31 1 *'
-    # February Resumption: Run 2/day at 10:00 AM and 8:30 PM IST
-    - cron: '30 4 1-28 2 *'
-    - cron: '0 15 1-28 2 *'
-    # Default (General): 2/day
-    - cron: '30 4 * 3-12 *'
-    - cron: '0 15 * 3-12 *'
+    - cron: '0 17 * * *'  # 17:00 UTC (US Midday)
+    - cron: '0 0 * * *'   # 00:00 UTC (US Evening)
   workflow_dispatch:
     inputs:
       prompt_tweak:
