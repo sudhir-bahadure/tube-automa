@@ -543,7 +543,10 @@ def get_meme_metadata(tweak=None):
             "3. Escalation (max 10 words) "
             "4. Punchline (max 8 words) "
             f"5. CTA (Use exactly: '{random.choice(MEME_CONFIG['script_engine']['rules']['cta_templates'])}') "
-            "Total words < 38. output as JSON compatible segments."
+            "Total words < 38. "
+            "CRITICAL: DO NOT include 'haha', 'lol', '(laughs)', or any sound effects in the text. "
+            "The humor must be in the SITUATION, not the laughter. Keep tone DEADPAN."
+            "output as JSON compatible segments."
         )
         
         full_tweak = f"{tweak_prompt} {tweak}" if tweak else tweak_prompt
