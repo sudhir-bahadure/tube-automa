@@ -48,14 +48,14 @@ MEME_CONFIG = {
             "emotion_trigger_required": True
         },
         "high_ctr_patterns": [
-            "You didn’t plan this, did you",
-            "This is why today feels wasted",
-            "POV: you said just one minute",
-            "Your brain does this every night",
-            "You opened your phone and lost",
-            "This habit quietly ruins your day",
-            "You thought today would be different",
-            "Nobody warned you about this feeling"
+            "POV: You thought it would be a quick nap",
+            "That one friend who ruins everything",
+            "POV: You checked your bank account today",
+            "This is why you're always tired",
+            "Your brain at 3 AM be like",
+            "POV: You trying to be productive",
+            "That mini heart attack when...",
+            "POV: You forgot to hit save"
         ],
         "negative_patterns_to_avoid": [
             "How to",
@@ -537,16 +537,17 @@ def get_meme_metadata(tweak=None):
         # to inject these constraints.
         
         tweak_prompt = (
-            f"STRICTLY follow this structure for the meme about {topic_key}: "
-            "1. Hook (max 5 words) "
-            "2. Situation (max 10 words) "
-            "3. Escalation (max 10 words) "
-            "4. Punchline (max 8 words) "
-            f"5. CTA (Use exactly: '{random.choice(MEME_CONFIG['script_engine']['rules']['cta_templates'])}') "
-            "Total words < 38. "
-            "CRITICAL: DO NOT include 'haha', 'lol', '(laughs)', or any sound effects in the text. "
-            "The humor must be in the SITUATION, not the laughter. Keep tone DEADPAN."
-            "output as JSON compatible segments."
+            f"Generate a VIRAL POV MEME script about {topic_key}. "
+            "STRICTLY follow this 5-part structure (Max 38 words total): "
+            "1. Hook: Start with 'POV:' or 'When you...' (Max 5 words) "
+            "2. Relatable Situation: Describe the moment (Max 8 words) "
+            "3. Escalation: It gets worse or awkward (Max 8 words) "
+            "4. Punchline: The realization/fail (Max 8 words) "
+            f"5. CTA: Use EXACTLY '{random.choice(MEME_CONFIG['script_engine']['rules']['cta_templates'])}' "
+            "RULES: "
+            "- NO 'Haha', 'Lol', or sound effects. "
+            "- NO intro like 'Here is a script'. "
+            "- RELATABLE & DEADPAN tone."
         )
         
         full_tweak = f"{tweak_prompt} {tweak}" if tweak else tweak_prompt
