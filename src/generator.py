@@ -178,6 +178,43 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
         elif template_name == "pan_lr":
             # Slowly pan from left to right center
             filter_complex = "scale=1920:1920,crop=1080:1920:x='(t/duration)*(iw-ow)':y=0"
+        elif template_name == "bounce":
+            # Bouncing animation (up and down)
+            d_frames = int(duration * 25)
+            filter_complex = (
+                f"zoompan=z='1.0':d={d_frames}:"
+                f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)+50*sin(2*PI*t/{duration})',"
+                "scale=1080:1920"
+            )
+        elif template_name == "slide_in":
+            # Slide in from right
+            d_frames = int(duration * 25)
+            filter_complex = (
+                f"zoompan=z='1.0':d={d_frames}:"
+                f"x='iw/2-(iw/zoom/2)+(iw*(1-t/{duration}))':y='ih/2-(ih/zoom/2)',"
+                "scale=1080:1920"
+            )
+        elif template_name == "rotate_subtle":
+            # Gentle rotation (like a phone tilt)
+            filter_complex = (
+                "scale=1200:2100,"
+                f"rotate='5*sin(2*PI*t/{duration})*PI/180':c=none,"
+                "crop=1080:1920:(iw-1080)/2:(ih-1920)/2"
+            )
+        elif template_name == "pulse":
+            # Pulsing zoom effect
+            d_frames = int(duration * 25)
+            filter_complex = (
+                f"zoompan=z='1.0+0.05*sin(4*PI*t/{duration})':d={d_frames}:"
+                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
+            )
+        elif template_name == "zoom_out":
+            # Zoom out effect (starts close, pulls back)
+            d_frames = int(duration * 25)
+            filter_complex = (
+                f"zoompan=z='max(1.15-0.15*t/{duration},1.0)':d={d_frames}:"
+                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
+            )
         else:
             # Default static scale
             filter_complex = "scale=1080:1920"
@@ -475,7 +512,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
 
             # --- D. Create Segment Video (Compose) ---
             seg_output_path = f"temp_seg_{i}.mp4"
-            templates = ["slow_zoom", "micro_shake"]
+            # All available professional animations
+            templates = ["slow_zoom", "micro_shake", "bounce", "slide_in", "rotate_subtle", "pulse", "zoom_out", "pan_lr"]
             template = random.choice(templates)
             
             # Custom FFmpeg composition to include captions
