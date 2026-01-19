@@ -71,9 +71,9 @@ MEME_CONFIG = {
         "structure": ["hook", "relatable_situation", "escalation", "punchline", "cta"],
         "rules": {
             "cta_templates": [
-                "Follow for daily relatable memes",
-                "Subscribe if this felt too real",
-                "Follow for more of this pain"
+                "Subscribe for more daily memes",
+                "Subscribe if this was you today",
+                "Subscribe for more of this pain"
             ]
         }
     }

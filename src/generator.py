@@ -491,7 +491,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
              cmd_hook = [
                 ffmpeg_exe, '-y',
                 '-f', 'lavfi', '-i', 'color=c=red:s=1080x1920:d=2',
-                '-vf', "drawtext=text='SUBSCRIBE':fontcolor=white:fontsize=150:x=(w-text_w)/2:y=(h-text_h)/2",
+                # Reduced font size slightly to fit "SUBSCRIBE FOR MORE" width
+                '-vf', "drawtext=text='SUBSCRIBE FOR MORE':fontcolor=white:fontsize=120:x=(w-text_w)/2:y=(h-text_h)/2",
                 '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
                 hook_path
              ]
