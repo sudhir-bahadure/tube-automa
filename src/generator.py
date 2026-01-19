@@ -492,7 +492,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             
             # --- B. Visual Generation (Unique per segment) ---
             topic = metadata.get('topic', 'meme')
-            visual_prompt = f"stickman sketch: {text}. Context: {topic}"
+            visual_prompt = f"stickman sketch: {cleaned_text}. Context: {topic}"
             
             image_path = f"temp_meme_visual_{i}.jpg"
             # AI Meme Character Generation (6 archetypes for variety)
