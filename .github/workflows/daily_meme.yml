@@ -36,8 +36,8 @@ jobs:
 
       - name: Generate Viral Meme Short
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_VISUAL_KEY: ${{ secrets.GEMINI_API_KEY }} # Use same key if distinct one not provided
+          GEMINI_API_KEY: ${{ secrets.GEMINI_MEME_KEY }}
+          GEMINI_VISUAL_KEY: ${{ secrets.GEMINI_MEME_KEY }} # Use same key if distinct one not provided
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
