@@ -103,9 +103,9 @@
         "provider": "edge_tts",
         "single_voice_for_year": true,
         "preset": {
-            "voice": "en-US-GuyNeural",
-            "rate": "+8%",
-            "pitch": "-2Hz",
+            "voice": "en-US-ChristopherNeural",
+            "rate": "+0%",
+            "pitch": "-5Hz",
             "style": "chat",
             "styledegree": "0.9"
         },

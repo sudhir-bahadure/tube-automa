@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import requests
 import asyncio
 import subprocess
@@ -446,20 +447,32 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
         
         # 1. Process each segment individually
         for i, seg in enumerate(script_segments):
-            text = seg.get("text", "")
-            if not text: continue
+            raw_text = seg.get("text", "")
+            if not raw_text: continue
             
-            print(f"  Processing segment {i+1}/{len(script_segments)}: {text[:30]}...")
+            # --- Text Sanitization for Voiceover ---
+            # 1. Remove "Hook:", "POV:", "Me:", "Subject:" prefixes (case insensitive)
+            cleaned_text = re.sub(r'^(Hook|POV|Me|Subject|Situation|Escalation|Punchline|CTA):\s*', '', raw_text, flags=re.IGNORECASE)
+            # 2. Remove parentheticals (e.g. "(2s)", "(sad tone)", "[Action]")
+            cleaned_text = re.sub(r'\s*[\[\(].*?[\]\)]', '', cleaned_text)
+            # 3. Remove quotes (common in JSON strings)
+            cleaned_text = cleaned_text.replace('"', '').replace("'", "")
+            # 4. Collapse whitespace
+            cleaned_text = ' '.join(cleaned_text.split())
+            
+            print(f"  Processing segment {i+1}/{len(script_segments)}: {cleaned_text[:30]}... (Raw: {raw_text[:15]}...)")
+            
+            # Use CLEANED text for audio, but keep raw for other needs if any (visual hook might use raw?)
+            # Actually, visuals usually rely on descriptions which are separate. 
+            # If the script text IS the visual text, we might want cleaned there too.
+            # For now, let's use cleaned_text for audio generation.
             
             # --- A. Audio Generation (Varied for engagement) ---
             audio_path = f"temp_meme_audio_{i}.mp3"
             
-            # --- A. Audio Generation (Optimized for Human Engagement) ---
-            audio_path = f"temp_meme_audio_{i}.mp3"
-            
             # Using defaults from generate_audio which are loaded from CHANNEL_CONFIG
             # This ensures consistent brand voice (e.g. GuyNeural, +8% rate)
-            word_metadata = asyncio.run(generate_audio(text, audio_path))
+            word_metadata = asyncio.run(generate_audio(cleaned_text, audio_path))
             
             if os.path.exists(audio_path):
                 temp_files_to_clean.append(audio_path)
