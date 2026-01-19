@@ -519,6 +519,9 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             filter_complex = ffmpeg_templates.get(template_name)
             
             # Custom FFmpeg composition to include captions
+            d_frames = int(duration * 25)
+            dynamic_filter = filter_complex.replace("d=125", f"d={d_frames}")
+
             if has_captions:
                 try:
                     ffmpeg_exe = "ffmpeg"
@@ -532,7 +535,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         '-i', audio_path,                  # 1: Audio
                         '-i', captions_path,               # 2: Visual Captions
                         '-filter_complex', 
-                        f"[0:v]{filter_complex}[base];[base][2:v]overlay=0:0:format=auto,format=yuv420p[v]",
+                        f"[0:v]{dynamic_filter}[base];[base][2:v]overlay=0:0:format=auto,format=yuv420p[v]",
                         '-map', '[v]', '-map', '1:a',
                         '-t', str(duration),
                         '-c:v', 'libx264', '-preset', 'veryfast',
@@ -546,8 +549,6 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     apply_ffmpeg_template(template_name, image_path, audio_path, seg_output_path, duration)
             else:
                  # Standard render without captions
-                 # We can use the complex filter without the overlay part or manual command
-                 # For simplicity, let's use the manual command for consistency with config templates
                  try:
                     ffmpeg_exe = "ffmpeg"
                     if os.name == 'nt':
@@ -558,7 +559,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         ffmpeg_exe, '-y',
                         '-loop', '1', '-i', image_path,    # 0: Image
                         '-i', audio_path,                  # 1: Audio
-                        '-filter_complex', f"[0:v]{filter_complex}[v]",
+                        '-filter_complex', f"[0:v]{dynamic_filter}[v]",
                         '-map', '[v]', '-map', '1:a',
                         '-t', str(duration),
                         '-c:v', 'libx264', '-preset', 'veryfast',
@@ -590,7 +591,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
              cmd_hook = [
                 ffmpeg_exe, '-y',
                 '-f', 'lavfi', '-i', 'color=c=red:s=1080x1920:d=2',
-                '-vf', "drawtext=text='SUBSCRIBE FOR MORE':fontcolor=white:fontsize=100:x=(w-text_w)/2:y=(h-text_h)/2",
+                '-vf', "drawtext=text='SUBSCRIBE FOR MORE':fontcolor=white:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2",
                 '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
                 hook_path
              ]

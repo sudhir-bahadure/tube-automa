@@ -172,13 +172,66 @@ def get_meme_metadata(tweak=None):
     return generate_content_metadata(mode="meme", tweak=tweak)
 
 def get_fact(tweak=None):
-    # Stub: User only authorized MEME workflow changes.
-    print("[WARN] Fact mode not fully implemented in robust overhaul.")
-    return None
+    """
+    Generates a viral psychological/curiosity fact.
+    """
+    # 1. Brainstorm a unique viral topic
+    used_topics = []
+    try:
+        if os.path.exists(INVENTORY_FILE):
+            with open(INVENTORY_FILE, "r") as f:
+                inv = json.load(f)
+                used_topics = inv.get("fact_topics", [])
+    except: pass
+
+    # Refined prompt for Psychology/Mind-blowing facts
+    prompt_topic = f"""
+    Act as a Mystery/Psychology Researcher.
+    Brainstorm ONE "mind-blowing, unheard of, or deeply psychological" fact.
+    Constraint: CANNOT be these: {used_topics[-50:]}
+    Output ONLY the topic/fact summary (e.g. "The bystander effect in digital spaces").
+    """
+    topic = llm.generate(prompt_topic).strip().replace('"', '')
+    track_inventory(topic, "fact_topics")
+
+    # 2. Generate multi-segment script
+    prompt_script = f"""
+    Write a high-retention script for a 15-20s video about: "{topic}"
+    Format (JSON List of 4-5 segments):
+    [
+      {{"text": "Hook line that stops the scroll", "visual": "Mysterious scene"}},
+      {{"text": "The core fact or data point", "visual": "Data representation/Action"}},
+      {{"text": "Why this matters or a twist", "visual": "Reaction/Surreal visual"}},
+      {{"text": "Final mind-blowing conclusion", "visual": "Cinematic ending"}},
+      {{"text": "Subscribe for more daily facts", "visual": "Subscribe reminder"}}
+    ]
+    Rules: Total words < 45. Pure JSON only.
+    """
+    
+    response = llm.generate(prompt_script)
+    try:
+        json_str = re.search(r'\[.*\]', response, re.DOTALL).group()
+        script_data = json.loads(json_str)
+    except:
+        script_data = [
+            {"text": f"Did you know about {topic}?", "visual": "Confused emoji"},
+            {"text": "It turns out everything we knew was wrong.", "visual": "Shocked pose"},
+            {"text": "Stay tuned for more.", "visual": "Pointing finger"}
+        ]
+
+    return {
+        "mode": "fact",
+        "category": "education",
+        "topic": topic,
+        "title": f"The Mystery of {topic[:40]}... #facts #psychology",
+        "description": f"Diving deep into {topic}. Did you know this?\n\n#facts #mystery #shorts",
+        "tags": ["facts", "psychology", "mystery", "education", "shorts"],
+        "script": script_data,
+        "visual_style": "sketch_static"
+    }
 
 def get_video_metadata(tweak=None):
-    # Stub
-    return None
+    return get_fact(tweak=tweak)
 
 def get_long_video_metadata(tweak=None):
     # Stub
