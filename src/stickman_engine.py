@@ -40,21 +40,20 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
     # Fallback prompt for speed/reliability if main fails
     fallback_prompt = f"Simple black stickman {clean_pose} on white background, flat vector style."
     
-    # Increased retries to 6 for stability
-    for attempt in range(6):
+    # Reduced retries to 3 for speed (fail fast)
+    for attempt in range(3):
         try:
-            # Switch to fallback prompt after 3 failed attempts
-            current_prompt = main_prompt if attempt < 3 else fallback_prompt
+            # Switch to fallback prompt after 1 failed attempt
+            current_prompt = main_prompt if attempt < 1 else fallback_prompt
             encoded_prompt = urllib.parse.quote(current_prompt)
             
             # Use a fresh seed for every attempt
             seed = random.randint(1, 1000000)
-            # Strategy: Use default model (faster) for first 2 attempts, then flux for quality/retry
-            model_param = "&model=flux" if attempt >= 2 else ""
-            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=894&nologo=1&seed={seed}{model_param}"
+            # Use standard model for speed
+            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=894&nologo=1&seed={seed}"
             
-            # Increased timeout: 30s is often too tight for generating AI images
-            timeout = 60 if attempt < 4 else 90
+            # Tighter timeout: 25s max per request
+            timeout = 25
             
             # Identify if this is first or second image in a segment (using optional label)
             label = getattr(generate_stickman_image, "current_label", "1")
