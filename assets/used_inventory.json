@@ -28,6 +28,8 @@
         "laziness + work",
         "anxiety + work",
         "regret + phone",
-        "anxiety + phone"
+        "anxiety + phone",
+        "anxiety + sleep",
+        "anxiety + weekend"
     ]
 }
