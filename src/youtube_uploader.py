@@ -5,11 +5,8 @@ import googleapiclient.errors
 from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaFileUpload
 
-# YouTube Data API - Scopes (Upload + Comments)
-SCOPES = [
-    "https://www.googleapis.com/auth/youtube.upload",
-    "https://www.googleapis.com/auth/youtube.force-ssl" 
-]
+# YouTube Data API - Upload Scope (Comments disabled until re-auth)
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 def get_authenticated_service():
     # Load credentials from Environment Variables (GitHub Secrets)

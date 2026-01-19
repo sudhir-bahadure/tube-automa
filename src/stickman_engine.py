@@ -2,6 +2,7 @@ import requests
 import random
 import os
 import urllib.parse
+import time
 
 # Meme Character Archetypes for Viral Content (Monetization-Safe)
 CHARACTER_ARCHETYPES = {
