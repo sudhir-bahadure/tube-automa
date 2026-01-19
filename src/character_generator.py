@@ -226,7 +226,7 @@ def generate_robot(text, size=(1080, 1920), segment_index=0):
             draw.ellipse([cx-80+i*60, cy-30+j*40, cx-50+i*60, cy+j*40], fill=(255, 0, 0))
     
     # Arms
-    draw.rectangle([cx-150, cy-50, cx-200, cy+50], fill=colors["primary"], outline=(0, 0, 0), width=6)
+    draw.rectangle([cx-200, cy-50, cx-150, cy+50], fill=colors["primary"], outline=(0, 0, 0), width=6)
     draw.rectangle([cx+150, cy-50, cx+200, cy+50], fill=colors["primary"], outline=(0, 0, 0), width=6)
     
     # Legs

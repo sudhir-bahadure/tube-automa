@@ -47,6 +47,7 @@ jobs:
         YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GEMINI_VISUAL_KEY: ${{ secrets.GEMINI_VISUAL_KEY }}
       run: |
         python src/main.py --category meme --tweak "${{ github.event.inputs.prompt_tweak }}"
 
