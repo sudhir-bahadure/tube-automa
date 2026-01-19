@@ -5,8 +5,11 @@ import googleapiclient.errors
 from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaFileUpload
 
-# YouTube Data API - Upload Scope
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+# YouTube Data API - Scopes (Upload + Comments)
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.force-ssl" 
+]
 
 def get_authenticated_service():
     # Load credentials from Environment Variables (GitHub Secrets)
@@ -30,6 +33,28 @@ def get_authenticated_service():
     
     print(f"Authenticating with Client ID: {client_id[:5]}...*****")
     return googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+
+def comment_on_video(youtube, video_id, text):
+    """Post a comment to the video (Algorithm Boost)"""
+    try:
+        youtube.commentThreads().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "videoId": video_id,
+                    "topLevelComment": {
+                        "snippet": {
+                            "textOriginal": text
+                        }
+                    }
+                }
+            }
+        ).execute()
+        print(f"  [ENGAGEMENT] Posted comment: '{text}'")
+        return True
+    except Exception as e:
+        print(f"  [WARN] Comment failed (Scope/Permission issue?): {e}")
+        return False
 
 def upload_video(file_path, title, description, tags, category_id="27", thumbnail_path=None):
     """
@@ -92,6 +117,18 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
                 print("Thumbnail Uploaded Successfully!")
             except Exception as e:
                 print(f"Thumbnail Upload Failed: {e}")
+
+        # Post Engagement Comment
+        if video_id:
+            import random
+            ctas = [
+                "Subscribe if you relate! 👇",
+                "Did this happen to you? Let us know!",
+                "Tag a friend who needs to see this 😂",
+                "POV: You just subscribed 🚀",
+                "Who else is watching this in bed? 😴"
+            ]
+            comment_on_video(youtube, video_id, random.choice(ctas))
                 
         return video_id
         
