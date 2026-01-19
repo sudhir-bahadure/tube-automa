@@ -30,6 +30,7 @@
         "regret + phone",
         "anxiety + phone",
         "anxiety + sleep",
-        "anxiety + weekend"
+        "anxiety + weekend",
+        "boredom + sleep"
     ]
 }
