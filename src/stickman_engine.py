@@ -21,16 +21,6 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
     Returns:
         Path to generated image (always succeeds)
     """
-    Args:
-        pose_description: Text description (used for emotion detection)
-        output_path: Where to save the image
-        niche: Content niche (not used in programmatic generation)
-        segment_index: Which segment (0-5) to determine character type
-    
-    Returns:
-        Path to generated image (always succeeds)
-    """
-    # 1. Programmatic PIL Generation (100% Reliable, "Our Own Code")
     try:
         print(f"  [PROGRAMMATIC] Generating character {segment_index % 6} for: {pose_description[:50]}...")
         
