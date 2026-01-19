@@ -431,7 +431,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             voice_config = metadata.get('voice_config', {})
             voice = voice_config.get('voice', 'en-US-GuyNeural')
             
-            asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice))
+            # CRITICAL: Capture word metadata for subtitles
+            word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice))
             
             if os.path.exists(audio_path):
                 temp_files_to_clean.append(audio_path)
@@ -453,24 +454,65 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             visual_prompt = f"stickman sketch: {text}. Context: {topic}"
             
             image_path = f"temp_meme_visual_{i}.jpg"
-            # Standard generation with built-in retries (already optimized in stickman_engine)
             img = generate_stickman_image(visual_prompt, image_path, niche="meme")
-            
             if not img:
-                # Fallback to white canvas if API fails (Safety Net)
-                subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=white:s=1080x1920', '-frames:v', '1', image_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
-            
+                subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=white:s=1080x1920', '-frames:v', '1', image_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             temp_files_to_clean.append(image_path)
             
-            # --- C. Create Segment Video ---
+            # --- C. Subtitle Generation (Brainrot Style) ---
+            captions_path = f"temp_captions_{i}.mp4"
+            has_captions = False
+            if word_metadata:
+                try:
+                    # Generate transparent video with captions
+                    # Ensure style is High Constrast (Yellow/White on Black Stroke)
+                    has_captions = generate_word_level_captions(word_metadata, duration, captions_path)
+                    if has_captions:
+                        temp_files_to_clean.append(captions_path)
+                except Exception as e:
+                     print(f"    [WARN] Captions failed: {e}")
+
+            # --- D. Create Segment Video (Compose) ---
             seg_output_path = f"temp_seg_{i}.mp4"
-            
-            # Randomize movement slightly
             templates = ["slow_zoom", "micro_shake"]
             template = random.choice(templates)
             
-            # Use safe apply function (it has timeouts logic inside, but we double check)
-            apply_ffmpeg_template(template, image_path, audio_path, seg_output_path, duration)
+            # Custom FFmpeg composition to include captions
+            if has_captions:
+                # Map: 0=Image, 1=Audio, 2=Captions (Overlay)
+                try:
+                    ffmpeg_exe = "ffmpeg"
+                    if os.name == 'nt':
+                        try: import imageio_ffmpeg; ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+                        except: pass
+                    
+                    # 1. Image Animation filter (zoom/shake)
+                    # 2. Overlay Captions on top
+                    d_frames = int(duration * 25)
+                    filter_base = (
+                        f"zoompan=z='min(zoom+0.0008,1.08)':d={d_frames}:"
+                        "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
+                    )
+                    
+                    cmd = [
+                        ffmpeg_exe, '-y',
+                        '-loop', '1', '-i', image_path,    # 0: Image
+                        '-i', audio_path,                  # 1: Audio
+                        '-i', captions_path,               # 2: Visual Captions
+                        '-filter_complex', 
+                        f"[0:v]{filter_base}[base];[base][2:v]overlay=0:0:format=auto,format=yuv420p[v]",
+                        '-map', '[v]', '-map', '1:a',
+                        '-t', str(duration),
+                        '-c:v', 'libx264', '-preset', 'veryfast',
+                        '-c:a', 'aac', '-b:a', '128k',
+                        seg_output_path
+                    ]
+                    subprocess.run(cmd, check=True, capture_output=True, timeout=60)
+                except Exception as e:
+                    print(f"    [ERROR] Caption overlay failed: {e}, falling back to simple render")
+                    apply_ffmpeg_template(template, image_path, audio_path, seg_output_path, duration)
+            else:
+                apply_ffmpeg_template(template, image_path, audio_path, seg_output_path, duration)
             
             if os.path.exists(seg_output_path):
                 segment_files.append(seg_output_path)
