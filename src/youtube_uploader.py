@@ -46,19 +46,28 @@ def upload_video(file_path, title, description, tags, category_id="27", thumbnai
         "snippet": {
             "title": title[:100], # Max 100 chars
             "description": description[:5000], # Max 5000 chars
-            "tags": tags.split(), # List of strings
+            "tags": tags.split() if isinstance(tags, str) else tags, # Safe handling
             "categoryId": category_id
         },
         "status": {
-            "privacyStatus": "public", # 'private', 'unlisted', or 'public'
+            "privacyStatus": "public", 
             "selfDeclaredMadeForKids": False
+        },
+        "recordingDetails": {
+            "location": {
+                "latitude": 40.7580,   # Growth Hack: Target New York, USA for high CPM
+                "longitude": -73.9855,
+                "altitude": 0
+            },
+            "locationDescription": "New York, USA",
+            "recordingDate": None # Optional
         }
     }
     
     try:
         media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
         request = youtube.videos().insert(
-            part="snippet,status",
+            part="snippet,status,recordingDetails", # REQUEST RECORDING DETAILS
             body=body,
             media_body=media
         )
