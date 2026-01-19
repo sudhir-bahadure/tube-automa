@@ -3,6 +3,34 @@ import random
 import os
 import urllib.parse
 
+# Meme Character Archetypes for Viral Content (Monetization-Safe)
+CHARACTER_ARCHETYPES = {
+    "wojak": {
+        "prompt": "simple wojak meme character, bald head, sad/stressed expression, black outline drawing, minimalist style",
+        "style": "meme internet culture"
+    },
+    "pepe": {
+        "prompt": "simple pepe frog meme style character, green, big expressive eyes, simple cartoon style",
+        "style": "classic meme frog"
+    },
+    "stickman": {
+        "prompt": "minimalist black stick figure character, simple lines, expressive pose",
+        "style": "stick figure minimalist"
+    },
+    "office": {
+        "prompt": "simple cartoon office worker character, stressed expression, business casual, minimal details",
+        "style": "relatable professional"
+    },
+    "chibi": {
+        "prompt": "cute chibi anime style character, big head small body, expressive kawaii face, simple design",
+        "style": "anime chibi cute"
+    },
+    "blob": {
+        "prompt": "simple emotional blob character, round soft shape, expressive face, minimalist",
+        "style": "cute blob mascot"
+    }
+}
+
 def get_niche_color_palette(niche="default"):
     """
     Returns color palette description based on content niche.
@@ -17,28 +45,35 @@ def get_niche_color_palette(niche="default"):
     }
     return palettes.get(niche, "soft pastel colors like light blue, pale pink, cream")
 
-def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", niche="default"):
+def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", niche="default", segment_index=0):
     """
-    Generates a stickman image based on a pose description using Pollinations.ai.
-    Style: Minimalist, black on white, professional.
-    Now supports niche-specific color palettes and stability fallback.
+    Generates AI meme character based on pose description using Pollinations.ai.
+    NOW WITH CHARACTER VARIETY: Rotates through 6 meme archetypes for uniqueness.
+    Monetization-safe: 100% original AI-generated content.
     """
+    # Select character archetype based on segment index (ensures variety)
+    archetype_names = list(CHARACTER_ARCHETYPES.keys())
+    selected_archetype = archetype_names[segment_index % len(archetype_names)]
+    archetype = CHARACTER_ARCHETYPES[selected_archetype]
+    
     # Clean and encode the prompt
-    clean_pose = pose_description.lower().replace("stickman", "").strip()
+    clean_pose = pose_description.lower().replace("stickman", "").replace("sketch:", "").strip()
     
     # Get niche-appropriate color palette
     color_palette = get_niche_color_palette(niche)
     
-    # Standard prompt for quality
+    # VIRAL MEME PROMPT (Original AI Art)
     main_prompt = (
-        f"A clean 2D vector animation style illustration of a stickman {clean_pose}. "
-        f"Use {color_palette} for background elements or props. "
-        "The stickman should be black with smooth lines. High quality, flat design, aesthetic, clear visibility. "
-        "White or very light solid background. (No watermark, no QR code, no logo, no signature, no text)."
+        f"{archetype['prompt']} {clean_pose}. "
+        f"Style: {archetype['style']}, clean simple design. "
+        f"Background: solid white or very light color. "
+        f"Accent colors: {color_palette}. "
+        "High quality, flat 2D art, clear visibility, expressive, shareable meme aesthetic. "
+        "(No watermark, no QR code, no logo, no text, no signature)."
     )
     
-    # Fallback prompt for speed/reliability if main fails
-    fallback_prompt = f"Simple black stickman {clean_pose} on white background, flat vector style."
+    # Simplified fallback for speed
+    fallback_prompt = f"{archetype['prompt']} {clean_pose}, white background, simple meme style."
     
     # Reduced retries to 3 for speed (fail fast)
     for attempt in range(3):

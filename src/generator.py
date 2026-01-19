@@ -482,8 +482,8 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             visual_prompt = f"stickman sketch: {text}. Context: {topic}"
             
             image_path = f"temp_meme_visual_{i}.jpg"
-            # generate_stickman_image now has bulletproof fallback (gradient backgrounds)
-            img = generate_stickman_image(visual_prompt, image_path, niche="meme")
+            # AI Meme Character Generation (6 archetypes for variety)
+            img = generate_stickman_image(visual_prompt, image_path, niche="meme", segment_index=i)
             temp_files_to_clean.append(image_path)
 
             
