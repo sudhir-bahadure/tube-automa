@@ -599,13 +599,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
              subprocess.run(cmd_hook, check=True, capture_output=True, timeout=30)
              
              if os.path.exists(hook_path):
-                 hook_audio = "temp_silence.mp3"
-                 subprocess.run([ffmpeg_exe, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-t', '2', hook_audio], stdout=subprocess.DEVNULL, timeout=10)
+                 hook_audio = "temp_silence.aac"
+                 subprocess.run([ffmpeg_exe, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-t', '2', '-c:a', 'aac', '-ar', '44100', '-ac', '2', hook_audio], stdout=subprocess.DEVNULL, timeout=10)
                  
                  hook_with_audio = "temp_subscribe_final.mp4"
                  subprocess.run([
                      ffmpeg_exe, '-y', '-i', hook_path, '-i', hook_audio, 
-                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-shortest', hook_with_audio
+                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-ar', '44100', '-ac', '2', '-shortest', hook_with_audio
                  ], stdout=subprocess.DEVNULL, timeout=20)
                  
                  segment_files.append(hook_with_audio)
@@ -676,9 +676,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     ffmpeg_exe, '-y',
                     '-i', output_path,
                     '-stream_loop', '-1', '-i', chosen_music,
-                    '-filter_complex', "[1:a]volume=0.10[bg];[0:a][bg]amix=inputs=2:duration=first[a]",
+                    # [0:a] is the voice track, [bg] is background music.
+                    # amix=inputs=2:duration=first:dropout_transition=0:normalize=0 ensures we control volumes manually.
+                    '-filter_complex', "[1:a]volume=0.08[bg]; [0:a][bg]amix=inputs=2:duration=first:dropout_transition=0:normalize=0 [a]",
                     '-map', '0:v', '-map', '[a]',
-                    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-ac', '2',
+                    '-c:v', 'copy',
+                    '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-ac', '2',
                     '-shortest',
                     mixed_output
                 ]
