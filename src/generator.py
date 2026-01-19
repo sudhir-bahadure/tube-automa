@@ -145,8 +145,14 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
     """
     try:
         # Resolve FFmpeg binary
-        import imageio_ffmpeg
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        ffmpeg_exe = "ffmpeg" # Default to system PATH (works on GitHub Actions)
+        try:
+            import imageio_ffmpeg
+            # Only use imageio_ffmpeg if we are strictly on Windows or if system ffmpeg is missing
+            if os.name == 'nt': 
+                ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        except:
+            pass
         
         # Calculate dynamic parameters
         # duration is passed in seconds
