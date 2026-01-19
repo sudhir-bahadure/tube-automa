@@ -416,17 +416,18 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             base_rate_val = 8
             
             if i == 0: # Hook (Fast & Punchy)
-                pitch = f"{base_pitch_val+2}Hz" 
-                rate = f"{base_rate_val+2}%"
+                pitch = f"{base_pitch_val+2:+d}Hz"  # +0Hz
+                rate = f"+{base_rate_val+2}%"       # +10%
             elif i == len(script_segments) - 1: # CTA (Clear)
-                 pitch = f"{base_pitch_val}Hz"
-                 rate = f"{base_rate_val}%"
+                 pitch = f"{base_pitch_val:+d}Hz"   # -2Hz
+                 rate = f"+{base_rate_val}%"        # +8%
             elif i % 2 == 0: # Variation
-                 pitch = f"{base_pitch_val-2}Hz"
-                 rate = f"{base_rate_val-2}%"
+                 pitch = f"{base_pitch_val-2:+d}Hz" # -4Hz
+                 rate = f"+{base_rate_val-2}%"      # +6%
             else:
-                 pitch = f"{base_pitch_val}Hz"
-                 rate = f"{base_rate_val}%"
+                 pitch = f"{base_pitch_val:+d}Hz"   # -2Hz
+                 rate = f"+{base_rate_val}%"        # +8%
+
 
             voice_config = metadata.get('voice_config', {})
             voice = voice_config.get('voice', 'en-US-GuyNeural')
