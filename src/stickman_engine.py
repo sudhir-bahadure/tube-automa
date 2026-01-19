@@ -21,16 +21,16 @@ def generate_stickman_image(pose_description, output_path="temp_stickman.jpg", n
     Returns:
         Path to generated image (always succeeds)
     """
-    # 1. Try Together AI (Professional Quality)
-    try:
-        if os.environ.get("TOGETHER_API_KEY"):
-            from together_engine import generate_professional_image
-            print(f"  [PROFESSIONAL] Attempting Flux.1 generation for: {pose_description[:50]}...")
-            return generate_professional_image(pose_description, output_path)
-    except Exception as e:
-        print(f"  [WARN] Professional generation failed (falling back to programmatic): {e}")
-
-    # 2. Fallback to Programmatic PIL (100% Reliable)
+    Args:
+        pose_description: Text description (used for emotion detection)
+        output_path: Where to save the image
+        niche: Content niche (not used in programmatic generation)
+        segment_index: Which segment (0-5) to determine character type
+    
+    Returns:
+        Path to generated image (always succeeds)
+    """
+    # 1. Programmatic PIL Generation (100% Reliable, "Our Own Code")
     try:
         print(f"  [PROGRAMMATIC] Generating character {segment_index % 6} for: {pose_description[:50]}...")
         
