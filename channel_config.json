@@ -1,0 +1,168 @@
+{
+    "automation_name": "yoDailyMemeDose_1Year_CTR_Max",
+    "runtime_days": 365,
+    "shorts_per_day": 2,
+    "fully_automated": true,
+    "time_control": {
+        "timezone": "UTC",
+        "upload_windows": [
+            {
+                "name": "US_MIDDAY",
+                "start": "17:00",
+                "end": "18:30"
+            },
+            {
+                "name": "US_EVENING",
+                "start": "00:00",
+                "end": "01:30"
+            }
+        ],
+        "late_start_policy": "wait_until_next_window",
+        "skip_if_both_windows_missed": true
+    },
+    "topic_engine": {
+        "emotion_pool": [
+            "stress",
+            "regret",
+            "anxiety",
+            "laziness",
+            "boredom"
+        ],
+        "situation_pool": [
+            "phone",
+            "sleep",
+            "work",
+            "money",
+            "weekend"
+        ],
+        "combine_randomly": true,
+        "cooldown_days_same_topic": 30
+    },
+    "ctr_title_generator": {
+        "rules": {
+            "max_length_chars": 50,
+            "no_hashtags": true,
+            "no_all_caps": true,
+            "natural_language_only": true,
+            "curiosity_gap_required": true,
+            "emotion_trigger_required": true
+        },
+        "high_ctr_patterns": [
+            "You didn’t plan this, did you",
+            "This is why today feels wasted",
+            "POV: you said just one minute",
+            "Your brain does this every night",
+            "You opened your phone and lost",
+            "This habit quietly ruins your day",
+            "You thought today would be different",
+            "Nobody warned you about this feeling"
+        ],
+        "negative_patterns_to_avoid": [
+            "How to",
+            "Tips for",
+            "Learn",
+            "Explained",
+            "Facts about",
+            "Psychology of"
+        ],
+        "title_scoring_logic": {
+            "emotion_word_present": "+30",
+            "time_reference_present": "+20",
+            "pov_or_you_present": "+25",
+            "curiosity_gap": "+25",
+            "penalty_if_generic": "-40"
+        },
+        "minimum_score_to_publish": 70
+    },
+    "script_engine": {
+        "max_words": 38,
+        "structure": [
+            "hook",
+            "relatable_situation",
+            "escalation",
+            "punchline",
+            "cta"
+        ],
+        "rules": {
+            "no_cta_before_percent": 80,
+            "cta_allowed_only_at_end": true,
+            "ban_words_before_cta": [
+                "subscribe",
+                "follow",
+                "like"
+            ],
+            "tone": "relatable_deadpan"
+        },
+        "cta_templates": [
+            "Follow for daily relatable memes",
+            "Subscribe if this felt too real",
+            "Follow for more of this pain"
+        ]
+    },
+    "voice_engine": {
+        "provider": "edge_tts",
+        "single_voice_for_year": true,
+        "preset": {
+            "voice": "en-US-GuyNeural",
+            "rate": "+8%",
+            "pitch": "-2Hz",
+            "style": "chat",
+            "styledegree": "0.9"
+        },
+        "cta_voice_rule": {
+            "allowed": true,
+            "volume_reduction_percent": 10,
+            "speed_reduction_percent": 5
+        }
+    },
+    "visual_engine": {
+        "type": "sketch_static",
+        "animation_method": "ffmpeg_only",
+        "animation_pool": [
+            "slow_zoom",
+            "micro_shake",
+            "pan_lr"
+        ],
+        "cta_visual_overlay": {
+            "enabled": true,
+            "duration_seconds": 1.8,
+            "text_style": "bold_simple",
+            "text_examples": [
+                "Follow for daily memes",
+                "Too real? Subscribe"
+            ]
+        },
+        "max_duration_seconds": 25,
+        "resolution": "1080x1920"
+    },
+    "ffmpeg_templates": {
+        "slow_zoom": "zoompan=z='min(zoom+0.0008,1.08)':d=25*fps:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920",
+        "micro_shake": "scale=1080:1920,tmix=frames=2",
+        "pan_lr": "crop=ih*9/16:ih:x='t*10':y=0,scale=1080:1920"
+    },
+    "shorts_format": {
+        "length_seconds": [
+            12,
+            25
+        ],
+        "hook_max_seconds": 1.5,
+        "punchline_before_seconds": 18,
+        "loop_required": true
+    },
+    "upload_settings": {
+        "privacy": "public",
+        "category": "entertainment",
+        "made_for_kids": false,
+        "retry_on_fail": 1
+    },
+    "performance_logging": {
+        "check_after_minutes": 120,
+        "metrics": [
+            "views",
+            "retention",
+            "replays",
+            "ctr"
+        ],
+        "no_reupload_same_concept_days": 60
+    }
+}

@@ -14,11 +14,20 @@ from moviepy.video.fx.all import crop, resize
 from stickman_engine import generate_stickman_image
 from captions import generate_word_level_captions
 from thumbnail import create_thumbnail
-# Removed silent logging override as it causes issues in some moviepy versions
+# ============================================================================
+# LOAD CHANNEL CONFIGURATION
+# ============================================================================
+try:
+    with open("channel_config.json", "r") as f:
+        CHANNEL_CONFIG = json.load(f)
+except Exception as e:
+    print(f"Warning: Could not load channel_config.json: {e}")
+    CHANNEL_CONFIG = {}
 
-# ============================================================================
-# VISUAL TRACKING SYSTEM - Prevents video repetition
-# ============================================================================
+# ... (rest of imports)
+
+# ...
+# Config loaded above
 
 TRACKING_FILE = "assets/used_videos.json"
 
@@ -239,16 +248,18 @@ def apply_ffmpeg_template(template_name, image_path, audio_path, output_path, du
         print(f"  [ERROR] FFmpeg template failed: {e}")
         return False
 
-async def generate_audio(text, output_file="audio.mp3", rate="+0%", pitch="+0Hz", voice="en-US-AndrewNeural"):
+async def generate_audio(text, output_file="audio.mp3", rate=None, pitch=None, voice=None):
+    # Load defaults from config if not provided
+    voice_config = CHANNEL_CONFIG.get("voice_engine", {}).get("preset", {})
+    if rate is None: rate = voice_config.get("rate", "+0%")
+    if pitch is None: pitch = voice_config.get("pitch", "+0Hz") 
+    if voice is None: voice = voice_config.get("voice", "en-US-AndrewNeural")
+
     # Voice Mapping for "Human Persona"
     # Andrew: Balanced, warm, good for general facts.
     # Christopher: Deep, serious, great for Long-form Documentaries.
     # Ryan: Cheerful, quick, great for Memes/Shorts.
     
-    # Logic to be handled by caller, but defaults here for safety.
-    if voice is None:
-        voice = "en-US-AndrewNeural"
-        
     if voice == "cloned":
         # SPECIAL: Use the custom voice cloning engine
         cloned_audio = clone_voice(text, output_file)
@@ -438,29 +449,12 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # --- A. Audio Generation (Varied for engagement) ---
             audio_path = f"temp_meme_audio_{i}.mp3"
             
-            # Dynamic Prosody: Vary pitch/rate slightly per line to keep attention
-            base_pitch_val = -2
-            base_rate_val = 8
+            # --- A. Audio Generation (Optimized for Human Engagement) ---
+            audio_path = f"temp_meme_audio_{i}.mp3"
             
-            if i == 0: # Hook (Fast & Punchy)
-                pitch = f"{base_pitch_val+2:+d}Hz"  # +0Hz
-                rate = f"+{base_rate_val+2}%"       # +10%
-            elif i == len(script_segments) - 1: # CTA (Clear)
-                 pitch = f"{base_pitch_val:+d}Hz"   # -2Hz
-                 rate = f"+{base_rate_val}%"        # +8%
-            elif i % 2 == 0: # Variation
-                 pitch = f"{base_pitch_val-2:+d}Hz" # -4Hz
-                 rate = f"+{base_rate_val-2}%"      # +6%
-            else:
-                 pitch = f"{base_pitch_val:+d}Hz"   # -2Hz
-                 rate = f"+{base_rate_val}%"        # +8%
-
-
-            voice_config = metadata.get('voice_config', {})
-            voice = voice_config.get('voice', 'en-US-GuyNeural')
-            
-            # CRITICAL: Capture word metadata for subtitles
-            word_metadata = asyncio.run(generate_audio(text, audio_path, rate=rate, pitch=pitch, voice=voice))
+            # Using defaults from generate_audio which are loaded from CHANNEL_CONFIG
+            # This ensures consistent brand voice (e.g. GuyNeural, +8% rate)
+            word_metadata = asyncio.run(generate_audio(text, audio_path))
             
             if os.path.exists(audio_path):
                 temp_files_to_clean.append(audio_path)
@@ -470,6 +464,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
 
             # Get duration
             try:
+                # Use FFprobe/MoviePy to get duration reliably
                 from moviepy.audio.AudioClip import AudioFileClip
                 ac = AudioFileClip(audio_path)
                 duration = ac.duration
@@ -485,7 +480,6 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             # AI Meme Character Generation (6 archetypes for variety)
             img = generate_stickman_image(visual_prompt, image_path, niche="meme", segment_index=i)
             temp_files_to_clean.append(image_path)
-
             
             # --- C. Subtitle Generation (Brainrot Style) ---
             captions_path = f"temp_captions_{i}.mp4"
@@ -493,7 +487,6 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             if word_metadata:
                 try:
                     # Generate transparent video with captions
-                    # Ensure style is High Constrast (Yellow/White on Black Stroke)
                     has_captions = generate_word_level_captions(word_metadata, duration, captions_path)
                     if has_captions:
                         temp_files_to_clean.append(captions_path)
@@ -502,26 +495,18 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
 
             # --- D. Create Segment Video (Compose) ---
             seg_output_path = f"temp_seg_{i}.mp4"
-            # ONLY WORKING ANIMATIONS (others have FFmpeg syntax errors)
-            templates = ["slow_zoom", "micro_shake"]
-            template = random.choice(templates)
+            
+            # Select template from CONFIG
+            template_name = random.choice(list(ffmpeg_templates.keys()))
+            filter_complex = ffmpeg_templates.get(template_name)
             
             # Custom FFmpeg composition to include captions
             if has_captions:
-                # Map: 0=Image, 1=Audio, 2=Captions (Overlay)
                 try:
                     ffmpeg_exe = "ffmpeg"
                     if os.name == 'nt':
                         try: import imageio_ffmpeg; ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
                         except: pass
-                    
-                    # 1. Image Animation filter (zoom/shake)
-                    # 2. Overlay Captions on top
-                    d_frames = int(duration * 25)
-                    filter_base = (
-                        f"zoompan=z='min(zoom+0.0008,1.08)':d={d_frames}:"
-                        "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920"
-                    )
                     
                     cmd = [
                         ffmpeg_exe, '-y',
@@ -529,7 +514,7 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                         '-i', audio_path,                  # 1: Audio
                         '-i', captions_path,               # 2: Visual Captions
                         '-filter_complex', 
-                        f"[0:v]{filter_base}[base];[base][2:v]overlay=0:0:format=auto,format=yuv420p[v]",
+                        f"[0:v]{filter_complex}[base];[base][2:v]overlay=0:0:format=auto,format=yuv420p[v]",
                         '-map', '[v]', '-map', '1:a',
                         '-t', str(duration),
                         '-c:v', 'libx264', '-preset', 'veryfast',
@@ -538,10 +523,33 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
                     ]
                     subprocess.run(cmd, check=True, capture_output=True, timeout=60)
                 except Exception as e:
-                    print(f"    [ERROR] Caption overlay failed: {e}, falling back to simple render")
-                    apply_ffmpeg_template(template, image_path, audio_path, seg_output_path, duration)
+                    print(f"    [ERROR] Caption overlay failed: {e}")
+                    # Simple fallback
+                    apply_ffmpeg_template(template_name, image_path, audio_path, seg_output_path, duration)
             else:
-                apply_ffmpeg_template(template, image_path, audio_path, seg_output_path, duration)
+                 # Standard render without captions
+                 # We can use the complex filter without the overlay part or manual command
+                 # For simplicity, let's use the manual command for consistency with config templates
+                 try:
+                    ffmpeg_exe = "ffmpeg"
+                    if os.name == 'nt':
+                        try: import imageio_ffmpeg; ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+                        except: pass
+                    
+                    cmd = [
+                        ffmpeg_exe, '-y',
+                        '-loop', '1', '-i', image_path,    # 0: Image
+                        '-i', audio_path,                  # 1: Audio
+                        '-filter_complex', f"[0:v]{filter_complex}[v]",
+                        '-map', '[v]', '-map', '1:a',
+                        '-t', str(duration),
+                        '-c:v', 'libx264', '-preset', 'veryfast',
+                        '-c:a', 'aac', '-b:a', '128k',
+                        seg_output_path
+                    ]
+                    subprocess.run(cmd, check=True, capture_output=True, timeout=60)
+                 except Exception as e:
+                     print(f"    [ERROR] Standard render failed: {e}")
             
             if os.path.exists(seg_output_path):
                 segment_files.append(seg_output_path)

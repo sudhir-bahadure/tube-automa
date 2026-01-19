@@ -31,53 +31,28 @@ NICHE_KEYWORDS = {
 # MEME ENGINE CONFIGURATION (yoDailyMemeDose_1Year_CTR_Max)
 # ============================================================================
 
-MEME_CONFIG = {
-    "topic_engine": {
-        "emotion_pool": ["stress", "regret", "anxiety", "laziness", "boredom"],
-        "situation_pool": ["phone", "sleep", "work", "money", "weekend"],
-        "combine_randomly": True,
-        "cooldown_days_same_topic": 30
-    },
-    "ctr_title_generator": {
-        "rules": {
-            "max_length_chars": 50,
-            "no_hashtags": True,
-            "no_all_caps": True,
-            "natural_language_only": True,
-            "curiosity_gap_required": True,
-            "emotion_trigger_required": True
-        },
-        "high_ctr_patterns": [
-            "POV: You thought it would be a quick nap",
-            "That one friend who ruins everything",
-            "POV: You checked your bank account today",
-            "This is why you're always tired",
-            "Your brain at 3 AM be like",
-            "POV: You trying to be productive",
-            "That mini heart attack when...",
-            "POV: You forgot to hit save"
-        ],
-        "negative_patterns_to_avoid": [
-            "How to",
-            "Tips for",
-            "Learn",
-            "Explained",
-            "Facts about",
-            "Psychology of"
-        ]
-    },
-    "script_engine": {
-        "max_words": 38,
-        "structure": ["hook", "relatable_situation", "escalation", "punchline", "cta"],
-        "rules": {
-            "cta_templates": [
-                "Subscribe for more daily memes",
-                "Subscribe if this was you today",
-                "Subscribe for more of this pain"
-            ]
+# ============================================================================
+# MEME ENGINE CONFIGURATION (Loaded from channel_config.json)
+# ============================================================================
+
+try:
+    with open("channel_config.json", "r") as f:
+        CHANNEL_CONFIG = json.load(f)
+        MEME_CONFIG = {
+            "topic_engine": CHANNEL_CONFIG.get("topic_engine", {}),
+            "script_engine": CHANNEL_CONFIG.get("script_engine", {}),
+            "ctr_title_generator": CHANNEL_CONFIG.get("ctr_title_generator", {})
+        }
+except Exception as e:
+    print(f"Warning: Could not load channel_config.json: {e}")
+    # Fallback default
+    MEME_CONFIG = {
+        "topic_engine": {
+            "emotion_pool": ["stress", "anxiety", "laziness"],
+            "situation_pool": ["work", "sleep", "money"],
+            "combine_randomly": True
         }
     }
-}
 
 # Tracking for used assets to prevent repetition
 INVENTORY_FILE = "assets/used_inventory.json"
