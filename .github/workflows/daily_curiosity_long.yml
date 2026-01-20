@@ -19,39 +19,42 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick ghostscript libjpeg-dev zlib1g-dev
-          # Fix ImageMagick policy
-          if [ -f /etc/ImageMagick-6/policy.xml ]; then
-            sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
-          fi
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # Install ffmpeg system dependency
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick fonts-liberation
+          # Relax ImageMagick security policy to allow text generation
+          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 
       - name: Generate and Upload Video
         env:
-          # Targets NEW CHANNEL
-          YOUTUBE_CLIENT_ID: ${{ secrets.NEW_CHANNEL_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_CHANNEL_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_CHANNEL_REFRESH_TOKEN }}
-          
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PYTHONPATH: ${{ github.workspace }}
-        # Pass specialized flag for long form with avatar
-        run: python src/main.py --category fact --long --avatar
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}
+          NICHE: "Psychology and Human Facts (Long-Form)"
+          VOICE_NAME: "en-US-ChristopherNeural"
+        run: |
+          # Fix ImageMagick security policy
+          sudo sed -i 's/policy domain="resource" name="width" value="16KP"/policy domain="resource" name="width" value="64KP"/g' /etc/ImageMagick-6/policy.xml
+          sudo sed -i 's/policy domain="resource" name="height" value="16KP"/policy domain="resource" name="height" value="64KP"/g' /etc/ImageMagick-6/policy.xml
+          sudo sed -i 's/policy domain="resource" name="area" value="128MP"/policy domain="resource" name="area" value="1GP"/g' /etc/ImageMagick-6/policy.xml
+          sudo sed -i 's/policy domain="resource" name="memory" value="256MiB"/policy domain="resource" name="memory" value="2GiB"/g' /etc/ImageMagick-6/policy.xml
+          sudo sed -i 's/policy domain="coder" rights="none" pattern="PDF"/policy domain="coder" rights="read,write" pattern="PDF"/g' /etc/ImageMagick-6/policy.xml
 
-      - name: Commit Tracking Data (Uniqueness)
-        if: success()
+          python -m src.main --type long --style noir
+
+      - name: Persist used topics
+        if: always()
         run: |
           git config --global user.name "TubeAutoma Bot"
           git config --global user.email "bot@tubeautoma.com"
-          git add assets/*.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update tracking data [skip ci]")
-          git pull origin main --rebase
-          git push origin main
+          git add -f output/used_topics.json
+          git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
+          git push origin main || echo "Push failed"

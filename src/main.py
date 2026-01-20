@@ -1,121 +1,162 @@
 import argparse
+import asyncio
 import os
-import warnings
-import PIL.Image
+import sys
+from src.utils import setup_logging, ensure_dir_exists
+from src.llm_wrapper import LLMWrapper
+from src.voice_engine import VoiceEngine
+from src.asset_manager import AssetManager
+from src.video_editor import VideoEditor
+from src.youtube_uploader import YouTubeUploader
 
-# Monkeypatch Pillow 10+ ANTIALIAS for MoviePy 1.0.3 compatibility
-if not hasattr(PIL.Image, 'ANTIALIAS'):
-    PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
+logger = setup_logging()
 
-# Suppress Pytrends/Pandas FutureWarnings to keep logs clean
-warnings.simplefilter(action='ignore', category=FutureWarning)
-from content import get_fact, get_meme_metadata, get_video_metadata, get_long_video_metadata
-from generator import create_video
-from youtube_uploader import upload_video
-from telegram_bot import upload_to_telegram
-from thumbnail import create_thumbnail
-from moviepy.editor import VideoFileClip
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--category", default="fact", help="Video Category: fact, meme, or long")
-    parser.add_argument("--long", action="store_true", help="Generate 8-10 minute long video")
-    parser.add_argument("--clone", action="store_true", help="Use voice cloning for curiosity shorts")
-    parser.add_argument("--avatar", action="store_true", help="Enable AI Hybrid Avatar intro/outro")
-    parser.add_argument("--tweak", default=None, help="Custom prompt tweak for AI generation")
+async def main():
+    parser = argparse.ArgumentParser(description="Media Generation Engine")
+    parser.add_argument("--dry-run", action="store_true", help="Generate video but do not upload")
+    parser.add_argument("--topic", type=str, help="Specific topic to generate")
+    parser.add_argument("--type", type=str, choices=["long", "short"], default="long", help="Type of video to generate")
+    parser.add_argument("--style", type=str, choices=["noir", "stickman"], default="noir", help="Visual style of the video")
     args = parser.parse_args()
+
+    logger.info(f"Starting Media Automation in {args.style} style...")
+    ensure_dir_exists("temp")
+    ensure_dir_exists("output")
+
+    # 1. Generate Content
+    llm = LLMWrapper()
+    voice = VoiceEngine()
     
-    print(f"[*] TubeAutoma Starting in [{args.category.upper()}] mode...")
+    from src.trends import TrendEngine
+    trend_engine = TrendEngine()
     
-    # 1. Fetch Content
-    if args.long or args.category == "long":
-        metadata = get_long_video_metadata(tweak=args.tweak)
-        if metadata: metadata['orientation'] = 'landscape'
-    elif args.category == "meme":
-        metadata = get_meme_metadata(tweak=args.tweak)
-        if metadata: metadata['orientation'] = 'vertical'
+    # Select Topic
+    title = args.topic
+    if not title:
+        title = trend_engine.get_viral_topic(llm)
+        if not title:
+            logger.error("Failed to discover a viral topic")
+            sys.exit(1)
+        logger.info(f"Viral Topic Selected: {title}")
+    
+    # Override voice for stickman style if requested (Harry-like deep voice)
+    if args.style == "stickman":
+        voice.voice = "en-GB-RyanNeural" 
+        logger.info(f"Using deep voice: {voice.voice}")
+    
+    logger.info(f"Generating {args.type} script for Title: {title}")
+    
+    if args.style == "stickman":
+         script_data = llm.generate_conversational_script(title, type=args.type)
+    elif args.type == "long":
+        script_data = llm.generate_psychology_script(title)
     else:
-        metadata = get_video_metadata(tweak=args.tweak)
-        if metadata: metadata['orientation'] = 'vertical'
-        
-    if metadata is None:
-        print("[!] Error: No metadata generated. Exiting...")
-        return
-        
-    if args.clone:
-        metadata['voice'] = "cloned"
-        
-    if args.avatar:
-        metadata['use_avatar'] = True
-        
-    print(f"Topic: {metadata['title']}")
-    
-    # Ensure description and tags exist
-    if 'description' not in metadata:
-        metadata['description'] = f"{metadata['title']}\n\n#shorts #facts #trending"
-    
-    if 'tags' not in metadata:
-        metadata['tags'] = "#shorts #facts #trending"
-    
-    # 2. Generate Video
-    # Get Pexels Key from Environment (Secrets)
-    pexels_key = os.environ.get("PEXELS_API_KEY") 
-    
-    output_file = f"viral_{args.category}.mp4"
-    
-    # Avatar logic removed
+        script_data = llm.generate_psychology_short_script(title)
 
-    # Pass entire metadata object to generator now
-    final_video_path = create_video(metadata, output_file, pexels_key)
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    
-    video_path_final = final_video_path
-    
-    # 3. Upload to YouTube (Primary)
-    youtube_id = None
-    if final_video_path and os.path.exists(final_video_path):
-        # Generate Thumbnail (Phase 2)
-        thumbnail_path = None
-        try:
-            print("[*] Generating Thumbnail...")
-            # Extract frame
-            thumb_bg = "temp_thumb_bg.jpg"
-            with VideoFileClip(final_video_path) as clip:
-                clip.save_frame(thumb_bg, t=min(clip.duration/2, 5.0)) # Frame at 5s or mid
-            
-            # Create Thumbnail
-            thumb_text = metadata['title'].split(':')[0][:20] # Short text
-            if len(thumb_text) < 5: thumb_text = "WATCH THIS"
-            
-            thumbnail_path = create_thumbnail(thumb_bg, thumb_text, "final_thumbnail.jpg")
-        except Exception as e:
-            print(f"[WARN] Thumbnail generation failed: {e}")
+    if not script_data:
+        logger.error(f"Failed to generate {args.type} script")
+        sys.exit(1)
 
-        # 3. Upload to YouTube
-        try:
-            print("Uploading to YouTube...")
-            youtube_id = upload_video(final_video_path, metadata['title'], metadata['description'], metadata['tags'], metadata.get('youtube_category', '27'), thumbnail_path)
-        except Exception as e:
-            print(f"YouTube Upload Module Error: {e}")
+    logger.info(f"Title: {script_data.get('title')}")
+    if script_data.get('deduced_angle'):
+        logger.info(f"Deduced Angle: {script_data.get('deduced_angle')}")
+    
+    # 2. Process Scenes
+    asset_mgr = AssetManager()
+    processed_scenes = []
 
-    # 4. Delivery / Notification to Telegram
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    
-    
-    if final_video_path and os.path.exists(final_video_path):
-        caption = f"{metadata['title']}\n\n{metadata['tags']}"
-        if youtube_id:
-            caption += f"\n\n✅ Uploaded to YouTube: https://youtu.be/{youtube_id}"
-        else:
-            caption += "\n\n⚠️ YouTube Upload Failed (Check Logs)"
-            
-        upload_to_telegram(final_video_path, caption, bot_token, chat_id)
+    for i, scene in enumerate(script_data['scenes']):
+        logger.info(f"Processing Scene {i+1}...")
         
-        # Cleanup
-        os.remove(final_video_path)
+        # Audio
+        audio_path = f"temp/audio_{i}.mp3"
+        mood = scene.get('audio_mood', 'neutral')
+        await voice.generate_audio(scene['text'], audio_path, mood=mood)
+        
+        # Visuals
+        # Use landscape for long-form, portrait for shorts
+        orientation = "landscape" if args.type == "long" else "portrait"
+        
+        # Save visuals in persistent assets folder for tracking
+        ensure_dir_exists("assets/visuals")
+        video_path = f"assets/visuals/visual_{i}.jpg"
+        
+        prompt = scene.get('visual_prompt', scene.get('text'))
+        logger.info(f"Generating Image with prompt: {prompt}")
+        
+        asset_mgr.generate_image(prompt, video_path, orientation=orientation)
+        
+        processed_scenes.append({
+            'audio_path': audio_path,
+            'video_path': video_path,
+            'text': scene['text']
+        })
+
+    # 3. Create Video
+    editor = VideoEditor()
+    output_file = f"output/final_{args.type}.mp4"
+    logger.info("Rendering video...")
+    is_short = (args.type == "short")
+    
+    success = editor.create_video(processed_scenes, output_file, is_short=is_short, style=args.style)
+    
+    if success:
+        logger.info(f"Video generated successfully: {output_file}")
+
+        # Prepare SEO Metadata
+        video_title = script_data.get('title', args.topic)
+        seo_description = script_data.get('description', f"{video_title}\n\n#Psychology #Archetypes")
+        if args.type == "long" and 'chapters' in script_data:
+            seo_description += "\n\nChapters:\n" + "\n".join(script_data['chapters'])
+        
+        seo_tags = script_data.get('tags', ['Psychology', 'Education'])
+        
+        # Preparation for Scheduling
+        from datetime import datetime, timedelta
+        # Schedule for 12 hours from now
+        schedule_date = datetime.utcnow() + timedelta(hours=12)
+        publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        if not args.dry_run:
+            # 4. Upload to YouTube
+            logger.info("Starting Upload Process...")
+            try:
+                uploader = YouTubeUploader()
+                
+                # Generate Thumbnail
+                ensure_dir_exists("assets/thumbnails")
+                thumbnail_path = f"assets/thumbnails/thumb_{args.type}.jpg"
+                logger.info(f"Generating Thumbnail for {video_title}...")
+                asset_mgr.generate_thumbnail(video_title, thumbnail_path)
+                
+                video_id = uploader.upload_video(
+                    output_file, 
+                    video_title, 
+                    seo_description, 
+                    tags=seo_tags,
+                    publish_at=publish_at
+                )
+
+                if video_id and os.path.exists(thumbnail_path):
+                    uploader.set_thumbnail(video_id, thumbnail_path)
+                    
+                    # Add and Pin Engagement Comment
+                    comment_text = "How was the video? Comment 'Ready' below if you reached the end! 👇"
+                    comment_id = uploader.add_comment(video_id, comment_text)
+                    if comment_id:
+                        uploader.pin_comment(comment_id) 
+                        
+                    logger.info(f"Successfully uploaded, scheduled for {publish_at}, and set thumbnail/comment: https://youtu.be/{video_id}")
+                elif video_id:
+                    logger.info(f"Successfully uploaded video: https://youtu.be/{video_id}")
+            except Exception as e:
+                logger.error(f"Upload process failed: {e}")
     else:
-        print("Error: Video generation failed.")
+        logger.error("Video generation failed")
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"FATAL ERROR: {e}")
+        sys.exit(1)
