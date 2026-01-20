@@ -2,8 +2,8 @@ name: Daily Meme Shorts (High CTR)
 
 on:
   schedule:
-    # 3 Times Daily (NY Time: 10am, 2pm, 6pm) -> approx 14:00, 18:00, 22:00 UTC
-    - cron: '0 14,18,22 * * *'
+    # Run once daily at 12:00 UTC (7:00 AM ET) to generate all 3 shorts
+    - cron: '0 12 * * *'
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    
+    strategy:
+      matrix:
+        time_slot: [morning, afternoon, evening]
+      fail-fast: false  # Continue other jobs even if one fails
       
     steps:
       - name: Checkout Code
@@ -25,13 +30,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # Install ffmpeg system dependency
           sudo apt-get update
           sudo apt-get install -y ffmpeg imagemagick fonts-liberation
-          # Relax ImageMagick security policy to allow text generation
           sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 
-      - name: Generate and Upload Meme
+      - name: Generate and Schedule Meme Short
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
@@ -39,7 +42,8 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           NICHE: "Viral Humorous Memes"
-          VOICE_NAME: "en-US-GuyNeural" # Playful voice for memes
+          VOICE_NAME: "en-US-GuyNeural"
+          TIME_SLOT: ${{ matrix.time_slot }}
         run: |
           # Fix ImageMagick security policy
           sudo sed -i 's/policy domain="resource" name="width" value="16KP"/policy domain="resource" name="width" value="64KP"/g' /etc/ImageMagick-6/policy.xml
@@ -48,13 +52,14 @@ jobs:
           sudo sed -i 's/policy domain="resource" name="memory" value="256MiB"/policy domain="resource" name="memory" value="2GiB"/g' /etc/ImageMagick-6/policy.xml
           sudo sed -i 's/policy domain="coder" rights="none" pattern="PDF"/policy domain="coder" rights="read,write" pattern="PDF"/g' /etc/ImageMagick-6/policy.xml
 
-          python -m src.main --type short --style stickman
+          python -m src.main --type short --style stickman --schedule-for ${{ matrix.time_slot }}
 
       - name: Persist used topics
         if: always()
         run: |
           git config --global user.name "TubeAutoma Bot"
           git config --global user.email "bot@tubeautoma.com"
+          git pull origin main --rebase || true
           git add -f output/used_topics.json || echo "No topic file found"
-          git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
+          git commit -m "chore: update topic history [${{ matrix.time_slot }}] [skip ci]" || echo "No changes to commit"
           git push origin main || echo "Push failed"

@@ -190,36 +190,44 @@ class LLMWrapper:
             return None
     def generate_conversational_script(self, topic, type="short"):
         """Generates a high-SEO, human-like script with dynamic stickman movements."""
-        char_count = "7000-9000" if type == "long" else "600-800"
-        scene_count = 25 if type == "long" else 12
+        
+        if type == "short":
+            char_count = "500-600"
+            scene_count = 10
+            duration_note = "CRITICAL: Total video MUST be under 60 seconds. Each scene should be 5-6 seconds max."
+        else:
+            char_count = "7000-9000"
+            scene_count = 25
+            duration_note = "Target 8-10 minute duration."
         
         prompt = f"""
         Topic: {topic}
-        Role: A charismatic YouTube storyteller/psychologist who is funny, relatable, and high-energy.
+        Role: A charismatic YouTube storyteller who is funny, relatable, and high-energy.
         
         STRICT RULES:
-        1. SEO Metadata: Provide a viral title, keyword-rich tags, and a detailed description.
-        2. Chapters (Long-form only): Create curiosity-driven chapters starting at 00:00 (e.g., "00:00 Why do we feel this?"). Use questions.
-        3. End Hook: The FINAL scene must be a powerful Call to Action (CTA) asking viewers to comment "Ready" if they reached the end.
-        4. No Watermarks: NEVER mention text, QR codes, or watermarks in visual_prompt.
-        5. Script-Aware Animation: Assign a 'vocal_action' to every scene from this list: [jumping, waving, bouncing, shaking, talking, thinking, walking].
-        6. Vocal Emotions: Assign 'audio_mood' (excited, serious, whispering, curious, neutral). Use expressive punctuation.
-        7. Tone: Conversational, simple, and funny.
+        1. {duration_note}
+        2. Scene Count: Generate EXACTLY {scene_count} scenes. NO MORE, NO LESS.
+        3. SEO Metadata: Provide a viral title, keyword-rich tags, and a detailed description.
+        4. End Hook: The FINAL scene must be a powerful Call to Action (CTA) asking viewers to comment "Ready" if they reached the end.
+        5. No Watermarks: NEVER mention text, QR codes, or watermarks in visual_prompt.
+        6. Script-Aware Animation: Assign a 'vocal_action' to every scene from this list: [jumping, waving, bouncing, shaking, talking, thinking, walking].
+        7. Vocal Emotions: Assign 'audio_mood' (excited, serious, whispering, curious, neutral). Use expressive punctuation.
+        8. Tone: Conversational, simple, and funny.
+        9. Character Limit: Each scene's text should be {char_count} characters total divided by {scene_count} scenes.
         
         FORMAT (Valid JSON ONLY):
         {{
             "title": "{topic}",
             "description": "Premium SEO description with keywords...",
-            "tags": ["psychology", "mindset", ...],
-            "chapters": ["00:00 Hook", "01:30 The Secret", ...],
+            "tags": ["viral", "trending", ...],
             "scenes": [
                 {{
-                    "text": "spoken narration...",
+                    "text": "spoken narration (max 50 characters for shorts)...",
                     "audio_mood": "excited",
                     "vocal_action": "jumping",
                     "visual_prompt": "A minimalist black stick figure on PLAIN WHITE background [action], doodle style, clean lines, NO TEXT, NO QR CODE"
                 }},
-                ... (repeat for {scene_count} scenes)
+                ... (repeat for EXACTLY {scene_count} scenes)
             ]
         }}
         """

@@ -17,6 +17,7 @@ async def main():
     parser.add_argument("--topic", type=str, help="Specific topic to generate")
     parser.add_argument("--type", type=str, choices=["long", "short"], default="long", help="Type of video to generate")
     parser.add_argument("--style", type=str, choices=["noir", "stickman"], default="noir", help="Visual style of the video")
+    parser.add_argument("--schedule-for", type=str, choices=["morning", "afternoon", "evening", "now"], default="now", help="Time slot for scheduling (US ET)")
     args = parser.parse_args()
 
     logger.info(f"Starting Media Automation in {args.style} style...")
@@ -113,9 +114,31 @@ async def main():
         
         # Preparation for Scheduling
         from datetime import datetime, timedelta
-        # Schedule for 12 hours from now
-        schedule_date = datetime.utcnow() + timedelta(hours=12)
-        publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        # Calculate publish time based on time slot
+        if args.schedule_for == "morning":
+            # 10:00 AM ET = 3:00 PM UTC (15:00)
+            target_hour_utc = 15
+        elif args.schedule_for == "afternoon":
+            # 2:00 PM ET = 7:00 PM UTC (19:00)
+            target_hour_utc = 19
+        elif args.schedule_for == "evening":
+            # 6:00 PM ET = 11:00 PM UTC (23:00)
+            target_hour_utc = 23
+        else:
+            # Default: 12 hours from now
+            schedule_date = datetime.utcnow() + timedelta(hours=12)
+            publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+            target_hour_utc = None
+        
+        if target_hour_utc is not None:
+            # Schedule for today if the hour hasn't passed, otherwise tomorrow
+            now = datetime.utcnow()
+            schedule_date = now.replace(hour=target_hour_utc, minute=0, second=0, microsecond=0)
+            if now.hour >= target_hour_utc:
+                schedule_date += timedelta(days=1)
+            publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+            logger.info(f"Scheduling video for {args.schedule_for} slot: {publish_at}")
 
         if not args.dry_run:
             # 4. Upload to YouTube
