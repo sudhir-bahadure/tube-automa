@@ -33,13 +33,14 @@ class TrendEngine:
 
     def get_viral_topic(self, llm):
         """
-        Interacts with LLM to fetch trending US psychology topics and returns the best unused one.
+        Interacts with LLM to fetch trending topics based on the configured niche and returns the best unused one.
         """
-        logger.info("Discovering viral US psychology trends...")
+        niche = Config.NICHE
+        logger.info(f"Discovering viral {niche} trends...")
         
         # We ask the LLM for many titles to increase the chance of finding an unused one
         prompt = f"""
-        Objective: Identify the top 20 viral, trending psychology or human behavior topics currently exploding in the USA.
+        Objective: Identify the top 20 viral, trending topics related to "{niche}" currently exploding in the USA.
         Target: YouTube audience (high CTR, curious, conversational).
         
         EXCLUSION LIST (DO NOT RETURN THESE):
@@ -79,5 +80,6 @@ class TrendEngine:
 
     def _get_fallback_topic(self, llm):
         """Force a unique topic if everything else is repeated."""
-        prompt = "Give me one unique, deeply disturbing or fascinating viral psychology topic that is completely different from common ones. Return only the string."
+        niche = Config.NICHE
+        prompt = f"Give me one unique, viral {niche} topic that is completely different from common ones. Return only the string."
         return llm._call_gemini(prompt).strip().replace('"', '')

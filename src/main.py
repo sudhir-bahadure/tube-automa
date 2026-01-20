@@ -105,11 +105,11 @@ async def main():
 
         # Prepare SEO Metadata
         video_title = script_data.get('title', args.topic)
-        seo_description = script_data.get('description', f"{video_title}\n\n#Psychology #Archetypes")
+        seo_description = script_data.get('description', f"{video_title}")
         if args.type == "long" and 'chapters' in script_data:
             seo_description += "\n\nChapters:\n" + "\n".join(script_data['chapters'])
         
-        seo_tags = script_data.get('tags', ['Psychology', 'Education'])
+        seo_tags = script_data.get('tags', ['Viral', 'Trending'])
         
         # Preparation for Scheduling
         from datetime import datetime, timedelta
