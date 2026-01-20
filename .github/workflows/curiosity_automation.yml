@@ -64,6 +64,6 @@ jobs:
         run: |
           git config --global user.name "TubeAutoma Bot"
           git config --global user.email "bot@tubeautoma.com"
-          git add -f output/used_topics.json
+          git add -f output/used_topics.json || echo "No topic file found"
           git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
           git push origin main || echo "Push failed"
