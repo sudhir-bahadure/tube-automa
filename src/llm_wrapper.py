@@ -207,7 +207,7 @@ class LLMWrapper:
         STRICT RULES:
         1. {duration_note}
         2. Scene Count: Generate EXACTLY {scene_count} scenes. NO MORE, NO LESS.
-        3. SEO Metadata: Provide a viral title, keyword-rich tags, and a detailed description.
+        10. Tagging Strategy: For shorts/memes, use ONLY trending/viral tags (e.g., #memes, #funny, #shorts, #viral). DO NOT use 'psychology' or educational tags for memes.
         4. End Hook: The FINAL scene must be a powerful Call to Action (CTA) asking viewers to comment "Ready" if they reached the end.
         5. No Watermarks: NEVER mention text, QR codes, or watermarks in visual_prompt.
         6. Script-Aware Animation: Assign a 'vocal_action' to every scene from this list: [jumping, waving, bouncing, shaking, talking, thinking, walking].
@@ -219,7 +219,7 @@ class LLMWrapper:
         {{
             "title": "{topic}",
             "description": "Premium SEO description with keywords...",
-            "tags": ["viral", "trending", ...],
+            "tags": ["memes", "funny", "shorts", "viral", ...],
             "scenes": [
                 {{
                     "text": "spoken narration (max 50 characters for shorts)...",

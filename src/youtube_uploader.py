@@ -43,7 +43,7 @@ class YouTubeUploader:
                 logger.error(f"Failed to authenticate with YouTube: {e}")
             raise
 
-    def upload_video(self, video_path, title, description, tags=None, privacy_status="private", publish_at=None):
+    def upload_video(self, video_path, title, description, tags=None, privacy_status="private", publish_at=None, category_id="27", altered_content=False):
         try:
             logger.info(f"Uploading video: {title}")
             
@@ -51,8 +51,8 @@ class YouTubeUploader:
                 'snippet': {
                     'title': title,
                     'description': description,
-                    'tags': tags if tags else ['Psychology', 'Education', 'Mental Health'],
-                    'categoryId': '27' # Education
+                    'tags': tags if tags else ['Viral', 'Trending'],
+                    'categoryId': category_id
                 },
                 'status': {
                     'privacyStatus': privacy_status if not publish_at else 'private',
@@ -60,6 +60,10 @@ class YouTubeUploader:
                     'publishAt': publish_at # ISO 8601 format: YYYY-MM-DDThh:mm:ss.sZ
                 }
             }
+            
+            # Add altered content declaration if specified
+            if altered_content:
+                body['status']['containsSyntheticMedia'] = True
             
             # MediaFileUpload handles the file upload
             media = MediaFileUpload(video_path, chunksize=-1, resumable=True)

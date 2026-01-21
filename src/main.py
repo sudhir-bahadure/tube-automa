@@ -152,12 +152,20 @@ async def main():
                 logger.info(f"Generating Thumbnail for {video_title}...")
                 asset_mgr.generate_thumbnail(video_title, thumbnail_path)
                 
+                
+                # Determine category based on style
+                # Category 23 = Comedy (for memes/stickman)
+                # Category 27 = Education (for psychology/noir)
+                category_id = "23" if args.style == "stickman" else "27"
+                
                 video_id = uploader.upload_video(
                     output_file, 
                     video_title, 
                     seo_description, 
                     tags=seo_tags,
-                    publish_at=publish_at
+                    publish_at=publish_at,
+                    category_id=category_id,
+                    altered_content=False  # Not altered/synthetic content
                 )
 
                 if video_id and os.path.exists(thumbnail_path):
