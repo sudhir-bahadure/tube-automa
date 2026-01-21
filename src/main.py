@@ -182,6 +182,7 @@ async def main():
                     logger.info(f"Successfully uploaded video: https://youtu.be/{video_id}")
             except Exception as e:
                 logger.error(f"Upload process failed: {e}")
+                sys.exit(1)
     else:
         logger.error("Video generation failed")
 

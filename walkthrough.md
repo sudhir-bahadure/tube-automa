@@ -32,6 +32,11 @@ Legacy code (Pytrends, Reddit scraper, random PIL visuals) was purged/bypassed i
 *   **Location:** New York, USA (Target High CPM).
 *   **Privacy:** Standard YouTube Policy Compliance check included.
 
-## Verification
-*   **Local Test:** `verify_meme_system.py` confirms pipeline integrity.
-*   **API Quotas:** System handles 429 errors with exponential backoff.
+
+## 5. Curiosity Workflow Repairs (Jan 2026)
+*   **Git User Config:** Switched global git user to `sudhir-bahadure` to match the repository owner for correct access permissions during workflow runs.
+*   **Authentication Fix:** Created `setup_youtube_auth.py` to correctly generate Refresh Tokens for the Curiosity Channel (CurioByte), isolated from the Meme channel credentials.
+*   **Token Refresh:** Successfully refreshed the YouTube API token and updated GitHub Secrets (`CURIOSITY_REFRESH_TOKEN`).
+*   **Validation:**
+    *   Triggered `curiosity_automation.yml` (Run ID: 21207494308).
+    *   Result: **Success** (Video generated and uploaded).
