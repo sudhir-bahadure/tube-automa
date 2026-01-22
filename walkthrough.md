@@ -55,4 +55,8 @@ Legacy code (Pytrends, Reddit scraper, random PIL visuals) was purged/bypassed i
 *   **Smart Topic Selection (Point 4):**
     *   The system now **fetches view counts** of the last 10 videos via the YouTube API.
     *   It identifies "Winning Angles" and feeds this performance data back to the AI for smarter content planning.
-    *   Integrated **Retention Hooks**: Scripts now include "Pattern Interrupts" at the 33% and 66% marks to boost viewer retention.
+## 8. Views Optimizer & Stability (Jan 22, 2026)
+*   **Analytics-Driven Pivoting:** The system now queries the YouTube API for recent view counts. If the channel is stuck at low views, it automatically shifts from niche topics to high-energy "Viral Reset" topics to break "Shorts Jail."
+*   **Viral Hook Enforcement:** Every script is now strictly forced to start with an aggressive question or a shocking statement in the first 3 seconds.
+*   **JSON Resilience:** Implemented regex-based JSON extraction and a 2-attempt failure recovery loop. If the AI makes a typo or gets rate-limited, the system automatically tries again or swaps models rather than crashing.
+*   **Comment Permission Guard:** Refined the uploader to handle cases where the API token only has "Upload" scope, ensuring videos post successfully even if a pinned comment is rejected by permissions.

@@ -5,18 +5,14 @@ from dotenv import load_dotenv
 def get_authenticated_service():
     load_dotenv()
     
-    print("YouTube API Refresh Token Generator - CURIOSITY WORKFLOW SPECIFIC")
+    print("YouTube API Refresh Token Generator - MEME WORKFLOW (yoDailyMemeDose)")
     print("-----------------------------------")
-    print("IMPORTANT: We are generating a token for the CURIOSITY channel (CurioByte).")
-    print("Do NOT use the credentials for the Meme channel (yoDailyMemeDose).")
-    print("Please enter the Client ID/Secret from your 'Curiosity' Google Cloud Project.")
+    print("IMPORTANT: We are generating a token for the MEME channel.")
+    print("This token will unlock Views Analytics and Comment Pinning.")
     print("-----------------------------------")
     
-    # We explicitly do NOT load from standard YOUTUBE_ env vars to prevent 
-    # accidental usage of the Meme channel's local .env credentials.
-    client_id = input("Enter your CURIOSITY YouTube Client ID: ").strip()
-        
-    client_secret = input("Enter your CURIOSITY YouTube Client Secret: ").strip()
+    client_id = input("Enter your MEME YouTube Client ID: ").strip()
+    client_secret = input("Enter your MEME YouTube Client Secret: ").strip()
         
     if not client_id or not client_secret:
         print("Error: Client ID and Client Secret are required.")
@@ -39,7 +35,11 @@ def get_authenticated_service():
     with open("temp_client_secrets.json", "w") as f:
         json.dump(client_config, f)
         
-    scopes = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl"]
+    scopes = [
+        "https://www.googleapis.com/auth/youtube",
+        "https://www.googleapis.com/auth/youtube.force-ssl",
+        "https://www.googleapis.com/auth/yt-analytics.readonly"
+    ]
     
     try:
         flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
