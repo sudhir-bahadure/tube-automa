@@ -114,10 +114,13 @@ class YouTubeUploader:
             logger.info(f"Comment added. ID: {comment_id}")
             return comment_id
         except Exception as e:
+            error_body = getattr(e, 'content', str(e))
             if "insufficientPermissions" in str(e):
-                logger.warning("Failed to add comment: Insufficient Permissions. (Your token needs 'youtube.force-ssl' scope to post comments).")
+                logger.warning(f"Failed to add comment: Insufficient Permissions (403). Ensure token has 'force-ssl'. Details: {error_body}")
+            elif "commentsDisabled" in str(e):
+                 logger.warning(f"Failed to add comment: Comments are disabled on this video (ID: {video_id}).")
             else:
-                logger.warning(f"Failed to add comment: {e}")
+                logger.warning(f"Failed to add comment error: {e}. Details: {error_body}")
             return None
 
     def pin_comment(self, comment_id):

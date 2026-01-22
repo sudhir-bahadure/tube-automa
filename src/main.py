@@ -187,10 +187,32 @@ async def main():
                     uploader.set_thumbnail(video_id, thumbnail_path)
                     
                     # Add and Pin Engagement Comment
-                    comment_text = "How was the video? Comment 'Ready' below if you reached the end! 👇"
-                    comment_id = uploader.add_comment(video_id, comment_text)
+                    import time
+                    import random
+                    prompts = [
+                        f"Who else relates to this? Comment 'ME' below! 👇",
+                        f"How was the video? Comment 'Ready' if you reached the end! 👇",
+                        f"Did you know about this? Let's discuss in the comments! 💬",
+                        f"Should I do more videos about '{title}'? Let me know! 👇"
+                    ]
+                    comment_text = random.choice(prompts)
+                    
+                    logger.info("Waiting 15s for video processing before commenting...")
+                    time.sleep(15)
+                    
+                    comment_id = None
+                    for c_attempt in range(3):
+                        logger.info(f"Attempting to add engagement comment (Attempt {c_attempt+1})...")
+                        comment_id = uploader.add_comment(video_id, comment_text)
+                        if comment_id:
+                            break
+                        logger.warning(f"Comment attempt {c_attempt+1} failed. Target: {video_id}. Retrying in 10s...")
+                        time.sleep(10)
+                        
                     if comment_id:
-                        uploader.pin_comment(comment_id) 
+                        uploader.pin_comment(comment_id)
+                    else:
+                        logger.error("Failed to add engagement comment after 3 attempts.")
                         
                     logger.info(f"Successfully uploaded, scheduled for {publish_at}, and set thumbnail/comment: https://youtu.be/{video_id}")
                 elif video_id:
