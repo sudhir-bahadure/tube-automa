@@ -17,12 +17,18 @@ class YouTubeUploader:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
             
         try:
+            scopes = [
+                "https://www.googleapis.com/auth/youtube",
+                "https://www.googleapis.com/auth/youtube.force-ssl",
+                "https://www.googleapis.com/auth/yt-analytics.readonly"
+            ]
             credentials = google.oauth2.credentials.Credentials(
                 None, # No access token initially
                 refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
                 token_uri="https://oauth2.googleapis.com/token",
                 client_id=Config.YOUTUBE_CLIENT_ID,
-                client_secret=Config.YOUTUBE_CLIENT_SECRET
+                client_secret=Config.YOUTUBE_CLIENT_SECRET,
+                scopes=scopes
             )
             service = build("youtube", "v3", credentials=credentials)
             
