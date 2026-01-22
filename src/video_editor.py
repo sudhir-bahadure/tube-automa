@@ -86,48 +86,77 @@ class VideoEditor:
                         
                         if style == "stickman":
                             # STICKMAN STYLE: Pure White BG, Centered, Fade In/Out, Pleasant Liveness
-                            bg_clip = ColorClip(size=(target_w, target_h), color=(255, 255, 255)).set_duration(duration)
                             
-                            # Base resize
+                            # 1. CREATE PARTICLE BACKGROUND
+                            backgrounds = []
+                            # Base white layer
+                            bg_base = ColorClip(size=(target_w, target_h), color=(255, 255, 255)).set_duration(duration)
+                            backgrounds.append(bg_base)
+                            
+                            # Add 5 minimalist drifting particles (small gray dots/squares)
+                            for p_idx in range(5):
+                                p_size = random.randint(4, 10)
+                                p_color = (220, 220, 220) # Subtle gray
+                                p_clip = ColorClip(size=(p_size, p_size), color=p_color).set_duration(duration)
+                                
+                                start_x = random.randint(0, target_w)
+                                start_y = random.randint(0, target_h)
+                                speed_x = random.uniform(-20, 20)
+                                speed_y = random.uniform(-20, 20)
+                                
+                                p_clip = p_clip.set_position(lambda t, sx=start_x, sy=start_y, spx=speed_x, spy=speed_y: 
+                                                            (sx + spx*t, sy + spy*t)).set_opacity(0.3)
+                                backgrounds.append(p_clip)
+                            
+                            bg_composite = CompositeVideoClip(backgrounds, size=(target_w, target_h))
+                            
+                            # 2. CHARACTER ANIMATION (SQUASH & STRETCH)
                             img_clip = img_clip.resize(width=int(target_w * 0.7))
-                            
-                            # PLEASANT LIVENESS EFFECTS:
-                            # 1. Floating: Vertical sway ±15px over 3 seconds
-                            # 2. Breathing: Subtle scaling ±1.5% over 4 seconds
-                            
                             v_action = scene.get('vocal_action', 'talking')
+                            is_punchline = scene.get('is_punchline', False)
                             
                             # Base floating position
-                            base_pos = lambda t: ('center', (target_h/2 - img_clip.h/2) + 15 * math.sin(2 * math.pi * 0.33 * t))
+                            base_y = target_h/2 - img_clip.h/2
+                            base_pos = lambda t, by=base_y: ('center', by + 15 * math.sin(2 * math.pi * 0.33 * t))
                             
-                            # ACTION-AWARE OVERRIDES:
                             if v_action == 'jumping':
-                                # Intense vertical bounce
-                                video_clip = img_clip.set_position(lambda t: ('center', (target_h/2 - img_clip.h/2) - abs(100 * math.sin(2 * math.pi * 0.8 * t))))
+                                # Intense vertical bounce with Stretch at peak and Squash at landing
+                                def jumping_pos(t, by=base_y):
+                                    jump_val = abs(150 * math.sin(2 * math.pi * 0.8 * t))
+                                    return ('center', by - jump_val)
+                                
+                                def jumping_scale(t):
+                                    # Squash when t makes sin close to 0 (landing), Stretch when sin close to 1 (peak)
+                                    cycle = abs(math.sin(2 * math.pi * 0.8 * t))
+                                    # Scale y inverse to x
+                                    return 1.0 + 0.1 * (cycle - 0.5) 
+                                
+                                video_clip = img_clip.set_position(jumping_pos).resize(jumping_scale)
+                            
+                            elif v_action == 'bouncing' or v_action == 'jumping':
+                                # Squash & Stretch Bounce
+                                video_clip = img_clip.resize(lambda t: 1.0 + 0.15 * abs(math.sin(2 * math.pi * 0.7 * t))).set_position(base_pos)
+                            
+                            elif v_action == 'shaking' or is_punchline:
+                                # High frequency jitter (Intense for punchlines)
+                                intensity = 25 if is_punchline else 8
+                                video_clip = img_clip.set_position(lambda t, by=base_y, inst=intensity: 
+                                                                  ('center', by + random.uniform(-inst, inst)))
+                                if is_punchline:
+                                    video_clip = video_clip.resize(lambda t: 1.1 + 0.05 * math.sin(2 * math.pi * 10 * t)) # Visual pop
+                            
                             elif v_action == 'waving':
-                                # Smooth rotation sway
                                 video_clip = img_clip.rotate(lambda t: 5 * math.sin(2 * math.pi * 0.5 * t)).set_position(base_pos)
-                            elif v_action == 'shaking':
-                                # High frequency jitter
-                                video_clip = img_clip.set_position(lambda t: ('center', (target_h/2 - img_clip.h/2) + random.uniform(-10, 10)))
-                            elif v_action == 'bouncing':
-                                # Scale-based bounce
-                                video_clip = img_clip.resize(lambda t: 1.0 + 0.1 * abs(math.sin(2 * math.pi * 0.7 * t))).set_position(base_pos)
                             else:
-                                # Default Floating
                                 video_clip = img_clip.set_position(base_pos)
                             
                             # Apply Breathing (Slow Scaling)
-                            if v_action != 'bouncing':
+                            if v_action not in ['bouncing', 'jumping'] and not is_punchline:
                                 video_clip = video_clip.resize(lambda t: 1.0 + 0.015 * math.sin(2 * math.pi * 0.25 * t))
                             
-                            # Fade In / Fade Out
-                            video_clip = video_clip.fadein(0.5).fadeout(0.5)
-                            
-                            # Composite over white background
-                            video_clip = CompositeVideoClip([bg_clip, video_clip.set_start(0)])
-                            
-                            # NO FILTERS for stickman to keep background pure white
+                            video_clip = video_clip.fadein(0.4).fadeout(0.4)
+                            final_scene_bg = CompositeVideoClip([bg_composite, video_clip.set_start(0)])
+                            video_clip = final_scene_bg
                         else:
                             # NOIR STYLE: Standard animated visuals
                             anim_type = random.choice(['zoom_in', 'zoom_out', 'pan_left', 'pan_right'])

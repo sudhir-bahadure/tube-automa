@@ -214,6 +214,8 @@ class LLMWrapper:
         7. Vocal Emotions: Assign 'audio_mood' (excited, serious, whispering, curious, neutral). Use expressive punctuation.
         8. Tone: Conversational, simple, and funny.
         9. Character Limit: Each scene's text should be {char_count} characters total divided by {scene_count} scenes.
+        11. Retention Hooks: Ensure the script has "Pattern Interrupts" at roughly 33% and 66% through the video (sudden shifts in energy or direct questions to the viewer).
+        12. Punchline Detection: In the JSON, mark the single funniest or most important scene as `"is_punchline": true`.
         
         FORMAT (Valid JSON ONLY):
         {{
@@ -222,9 +224,10 @@ class LLMWrapper:
             "tags": ["relatable", "pov", "skit", "comedy", "humor", ...],
             "scenes": [
                 {{
-                    "text": "spoken narration (max 50 characters for shorts)...",
+                    "text": "spoken narration...",
                     "audio_mood": "excited",
                     "vocal_action": "jumping",
+                    "is_punchline": false,
                     "visual_prompt": "A minimalist black stick figure on PLAIN WHITE background [action], doodle style, clean lines, NO TEXT, NO QR CODE"
                 }},
                 ... (repeat for EXACTLY {scene_count} scenes)

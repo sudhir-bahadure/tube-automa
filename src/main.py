@@ -90,7 +90,8 @@ async def main():
         processed_scenes.append({
             'audio_path': audio_path,
             'video_path': video_path,
-            'text': scene['text']
+            'text': scene['text'],
+            'is_punchline': scene.get('is_punchline', False)
         })
 
     # 3. Create Video
