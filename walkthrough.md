@@ -40,3 +40,9 @@ Legacy code (Pytrends, Reddit scraper, random PIL visuals) was purged/bypassed i
 *   **Validation:**
     *   Triggered `curiosity_automation.yml` (Run ID: 21207494308).
     *   Result: **Success** (Video generated and uploaded).
+
+## 6. Meme Workflow Optimizations (Jan 2026)
+*   **Targeted Tagging:** Updated the LLM prompt to generate high-relevance tags (`#relatable`, `#pov`, `#skit`, `#comedy`) instead of generic viral tags.
+*   **Category Locking:** Hardcoded the YouTube Category to **Comedy (23)** for all stickman-style videos to better target the humor audience.
+*   **Compliance:** Explicitly disabled the "Altered Content" (Synthetic Media) flag to comply with transparency requirements for AI-assisted but non-misleading content.
+*   **Audience Targeting:** Improved the algorithm's understanding of the niche by focusing tags and category specifically on humor rather than general entertainment.
