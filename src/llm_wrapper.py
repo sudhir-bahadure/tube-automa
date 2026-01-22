@@ -97,6 +97,24 @@ class LLMWrapper:
                 return None
         return None
 
+    def _extract_json(self, text):
+        """Robustly Extracts and cleans JSON from LLM response using regex and balance checks."""
+        import re
+        try:
+            # 1. Strip markdown blocks
+            text = text.replace("```json", "").replace("```", "").strip()
+            
+            # 2. Find anything between { } or [ ]
+            json_match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
+            if json_match:
+                candidate = json_match.group(1)
+                # 3. Final validation
+                return json.loads(candidate)
+            return json.loads(text)
+        except Exception as e:
+            print(f"JSON Extraction Error: {e}")
+            return None
+
     def generate_psychology_titles(self):
         """Generates 20 viral psychology titles."""
         prompt = """
@@ -107,13 +125,8 @@ class LLMWrapper:
         try:
             text = self._call_gemini(prompt)
             if not text: return []
-            clean_text = text.replace("```json", "").replace("```", "").strip()
-            # Basic JSON extraction if AI includes filler
-            if "[" in clean_text:
-                clean_text = clean_text[clean_text.find("["):clean_text.rfind("]")+1]
-            return json.loads(clean_text)
-        except Exception as e:
-            print(f"Error parsing titles: {e}")
+            return self._extract_json(text) or []
+        except:
             return []
 
     def generate_psychology_script(self, title):
@@ -123,78 +136,37 @@ class LLMWrapper:
         Act as a lead writer for a top-tier US psychology channel.
         
         STRICT RULES:
-        1. Break the script into AT LEAST 25 detailed scenes for a high-quality visual experience.
-        2. Visual Style: 'Surrealist Psychological Noir'. Use ink wash textures, moody watercolor, deep shadows, and metaphorical imagery.
-        3. NO REAL HUMANS: Use silhouettes, faceless figures, metaphorical objects (clocks, keys, mirrors), or abstract anatomical sketches. THIS IS CRITICAL.
-        4. Tone: Deep, narrative-driven, and emotionally resonant.
-        5. Visual Continuity: Maintain a consistent atmospheric color palette throughout all scenes.
-
+        1. Break the script into AT LEAST 25 detailed scenes.
+        1. VIRAL HOOK: The first 5 seconds MUST use a shocking psychological fact or an intense curiosity-gap question.
+        2. Visual Style: 'Surrealist Psychological Noir'. 
+        
         STRICT OUTPUT FORMAT (Valid JSON ONLY):
         {{
             "title": "{title}",
-            "description": "The professional description...",
+            "description": "...",
             "scenes": [
                 {{
-                    "text": "The spoken narration...",
-                    "visual_prompt": "A surrealist ink wash of [metaphor], psychological noir style, deep shadows, no real humans, high contrast, cinematic lighting, 8k"
+                    "text": "spoken narration...",
+                    "visual_prompt": "..."
                 }},
-                ... (repeat for 25+ scenes)
+                ...
             ]
         }}
         """
         try:
             text = self._call_gemini(prompt)
             if not text: return None
-            clean_text = text.replace("```json", "").replace("```", "").strip()
-            if "{" in clean_text:
-                clean_text = clean_text[clean_text.find("{"):clean_text.rfind("}")+1]
-            return json.loads(clean_text)
-        except Exception as e:
-            print(f"Error parsing script: {e}")
+            return self._extract_json(text)
+        except:
             return None
 
-    def generate_psychology_short_script(self, title):
-        """Generates a 60-second viral psychology short script with 12 animated scenes."""
-        prompt = f"""
-        Title: {title}
-        Objective: Create a 60-second viral psychology short script.
-        
-        STRICT RULES:
-        1. Break the script into EXACTLY 18 scenes for fast-paced, high-engagement visuals.
-        2. Visual Style: 'Surrealist Psychological Noir'. Ink wash, moody watercolor, metaphorical.
-        3. NO REAL HUMANS: Use silhouettes, abstract figures, or metaphorical symbols. DO NOT INCLUDE FACES.
-        4. Tone: Captivating and fast-paced.
-        5. Visual Continuity: Ensure every scene feels like part of the same dark, surreal world.
-
-        Return ONLY Valid JSON.
-        {{
-            "title": "{title}",
-            "scenes": [
-                {{
-                    "text": "spoken text (approx 5 seconds)...",
-                    "visual_prompt": "A cinematic, psychological noir illustration of [metaphor], surreal ink textures, no humans, atmospheric lighting, 8k"
-                }},
-                ... (repeat for 12 scenes)
-            ]
-        }}
-        """
-        try:
-            text = self._call_gemini(prompt)
-            if not text: return None
-            clean_text = text.replace("```json", "").replace("```", "").strip()
-            if "{" in clean_text:
-                clean_text = clean_text[clean_text.find("{"):clean_text.rfind("}")+1]
-            return json.loads(clean_text)
-        except Exception as e:
-            print(f"Error parsing short script: {e}")
-            return None
     def generate_conversational_script(self, topic, type="short"):
         """Generates a high-SEO, human-like script with dynamic stickman movements."""
         
         if type == "short":
             char_count = "500-600"
             scene_count = 10
-            duration_note = "CRITICAL: Total video MUST be under 60 seconds. Each scene should be 5-6 seconds max."
+            duration_note = "CRITICAL: Total video MUST be under 60 seconds."
         else:
             char_count = "7000-9000"
             scene_count = 25
@@ -206,41 +178,32 @@ class LLMWrapper:
         
         STRICT RULES:
         1. {duration_note}
-        2. Scene Count: Generate EXACTLY {scene_count} scenes. NO MORE, NO LESS.
-        10. Tagging Strategy: For shorts/memes, use TARGETED comedy tags: #relatable, #pov, #skit, #comedy, #humor. DO NOT use generic #viral or #shorts alone. DO NOT use 'psychology'.
-        4. End Hook: The FINAL scene must be a powerful Call to Action (CTA) asking viewers to comment "Ready" if they reached the end.
-        5. No Watermarks: NEVER mention text, QR codes, or watermarks in visual_prompt.
-        6. Script-Aware Animation: Assign a 'vocal_action' to every scene from this list: [jumping, waving, bouncing, shaking, talking, thinking, walking].
-        7. Vocal Emotions: Assign 'audio_mood' (excited, serious, whispering, curious, neutral). Use expressive punctuation.
-        8. Tone: Conversational, simple, and funny.
-        9. Character Limit: Each scene's text should be {char_count} characters total divided by {scene_count} scenes.
-        11. Retention Hooks: Ensure the script has "Pattern Interrupts" at roughly 33% and 66% through the video (sudden shifts in energy or direct questions to the viewer).
-        12. Punchline Detection: In the JSON, mark the single funniest or most important scene as `"is_punchline": true`.
+        2. VIRAL HOOK (0-3s): The first scene MUST be an aggressive question, a relatable 'POV', or a shocking statement. Zero fluff.
+        3. Retention Hooks: Include 'Pattern Interrupts' at 33% and 66% marks.
+        4. Scene Count: {scene_count}.
+        5. Punchline: Mark the funniest scene as `"is_punchline": true`.
+        6. JSON VALIDITY: Ensure all strings are correctly quoted and escaped. No trailing commas.
         
-        FORMAT (Valid JSON ONLY):
+        FORMAT:
         {{
             "title": "{topic}",
-            "description": "Premium SEO description with keywords...",
-            "tags": ["relatable", "pov", "skit", "comedy", "humor", ...],
+            "description": "...",
             "scenes": [
                 {{
                     "text": "spoken narration...",
                     "audio_mood": "excited",
-                    "vocal_action": "jumping",
+                    "vocal_action": "talking",
                     "is_punchline": false,
-                    "visual_prompt": "A minimalist black stick figure on PLAIN WHITE background [action], doodle style, clean lines, NO TEXT, NO QR CODE"
+                    "visual_prompt": "..."
                 }},
-                ... (repeat for EXACTLY {scene_count} scenes)
+                ...
             ]
         }}
         """
         try:
             text = self._call_gemini(prompt)
             if not text: return None
-            clean_text = text.replace("```json", "").replace("```", "").strip()
-            if "{" in clean_text:
-                clean_text = clean_text[clean_text.find("{"):clean_text.rfind("}")+1]
-            return json.loads(clean_text)
+            return self._extract_json(text)
         except Exception as e:
             print(f"Error parsing conversational script: {e}")
             return None

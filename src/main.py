@@ -54,15 +54,22 @@ async def main():
     
     logger.info(f"Generating {args.type} script for Title: {title}")
     
-    if args.style == "stickman":
-         script_data = llm.generate_conversational_script(title, type=args.type)
-    elif args.type == "long":
-        script_data = llm.generate_psychology_script(title)
-    else:
-        script_data = llm.generate_psychology_short_script(title)
+    script_data = None
+    for attempt in range(2):
+        if args.style == "stickman":
+             script_data = llm.generate_conversational_script(title, type=args.type)
+        elif args.type == "long":
+            script_data = llm.generate_psychology_script(title)
+        else:
+            # Fallback for noir style shorts
+            script_data = llm.generate_conversational_script(title, type="short")
+            
+        if script_data:
+            break
+        logger.warning(f"Script generation attempt {attempt+1} failed. Retrying...")
 
     if not script_data:
-        logger.error(f"Failed to generate {args.type} script")
+        logger.error(f"Failed to generate {args.type} script after 2 attempts.")
         sys.exit(1)
 
     logger.info(f"Title: {script_data.get('title')}")

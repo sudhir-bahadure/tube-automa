@@ -38,10 +38,26 @@ class TrendEngine:
         niche = Config.NICHE
         logger.info(f"Discovering viral {niche} trends...")
         
+        # ANALYTICS-DRIVEN PIVOTING
+        is_pivoting = False
         performance_str = ""
         if performance_context:
             perf_list = [f"'{p['title']}' ({p['views']} views)" for p in performance_context]
-            performance_str = f"RECENT PERFORMANCE DATA (Use this to find similar winning angles):\n{', '.join(perf_list)}\n"
+            performance_str = f"RECENT PERFORMANCE DATA:\n{', '.join(perf_list)}\n"
+            
+            avg_views = sum(p['views'] for p in performance_context) / len(performance_context) if performance_context else 0
+            if avg_views < 100 and len(performance_context) >= 3:
+                is_pivoting = True
+                logger.warning(f"Low performance detected (Avg: {avg_views:.0f}). Triggering VIRAL PIVOT.")
+
+        pivot_instruction = ""
+        if is_pivoting:
+            pivot_instruction = f"""
+            CRITICAL: The channel is currently in 'Shorts Jail' (low views). 
+            Do NOT return niche or subtle topics. 
+            Return 20 'VIRAL RESET' topics that are MASSIVELY trending, high-controversy, or intense curiosity gaps. 
+            Think 'Top 10 Secrets', 'The Truth about {niche}', or 'Why you are failing at {niche}'.
+            """
 
         # We ask the LLM for many titles to increase the chance of finding an unused one
         prompt = f"""
@@ -49,6 +65,7 @@ class TrendEngine:
         Target: YouTube audience (high CTR, curious, conversational).
         
         {performance_str}
+        {pivot_instruction}
         
         EXCLUSION LIST (DO NOT RETURN THESE):
         {json.dumps(self.used_topics[-50:] if self.used_topics else [])}
@@ -62,19 +79,15 @@ class TrendEngine:
             if not response:
                 return None
             
-            # Clean and parse JSON
-            clean_text = response.replace("```json", "").replace("```", "").strip()
-            if "[" in clean_text:
-                clean_text = clean_text[clean_text.find("["):clean_text.rfind("]")+1]
+            candidates = llm._extract_json(response)
+            if not candidates or not isinstance(candidates, list):
+                return None
             
-            candidates = json.loads(clean_text)
-            
-            # Filter out used topics (just in case LLM ignored the exclusion list)
+            # Filter out used topics
             unused = [c for c in candidates if c not in self.used_topics]
             
             if not unused:
                 logger.warning("All discovered trends were already used. Forcing a new angle...")
-                # Fallback: Ask for a completely unique niche angle
                 return self._get_fallback_topic(llm)
                 
             selected = unused[0] # Pick the top one
