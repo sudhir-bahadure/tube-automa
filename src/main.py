@@ -34,7 +34,14 @@ async def main():
     # Select Topic
     title = args.topic
     if not title:
-        title = trend_engine.get_viral_topic(llm)
+        # Smart Topic Selection: Fetch view counts of last 10 videos
+        try:
+            uploader_temp = YouTubeUploader()
+            perf_data = uploader_temp.get_recent_performance(limit=10)
+        except:
+            perf_data = None
+        
+        title = trend_engine.get_viral_topic(llm, performance_context=perf_data)
         if not title:
             logger.error("Failed to discover a viral topic")
             sys.exit(1)

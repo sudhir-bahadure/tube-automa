@@ -46,3 +46,13 @@ Legacy code (Pytrends, Reddit scraper, random PIL visuals) was purged/bypassed i
 *   **Category Locking:** Hardcoded the YouTube Category to **Comedy (23)** for all stickman-style videos to better target the humor audience.
 *   **Compliance:** Explicitly disabled the "Altered Content" (Synthetic Media) flag to comply with transparency requirements for AI-assisted but non-misleading content.
 *   **Audience Targeting:** Improved the algorithm's understanding of the niche by focusing tags and category specifically on humor rather than general entertainment.
+
+## 7. Pro-Grade Automation Upgrades (Jan 22, 2026)
+*   **Visual Dynamicism (Point 3):**
+    *   Implemented **Squash & Stretch** for stickman jumping/bouncing animations.
+    *   Added **Background Particles** to keep pure white backgrounds active and high-quality.
+    *   Introduced **Punchline Jitters**—the screen shakes during the funniest moments for maximum emphasis.
+*   **Smart Topic Selection (Point 4):**
+    *   The system now **fetches view counts** of the last 10 videos via the YouTube API.
+    *   It identifies "Winning Angles" and feeds this performance data back to the AI for smarter content planning.
+    *   Integrated **Retention Hooks**: Scripts now include "Pattern Interrupts" at the 33% and 66% marks to boost viewer retention.

@@ -31,17 +31,24 @@ class TrendEngine:
         except Exception as e:
             logger.error(f"Failed to save used topic: {e}")
 
-    def get_viral_topic(self, llm):
+    def get_viral_topic(self, llm, performance_context=None):
         """
         Interacts with LLM to fetch trending topics based on the configured niche and returns the best unused one.
         """
         niche = Config.NICHE
         logger.info(f"Discovering viral {niche} trends...")
         
+        performance_str = ""
+        if performance_context:
+            perf_list = [f"'{p['title']}' ({p['views']} views)" for p in performance_context]
+            performance_str = f"RECENT PERFORMANCE DATA (Use this to find similar winning angles):\n{', '.join(perf_list)}\n"
+
         # We ask the LLM for many titles to increase the chance of finding an unused one
         prompt = f"""
         Objective: Identify the top 20 viral, trending topics related to "{niche}" currently exploding in the USA.
         Target: YouTube audience (high CTR, curious, conversational).
+        
+        {performance_str}
         
         EXCLUSION LIST (DO NOT RETURN THESE):
         {json.dumps(self.used_topics[-50:] if self.used_topics else [])}

@@ -108,7 +108,10 @@ class YouTubeUploader:
             logger.info(f"Comment added. ID: {comment_id}")
             return comment_id
         except Exception as e:
-            logger.warning(f"Failed to add comment: {e}")
+            if "insufficientPermissions" in str(e):
+                logger.warning("Failed to add comment: Insufficient Permissions. (Your token needs 'youtube.force-ssl' scope to post comments).")
+            else:
+                logger.warning(f"Failed to add comment: {e}")
             return None
 
     def pin_comment(self, comment_id):
@@ -149,3 +152,47 @@ class YouTubeUploader:
         except Exception as e:
             logger.error(f"Failed to upload thumbnail: {e}")
             return False
+
+    def get_recent_performance(self, limit=5):
+        """Fetches the titles and view counts of the last N uploaded videos."""
+        try:
+            logger.info(f"Fetching performance data for last {limit} videos...")
+            
+            # 1. Get uploaded videos playlist ID
+            channels_response = self.youtube.channels().list(
+                mine=True,
+                part="contentDetails"
+            ).execute()
+            
+            uploads_playlist_id = channels_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+            
+            # 2. Get recent videos from playlist
+            playlist_items_response = self.youtube.playlistItems().list(
+                playlistId=uploads_playlist_id,
+                part="snippet,contentDetails",
+                maxResults=limit
+            ).execute()
+            
+            video_ids = [item['contentDetails']['videoId'] for item in playlist_items_response['items']]
+            
+            if not video_ids:
+                return []
+                
+            # 3. Get view counts for these videos
+            videos_response = self.youtube.videos().list(
+                id=",".join(video_ids),
+                part="snippet,statistics"
+            ).execute()
+            
+            performance_data = []
+            for item in videos_response['items']:
+                performance_data.append({
+                    "title": item['snippet']['title'],
+                    "views": int(item['statistics'].get('viewCount', 0))
+                })
+                
+            return performance_data
+            
+        except Exception as e:
+            logger.warning(f"Failed to fetch performance data: {e}")
+            return []
