@@ -265,6 +265,9 @@ class VideoEditor:
                 # Professional Transitions: 1s Fade In, 2s Fade Out
                 bg_audio = bg_audio.audio_fadein(1).audio_fadeout(2)
                 
+                # Combine original voice (from final_video) with background music
+                final_audio = CompositeAudioClip([final_video.audio, bg_audio])
+                
                 print("DEBUG: Audio mixing successful.")
                 final_video = final_video.set_audio(final_audio)
 
