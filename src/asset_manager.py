@@ -3,9 +3,9 @@ from .config import Config
 
 class AssetManager:
     def __init__(self):
-        if not Config.PEXELS_API_KEY:
-            raise ValueError("PEXELS_API_KEY not found")
-        self.headers = {"Authorization": Config.PEXELS_API_KEY}
+        # if not Config.PEXELS_API_KEY:
+        #     raise ValueError("PEXELS_API_KEY not found")
+        self.headers = {"Authorization": Config.PEXELS_API_KEY or ""}
     
     def search_video(self, query, orientation="portrait"):
         """Searches Pexels for a video URL."""

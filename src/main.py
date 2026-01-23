@@ -8,6 +8,7 @@ from src.voice_engine import VoiceEngine
 from src.asset_manager import AssetManager
 from src.video_editor import VideoEditor
 from src.youtube_uploader import YouTubeUploader
+from src.music_engine import MusicEngine
 
 logger = setup_logging()
 
@@ -61,8 +62,8 @@ async def main():
         elif args.type == "long":
             script_data = llm.generate_psychology_script(title)
         else:
-            # Fallback for noir style shorts
-            script_data = llm.generate_conversational_script(title, type="short")
+            # Noir style shorts use the specific psychology-short engine
+            script_data = llm.generate_psychology_short_script(title)
             
         if script_data:
             break
@@ -109,12 +110,23 @@ async def main():
         })
 
     # 3. Create Video
+    # Select Background Music
+    music_engine = MusicEngine()
+    music_mood = script_data.get('music_mood', 'chill')
+    bg_music_path, music_credits = music_engine.get_track(music_mood)
+    
     editor = VideoEditor()
     output_file = f"output/final_{args.type}.mp4"
-    logger.info("Rendering video...")
+    logger.info(f"Rendering video with {music_mood} music...")
     is_short = (args.type == "short")
     
-    success = editor.create_video(processed_scenes, output_file, is_short=is_short, style=args.style)
+    try:
+        success = editor.create_video(processed_scenes, output_file, is_short=is_short, bg_music_path=bg_music_path, style=args.style)
+    except Exception as e:
+        logger.error(f"CRITICAL RENDER ERROR: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        success = False
     
     if success:
         logger.info(f"Video generated successfully: {output_file}")
@@ -124,6 +136,14 @@ async def main():
         seo_description = script_data.get('description', f"{video_title}")
         if args.type == "long" and 'chapters' in script_data:
             seo_description += "\n\nChapters:\n" + "\n".join(script_data['chapters'])
+        
+        # Add Music Credits (License Awareness)
+        if bg_music_path and music_credits:
+            seo_description += f"\n\n🎵 Music: {music_credits} (YouTube Audio Library - No Attribution Required)"
+        elif bg_music_path:
+            # Fallback if credits couldn't be parsed
+            music_name = os.path.basename(bg_music_path).split('.')[0].replace('_', ' ').title()
+            seo_description += f"\n\n🎵 Music: {music_name} (YouTube Audio Library - No Attribution Required)"
         
         seo_tags = script_data.get('tags', ['Viral', 'Trending'])
         
@@ -168,9 +188,20 @@ async def main():
                 asset_mgr.generate_thumbnail(video_title, thumbnail_path)
                 
                 
+                # Engagement Strategy: Since Pinned Comments don't work for Scheduled (Private) videos,
+                # we move the Engagement Prompt to the TOP of the description for Shorts.
+                prompts = [
+                    f"Who else relates to this? Comment 'ME' below! 👇",
+                    f"How was the video? Comment 'Ready' if you reached the end! 👇",
+                    f"Did you know about this? Let's discuss in the comments! 💬",
+                    f"Should I do more videos about '{video_title[:20]}'? Let me know! 👇"
+                ]
+                engagement_prompt = random.choice(prompts)
+                
+                # Prepend to description for visibility
+                seo_description = f"{engagement_prompt}\n\n{seo_description}"
+                
                 # Determine category based on style
-                # Category 23 = Comedy (for memes/stickman)
-                # Category 27 = Education (for psychology/noir)
                 category_id = "23" if args.style == "stickman" else "27"
                 
                 video_id = uploader.upload_video(
@@ -180,41 +211,26 @@ async def main():
                     tags=seo_tags,
                     publish_at=publish_at,
                     category_id=category_id,
-                    altered_content=False  # Not altered/synthetic content
+                    altered_content=True
                 )
-
-                if video_id and os.path.exists(thumbnail_path):
-                    uploader.set_thumbnail(video_id, thumbnail_path)
+                
+                if video_id:
+                    if os.path.exists(thumbnail_path):
+                        uploader.set_thumbnail(video_id, thumbnail_path)
                     
-                    # Add and Pin Engagement Comment
-                    import time
-                    import random
-                    prompts = [
-                        f"Who else relates to this? Comment 'ME' below! 👇",
-                        f"How was the video? Comment 'Ready' if you reached the end! 👇",
-                        f"Did you know about this? Let's discuss in the comments! 💬",
-                        f"Should I do more videos about '{title}'? Let me know! 👇"
-                    ]
-                    comment_text = random.choice(prompts)
-                    
-                    logger.info("Waiting 15s for video processing before commenting...")
-                    time.sleep(15)
-                    
-                    comment_id = None
-                    for c_attempt in range(3):
-                        logger.info(f"Attempting to add engagement comment (Attempt {c_attempt+1})...")
-                        comment_id = uploader.add_comment(video_id, comment_text)
+                    # Attempt comment pinning only if NOT scheduled for far in the future
+                    # (Though uploader.pin_comment usually fails for private/scheduled videos)
+                    if not publish_at:
+                        import time
+                        logger.info("Waiting 15s for processing before pinning...")
+                        time.sleep(15)
+                        comment_id = uploader.add_comment(video_id, engagement_prompt)
                         if comment_id:
-                            break
-                        logger.warning(f"Comment attempt {c_attempt+1} failed. Target: {video_id}. Retrying in 10s...")
-                        time.sleep(10)
-                        
-                    if comment_id:
-                        uploader.pin_comment(comment_id)
+                            uploader.pin_comment(comment_id)
                     else:
-                        logger.error("Failed to add engagement comment after 3 attempts.")
-                        
-                    logger.info(f"Successfully uploaded, scheduled for {publish_at}, and set thumbnail/comment: https://youtu.be/{video_id}")
+                        logger.info("Video is scheduled. Engagement prompt has been added to the description instead.")
+                    
+                    logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
                 elif video_id:
                     logger.info(f"Successfully uploaded video: https://youtu.be/{video_id}")
             except Exception as e:

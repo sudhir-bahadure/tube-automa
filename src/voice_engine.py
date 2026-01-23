@@ -1,24 +1,32 @@
 import edge_tts
 import asyncio
 from .config import Config
+from .elevenlabs_engine import ElevenLabsEngine
 
 class VoiceEngine:
     def __init__(self):
         self.voice = Config.VOICE_NAME
+        self.eleven = ElevenLabsEngine()
 
     async def generate_audio(self, text, output_file, mood="neutral"):
         """
-        Generates speech from text using MS Edge TTS with emotional parameters.
-        Moods: neutral, excited, serious, whispering, curious
+        Generates speech using ElevenLabs (Primary) or Edge TTS (Fallback).
         """
         try:
-            # Clean text: Remove markdown emphasis and asterisks
+            # Clean text
             import re
             clean_text = re.sub(r'[*_#~>]', '', text)
             
-            # Map moods to edge-tts parameters
-            # Rate: +X% (faster), -X% (slower)
-            # Pitch: +XHz (higher), -XHz (lower)
+            # 1. Try ElevenLabs first (High Quality / Cloned Voice)
+            logger_print = f"--- Using ElevenLabs for: '{clean_text[:30]}...' ---"
+            if self.eleven.api_key and self.eleven.voice_id:
+                print(logger_print)
+                success = self.eleven.generate_audio(clean_text, output_file)
+                if success:
+                    return True
+                print("ElevenLabs failed or out of credits. Falling back to Edge TTS.")
+
+            # 2. Fallback to Edge TTS (Free Forever)
             mood_params = {
                 "excited": {"rate": "+15%", "pitch": "+4Hz"},
                 "serious": {"rate": "-8%", "pitch": "-4Hz"},
@@ -38,5 +46,5 @@ class VoiceEngine:
             await communicate.save(output_file)
             return True
         except Exception as e:
-            print(f"Error generating audio with mood {mood}: {e}")
+            print(f"Error generating audio: {e}")
             return False

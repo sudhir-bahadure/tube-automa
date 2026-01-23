@@ -1,6 +1,8 @@
 from moviepy.editor import *
 import moviepy.video.fx.all as vfx
 import os
+import math
+import random
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
@@ -61,6 +63,9 @@ class VideoEditor:
         Stitches visualization, audio and subtitles with dynamic animations and transitions.
         style: "noir" (Standard dark surreal) or "stickman" (Minimalist stick figures on white)
         """
+        import sys
+        sys.stdout.write(f"DEBUG: Entering create_video with {len(scenes)} scenes...\n")
+        sys.stdout.flush()
         import random
         import math
         
@@ -240,19 +245,31 @@ class VideoEditor:
                 print(f"Error processing scene: {e}")
         
         if clips:
+            print(f"DEBUG: Concatenating {len(clips)} clips...")
             final_video = concatenate_videoclips(clips, method="compose")
+            print("DEBUG: Concatenation successful.")
             
             # Add Background Music
             if bg_music_path and os.path.exists(bg_music_path):
-                bg_audio = AudioFileClip(bg_music_path).volumex(0.08)
+                # Professional Volume Mixing:
+                # Noir (Psychology) needs subtle atmosphere (0.08-0.12)
+                # Stickman (Meme) can have higher energy (0.15-0.20)
+                music_volume = 0.18 if style == "stickman" else 0.10
+                bg_audio = AudioFileClip(bg_music_path).volumex(music_volume)
+                
                 if bg_audio.duration < final_video.duration:
                     bg_audio = bg_audio.loop(duration=final_video.duration)
                 else:
                     bg_audio = bg_audio.subclip(0, final_video.duration)
                 
-                final_audio = CompositeAudioClip([final_video.audio, bg_audio])
+                # Professional Transitions: 1s Fade In, 2s Fade Out
+                bg_audio = bg_audio.audio_fadein(1).audio_fadeout(2)
+                
+                print("DEBUG: Audio mixing successful.")
                 final_video = final_video.set_audio(final_audio)
 
+            print(f"DEBUG: Writing final video to {output_path}...")
             final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", temp_audiofile="temp_audio.m4a", threads=4)
+            print("DEBUG: Write successful.")
             return True
         return False

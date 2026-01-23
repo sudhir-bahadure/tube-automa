@@ -53,10 +53,10 @@ class TrendEngine:
         pivot_instruction = ""
         if is_pivoting:
             pivot_instruction = f"""
-            CRITICAL: The channel is currently in 'Shorts Jail' (low views). 
-            Do NOT return niche or subtle topics. 
-            Return 20 'VIRAL RESET' topics that are MASSIVELY trending, high-controversy, or intense curiosity gaps. 
-            Think 'Top 10 Secrets', 'The Truth about {niche}', or 'Why you are failing at {niche}'.
+            CRITICAL: The channel is currently in 'Shorts Jail' (lost subscribers/low views). 
+            Do NOT return educational or subtle topics. 
+            Return 20 'DARK PSYCHOLOGY' titles that hit deep insecurities, social secrets, or human shadows. 
+            Examples: 'The truth about they look at you', 'Why you are being manipulated', 'The dark side of being nice'.
             """
 
         # We ask the LLM for many titles to increase the chance of finding an unused one

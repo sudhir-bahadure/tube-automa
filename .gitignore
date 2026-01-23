@@ -1,6 +1,8 @@
 __pycache__/
 *.mp4
+# Ignore all MP3s except the ones in our permanent music library
 *.mp3
+!assets/music/**/*.mp3
 *.png
 .env
 output/

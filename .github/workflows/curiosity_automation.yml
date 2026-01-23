@@ -45,7 +45,7 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}
-          NICHE: "Psychology and Human Curiosity"
+          NICHE: "Deep Dark Psychology and Human Behavior"
           VOICE_NAME: "en-US-ChristopherNeural"
         run: |
           # Fix ImageMagick security policy
@@ -54,10 +54,10 @@ jobs:
           sudo sed -i 's/policy domain="resource" name="area" value="128MP"/policy domain="resource" name="area" value="1GP"/g' /etc/ImageMagick-6/policy.xml
           sudo sed -i 's/policy domain="resource" name="memory" value="256MiB"/policy domain="resource" name="memory" value="2GiB"/g' /etc/ImageMagick-6/policy.xml
           sudo sed -i 's/policy domain="coder" rights="none" pattern="PDF"/policy domain="coder" rights="read,write" pattern="PDF"/g' /etc/ImageMagick-6/policy.xml
-
+ 
           TYPE="${{ github.event.inputs.type }}"
           if [ -z "$TYPE" ]; then TYPE="short"; fi
-          python -m src.main --type $TYPE --style noir
+          python -m src.main --type $TYPE --style noir --schedule-for afternoon
 
       - name: Persist used topics
         if: always()
