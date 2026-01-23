@@ -17,6 +17,7 @@ class YouTubeUploader:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
             
         try:
+            # We request multiple scopes for full features (Upload, Pin, Analytics)
             scopes = [
                 "https://www.googleapis.com/auth/youtube",
                 "https://www.googleapis.com/auth/youtube.force-ssl",
@@ -34,7 +35,15 @@ class YouTubeUploader:
             
             # Force a token refresh to verify credentials immediately
             from google.auth.transport.requests import Request
-            credentials.refresh(Request())
+            try:
+                credentials.refresh(Request())
+            except Exception as e:
+                if "invalid_scope" in str(e):
+                    logger.warning("Requested scopes mismatch token permissions. Falling back to minimal 'youtube' scope...")
+                    credentials.scopes = ["https://www.googleapis.com/auth/youtube"]
+                    credentials.refresh(Request())
+                else:
+                    raise
             
             return service
         except Exception as e:

@@ -143,20 +143,20 @@ class LLMWrapper:
         4. Scene Count: 30-40 detailed scenes for a long-form deep dive.
         
         STRICT OUTPUT FORMAT (Valid JSON ONLY):
-        {
+        {{
             "title": "Title",
-            "description": "Exploding the hidden truths of {title}. #Psychology #HumanBehavior #Wisdom",
+            "description": "Exploding the hidden truths of {{title}}. #Psychology #HumanBehavior #Wisdom",
             "tags": ["Psychology", "Human Behavior", "Mental Health", "Mindset", "Deep Truths", "Noir"],
             "music_mood": "dark", // Choice: dark, suspenseful, chill, tense
             "deduced_angle": "Brief explanation of the psychological angle",
             "scenes": [
-                {
+                {{
                     "text": "spoken narration...",
                     "visual_prompt": "moody cinematic ink wash illustration of..."
-                },
+                }},
                 ...
             ]
-        }
+        }}
         """
         try:
             text = self._call_gemini(prompt)
@@ -180,19 +180,19 @@ class LLMWrapper:
         4. PUNCHLINE: End with a question that makes them rethink their entire life.
         
         STRICT OUTPUT FORMAT (Valid JSON ONLY):
-        {
+        {{
             "title": "{title}",
             "description": "The hidden psychology of {title}. #Psychology #DarkPsychology #Shorts",
             "tags": ["Psychology", "Dark Psychology", "Social Facts", "Shorts", "Noir", "Human Nature"],
             "music_mood": "tense",
             "scenes": [
-                {
+                {{
                     "text": "spoken narration...",
                     "visual_prompt": "Surrealist noir ink drawing of..."
-                },
+                }},
                 ...
             ]
-        }
+        }}
         """
         try:
             text = self._call_gemini(prompt)
