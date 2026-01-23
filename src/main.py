@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import os
 import sys
+import random
 from src.utils import setup_logging, ensure_dir_exists
 from src.llm_wrapper import LLMWrapper
 from src.voice_engine import VoiceEngine
