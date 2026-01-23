@@ -2,8 +2,9 @@ name: Curiosity Automation
 
 on:
   schedule:
-    # Weekly on Saturdays starting February
-    - cron: '0 19 * 2-12 6'
+    # Trigger 1 hour before US Peak Window (7-10 PM ET) -> 6 PM ET = 23:00 UTC
+    # Frequency: Every 3 days
+    - cron: '0 23 */3 * *'
   workflow_dispatch:
     inputs:
       type:
