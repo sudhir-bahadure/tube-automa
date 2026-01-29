@@ -12,17 +12,22 @@ class YouTubeUploader:
     def __init__(self):
         self.youtube = self._get_authenticated_service()
 
-    def _get_authenticated_service(self):
+    def _get_authenticated_service(self, fallback_to_minimal=False):
         if not Config.YOUTUBE_REFRESH_TOKEN:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
             
         try:
             # We request multiple scopes for full features (Upload, Pin, Analytics)
-            scopes = [
-                "https://www.googleapis.com/auth/youtube",
-                "https://www.googleapis.com/auth/youtube.force-ssl",
-                "https://www.googleapis.com/auth/yt-analytics.readonly"
-            ]
+            # If fallback is triggered, we strictly use the minimal scope
+            if fallback_to_minimal:
+                scopes = ["https://www.googleapis.com/auth/youtube"]
+            else:
+                scopes = [
+                    "https://www.googleapis.com/auth/youtube",
+                    "https://www.googleapis.com/auth/youtube.force-ssl",
+                    "https://www.googleapis.com/auth/yt-analytics.readonly"
+                ]
+
             credentials = google.oauth2.credentials.Credentials(
                 None, # No access token initially
                 refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
@@ -38,10 +43,10 @@ class YouTubeUploader:
             try:
                 credentials.refresh(Request())
             except Exception as e:
-                if "invalid_scope" in str(e):
-                    logger.warning("Requested scopes mismatch token permissions. Falling back to minimal 'youtube' scope...")
-                    credentials.scopes = ["https://www.googleapis.com/auth/youtube"]
-                    credentials.refresh(Request())
+                # If we haven't already fallen back, and we hit a scope error, try again with minimal scopes.
+                if not fallback_to_minimal and ("invalid_scope" in str(e) or "access_denied" in str(e)):
+                    logger.warning("Requested scopes mismatch token permissions. Retrying with minimal 'youtube' scope...")
+                    return self._get_authenticated_service(fallback_to_minimal=True)
                 else:
                     raise
             
