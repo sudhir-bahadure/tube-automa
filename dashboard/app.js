@@ -1,18 +1,67 @@
+// SaaS Pro State Management
 const REPO_OWNER = "sudhir-bahadure";
 const REPO_NAME = "tube-automa";
+let CURRENT_STEP = parseInt(localStorage.getItem('onboarding_step')) || 1;
+const TOTAL_STEPS = 4;
 
 // UI Elements
 const authBtn = document.getElementById('auth-btn');
 const authModal = document.getElementById('auth-modal');
 const ghTokenInput = document.getElementById('gh-token');
 const logsContainer = document.getElementById('logs-container');
+const progressPill = document.getElementById('setup-progress-pill');
+
+// Tab Switching
+document.querySelectorAll('.nav-links button').forEach(btn => {
+    btn.onclick = () => {
+        const tab = btn.dataset.tab;
+        switchTab(tab);
+        document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
+        btn.parentElement.classList.add('active');
+    };
+});
+
+function switchTab(tabId) {
+    const views = ['view-setup', 'telemetry-grid', 'command-grid', 'strategy-center'];
+    views.forEach(v => {
+        const el = document.getElementById(v);
+        if (el) el.style.display = 'none';
+    });
+
+    document.getElementById('page-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+
+    if (tabId === 'setup') {
+        document.getElementById('view-setup').style.display = 'block';
+    } else {
+        // Show components of the dashboard for other tabs
+        document.querySelector('.telemetry-grid').style.display = 'grid';
+        document.querySelector('.command-grid').style.display = 'grid';
+    }
+}
 
 // Check for token on load
 let GITHUB_TOKEN = localStorage.getItem('gh_token');
 if (GITHUB_TOKEN) {
-    authBtn.innerText = "GitHub Linked ✅";
+    authBtn.innerText = "Identity Verified ✅";
     addLog("Dashboard synchronized. Monitoring active.");
+    if (CURRENT_STEP === 1) updateStep(2);
     refreshData();
+}
+
+function updateStep(step) {
+    CURRENT_STEP = step;
+    localStorage.setItem('onboarding_step', step);
+    progressPill.innerText = `Setup: ${step}/4 Complete`;
+    updateWizardUI();
+}
+
+function updateWizardUI() {
+    document.querySelectorAll('.step').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.className = 'step';
+        if (s === CURRENT_STEP) el.classList.add('active');
+        if (s < CURRENT_STEP) el.classList.add('completed');
+    });
 }
 
 function addLog(message) {
@@ -242,6 +291,51 @@ async function triggerWorkflow(workflowId) {
     } catch (e) {
         addLog(`ERROR: ${e.message}`);
     }
+}
+
+// Wizard Navigation Loop
+const nextStepBtn = document.getElementById('next-step-btn');
+if (nextStepBtn) {
+    nextStepBtn.onclick = () => {
+        if (CURRENT_STEP < TOTAL_STEPS) {
+            const next = CURRENT_STEP + 1;
+            showPanel(next);
+            updateStep(next);
+        } else {
+            switchTab('dashboard');
+        }
+    };
+}
+
+function showPanel(stepIdx) {
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.add('hidden'));
+    const target = document.getElementById(`step-${stepIdx}-panel`);
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('fadeIn');
+    }
+
+    // Step-Specific Logic
+    if (stepIdx === 2) {
+        nextStepBtn.disabled = false;
+        nextStepBtn.innerText = "Next: Channel Setup";
+    } else if (stepIdx === 3) {
+        nextStepBtn.innerText = "Next: API Access";
+    } else if (stepIdx === 4) {
+        nextStepBtn.innerText = "Launch Automation 🚀";
+    }
+}
+
+function selectNiche(name) {
+    document.querySelectorAll('.niche-card').forEach(c => c.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    addLog(`Strategy Selected: ${name} Niche identified for monetization.`);
+    localStorage.setItem('user_niche', name);
+}
+
+// Initial Wizard State
+if (CURRENT_STEP > 1) {
+    showPanel(CURRENT_STEP);
 }
 
 // Polling Loop (Refresh every 60s)

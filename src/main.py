@@ -18,7 +18,7 @@ async def main():
     parser.add_argument("--dry-run", action="store_true", help="Generate video but do not upload")
     parser.add_argument("--topic", type=str, help="Specific topic to generate")
     parser.add_argument("--type", type=str, choices=["long", "short"], default="long", help="Type of video to generate")
-    parser.add_argument("--style", type=str, choices=["noir", "stickman"], default="noir", help="Visual style of the video")
+    parser.add_argument("--style", type=str, choices=["noir", "stickman", "psych_stickman"], default="noir", help="Visual style of the video")
     parser.add_argument("--schedule-for", type=str, choices=["morning", "afternoon", "evening", "now"], default="now", help="Time slot for scheduling (US ET)")
     args = parser.parse_args()
 
@@ -50,6 +50,11 @@ async def main():
         logger.info(f"Viral Topic Selected: {title}")
     
     # Override voice for stickman style if requested (Harry-like deep voice)
+    # Also use for psych_stickman if that's desired, or keep Christopher?
+    # User didn't ask to change voice ID, just settings. Stickman uses Ryan, Noir uses Christopher.
+    # Curiosity workflow uses Christopher. 
+    # Let's keep Christopher (default) for psych_stickman unless user specifically requested otherwise.
+    # But user wants "humanly" AI narration.
     if args.style == "stickman":
         voice.voice = "en-GB-RyanNeural" 
         logger.info(f"Using deep voice: {voice.voice}")
@@ -60,6 +65,8 @@ async def main():
     for attempt in range(2):
         if args.style == "stickman":
              script_data = llm.generate_conversational_script(title, type=args.type)
+        elif args.style == "psych_stickman":
+             script_data = llm.generate_psychology_stickman_script(title)
         elif args.type == "long":
             script_data = llm.generate_psychology_script(title)
         else:
@@ -88,7 +95,16 @@ async def main():
         # Audio
         audio_path = f"temp/audio_{i}.mp3"
         mood = scene.get('audio_mood', 'neutral')
-        await voice.generate_audio(scene['text'], audio_path, mood=mood)
+        
+        # Audio Settings for Psych Stickman
+        audio_kwargs = {}
+        if args.style == "psych_stickman":
+            audio_kwargs = {
+                "voice_settings": {"stability": 1.0, "similarity_boost": 0.8},
+                "remove_silence": True
+            }
+
+        await voice.generate_audio(scene['text'], audio_path, mood=mood, **audio_kwargs)
         
         # Visuals
         # Use landscape for long-form, portrait for shorts
@@ -100,6 +116,9 @@ async def main():
         
         prompt = scene.get('visual_prompt', scene.get('text'))
         logger.info(f"Generating Image with prompt: {prompt}")
+        
+        # Logic to ensure stickman usage for stickman styles even if prompt is generic (though script should provide it)
+        # prompt already comes from script.
         
         asset_mgr.generate_image(prompt, video_path, orientation=orientation)
         

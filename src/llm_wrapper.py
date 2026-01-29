@@ -248,3 +248,49 @@ class LLMWrapper:
         except Exception as e:
             print(f"Error parsing conversational script: {e}")
             return None
+
+    def generate_psychology_stickman_script(self, topic):
+        """
+        Generates a high-retention psychology script with STICKMAN visuals.
+        Requested by user feedback: Natural punctuation, stickman synced visuals.
+        """
+        scene_count = 10
+        duration_note = "CRITICAL: Total video MUST be under 60 seconds."
+        
+        prompt = f"""
+        Topic: {topic}
+        Role: A charismatic Psychology Storyteller who reveals hidden social secrets.
+        
+        STRICT RULES:
+        1. {duration_note}
+        2. VIRAL HOOK (0-3s): Start with "Did you know..." or "Psychology says..." or a "POV" that hits a social pain point.
+        3. NATURAL PUNCTUATION: You MUST use commas, periods, and ellipses (...) specifically to guide the AI Voiceover's breathing and pacing. Do not write run-on sentences.
+        4. Psychology Focus: Make it about relatable social hacks, human nature, or dark truths.
+        5. Visual Synced Animation: {scene_count} scenes.
+           - `visual_prompt`: MUST be "minimalist stickman [ACTION]" (e.g. "minimalist stickman holding head in pain", "minimalist stickman running fast").
+           - `vocal_action`: Use "jumping", "shaking", "bouncing" or "talking" to match the emotion.
+        6. JSON VALIDITY: Ensure all strings are correctly quoted and escaped.
+        
+        FORMAT:
+        {{
+            "title": "{topic}",
+            "description": "Deep psychological insights about {topic}. #Insight #SelfImprovement #Shorts",
+            "music_mood": "chill", // Choice: upbeat, funny, chill, tense
+            "scenes": [
+                {{
+                    "text": "spoken narration with breathing room...",
+                    "audio_mood": "serious",
+                    "vocal_action": "talking",
+                    "visual_prompt": "minimalist stickman illustration of..."
+                }},
+                ...
+            ]
+        }}
+        """
+        try:
+            text = self._call_gemini(prompt)
+            if not text: return None
+            return self._extract_json(text)
+        except Exception as e:
+            print(f"Error parsing psychology stickman script: {e}")
+            return None

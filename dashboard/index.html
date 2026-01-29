@@ -11,78 +11,201 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-    <div class="app-container">
+<body class="auth-required">
+    <!-- Auth Gate -->
+    <div id="auth-gate" class="modal-overlay">
+        <div class="auth-card glass">
+            <div class="logo large">
+                <img src="C:/Users/SUDHIR/.gemini/antigravity/brain/74d8e95b-562e-4fca-8e26-70cb6018c4c7/tubeautoma_pro_logo_1769319866798.png"
+                    alt="TubeAutoma Pro">
+                <span>TubeAutoma <small>PRO</small></span>
+            </div>
+            <h2>Quantum Automation Awaits</h2>
+            <p class="subtitle">Securely manage your faceless empire.</p>
+
+            <div id="auth-forms">
+                <!-- Login Phase -->
+                <div id="login-form" class="auth-phase">
+                    <button id="google-signin-btn" class="btn-primary w-100">
+                        <span class="icon">G</span> Sign in with Google
+                    </button>
+                    <div class="divider"><span>OR</span></div>
+                    <input type="email" placeholder="Creator Email">
+                    <input type="password" placeholder="Access Password">
+                    <button class="btn-secondary w-100" onclick="mockLogin()">Enter Command Deck</button>
+                    <p class="auth-footer">New Creator? <a href="#" onclick="toggleAuth()">Start Free Trial</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container hidden" id="app-main">
         <!-- Sidebar -->
         <nav class="sidebar">
             <div class="logo">
-                <div class="logo-icon"></div>
-                <span>TubeAutoma</span>
+                <img src="C:/Users/SUDHIR/.gemini/antigravity/brain/74d8e95b-562e-4fca-8e26-70cb6018c4c7/tubeautoma_pro_logo_1769319866798.png"
+                    alt="TubeAutoma Pro" class="logo-img">
+                <span>TubeAutoma <small>PRO</small></span>
             </div>
             <ul class="nav-links">
-                <li class="active"><button><span class="icon">📺</span> Videos</button></li>
-                <li><button><span class="icon">📊</span> Analytics</button></li>
-                <li><button><span class="icon">🧠</span> AI Brain</button></li>
-                <li><button><span class="icon">⚙️</span> Settings</button></li>
+                <li class="active"><button data-tab="setup"><span class="icon">🚀</span> Setup Wizard</button></li>
+                <li><button data-tab="dashboard"><span class="icon">📺</span> My Channels</button></li>
+                <li><button data-tab="strategy"><span class="icon">💡</span> Strategy Center</button></li>
+                <li><button data-tab="analytics"><span class="icon">📊</span> Insights</button></li>
             </ul>
             <div class="nav-footer">
                 <span class="status-indicator online"></span>
-                <span>AI System: ONLINE</span>
+                <span>SYSTEM SECURE</span>
             </div>
         </nav>
 
         <!-- Main Content -->
         <main class="main-content">
             <header>
-                <h1>Command Deck</h1>
+                <div class="header-left">
+                    <h1 id="page-title">Onboarding Wizard</h1>
+                    <p class="subtitle">Welcome, Creator. Let's build your empire.</p>
+                </div>
                 <div class="header-actions">
-                    <div class="optimization-tag">Optimization Protocol: ACTIVE</div>
-                    <button id="auth-btn" class="btn-secondary">Link GitHub</button>
+                    <div id="setup-progress-pill" class="optimization-tag">Setup: 1/4 Complete</div>
+                    <button id="auth-btn" class="btn-secondary">Account Security</button>
                 </div>
             </header>
 
-            <section class="telemetry-grid">
-                <div class="card glass">
-                    <h3>Video Performance</h3>
-                    <div class="chart-placeholder">
-                        <div class="bar" style="height: 40%"></div>
-                        <div class="bar" style="height: 60%"></div>
-                        <div class="bar" style="height: 55%"></div>
-                        <div class="bar" style="height: 80%"></div>
-                        <div class="bar" style="height: 70%"></div>
+            <!-- Onboarding Wizard View -->
+            <section id="view-setup" class="wizard-view active">
+                <div class="wizard-container glass">
+                    <div class="wizard-steps-indicator">
+                        <div class="step active" data-step="1">1. Pulse</div>
+                        <div class="step" data-step="2">2. Identity</div>
+                        <div class="step" data-step="3">3. Access</div>
+                        <div class="step" data-step="4">4. Finalize</div>
                     </div>
-                </div>
-                <div class="card glass">
-                    <h3>AI Brain Activity</h3>
-                    <div class="chart-placeholder line">
-                        <svg viewBox="0 0 100 40" class="line-chart">
-                            <path d="M0,35 Q10,10 20,30 T40,15 T60,25 T80,5 T100,20" fill="none"
-                                stroke="var(--neon-blue)" stroke-width="2" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="card glass usage-card">
-                    <h3>Actions Usage</h3>
-                    <div class="usage-container">
-                        <div class="usage-info">
-                            <span id="used-minutes">0</span> / <span id="total-minutes">2000</span>
-                            <small>Minutes Used</small>
+
+                    <div class="wizard-content" id="step-content">
+                        <!-- Step 0: License Activation -->
+                        <div class="step-panel" id="step-0-panel">
+                            <h3>Phase 0: Project Activation</h3>
+                            <p>Enter your professional license key to unlock quantum automation.</p>
+                            <input type="text" id="license-key" class="license-input" placeholder="XXXX-XXXX-XXXX-XXXX">
+                            <div class="action-zone">
+                                <button onclick="activateLicense()" class="btn-primary">Unlock System</button>
+                            </div>
                         </div>
-                        <div class="usage-progress-bg">
-                            <div id="usage-bar" class="usage-bar" style="width: 0%"></div>
+
+                        <!-- Step 1: Managed Deployment & GitHub Pulse -->
+                        <div class="step-panel hidden" id="step-1-panel">
+                            <h3>Phase 1: Cloud Nerve Center</h3>
+                            <p>Your automation runs on the cloud for 24/7 uptime. Let's sync your identity.</p>
+                            <div class="deployment-options">
+                                <div class="deploy-card">
+                                    <h4>Automatic Sync (Recommended)</h4>
+                                    <p>One-click setup of your automation environment.</p>
+                                    <button onclick="openModal()" class="btn-primary">Link Account</button>
+                                </div>
+                                <div class="deploy-card secondary">
+                                    <h4>Self-Managed</h4>
+                                    <p>I have my own GitHub repository ready.</p>
+                                    <button class="btn-secondary" onclick="updateStep(2)">Manual Setup</button>
+                                </div>
+                            </div>
                         </div>
-                        <div id="remaining-minutes-tag" class="pill success">Calculated: -- left</div>
+
+                        <!-- Step 2: Niche & Strategy Guidance -->
+                        <div class="step-panel hidden" id="step-2-panel">
+                            <h3>Phase 2: Define Your Identity</h3>
+                            <p>Don't have a niche yet? Choose a proven category or enter your own:</p>
+                            <div class="niche-selector-grid">
+                                <div class="niche-card" onclick="selectNiche('Psychology')">
+                                    <h4>🧠 Deep Psychology</h4>
+                                    <small>Noir Style / High CPM</small>
+                                </div>
+                                <div class="niche-card" onclick="selectNiche('Memes')">
+                                    <h4>🎭 Relatable Memes</h4>
+                                    <small>Stickman / Viral Reach</small>
+                                </div>
+                                <div class="niche-card" onclick="selectNiche('Motivation')">
+                                    <h4>⚡ Motivational</h4>
+                                    <small>Cinematic / High Shares</small>
+                                </div>
+                            </div>
+                            <div class="custom-niche-area">
+                                <input type="text" id="custom-niche-input"
+                                    placeholder="Or enter your custom niche theme...">
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Channel Setup Guide -->
+                        <div class="step-panel hidden" id="step-3-panel">
+                            <h3>Phase 3: Channel Optimization</h3>
+                            <div class="setup-checklist-container">
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="check-1">
+                                    <label for="check-1">Create Brand Account & Handle (@Name)</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="check-2">
+                                    <label for="check-2">Upload Profile Pic & Banner</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="check-3">
+                                    <label for="check-3">Verify Business Email</label>
+                                </div>
+                                <div class="checklist-item highlight">
+                                    <input type="checkbox" id="check-4">
+                                    <label for="check-4">Enable "Advanced Features" (ID Verification)</label>
+                                </div>
+                            </div>
+                            <button onclick="window.open('https://studio.youtube.com/', '_blank')" class="btn-flat">Open
+                                YouTube Studio ↗</button>
+                        </div>
+                    </div>
+                    <div class="wizard-footer">
+                        <button id="next-step-btn" class="btn-secondary" disabled>Next Phase</button>
                     </div>
                 </div>
-                <div class="card glass">
-                    <h3>Trigger Events</h3>
-                    <div class="stats-pills">
-                        <div class="pill">24h: <span id="runs-count">--</span> Runs</div>
-                        <div class="pill">Success: <span id="success-rate">--</span>%</div>
-                    </div>
-                    <div id="last-run-time" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 15px;">Last
-                        Run: --</div>
+            </section>
+            <div class="card glass">
+                <h3>Video Performance</h3>
+                <div class="chart-placeholder">
+                    <div class="bar" style="height: 40%"></div>
+                    <div class="bar" style="height: 60%"></div>
+                    <div class="bar" style="height: 55%"></div>
+                    <div class="bar" style="height: 80%"></div>
+                    <div class="bar" style="height: 70%"></div>
                 </div>
+            </div>
+            <div class="card glass">
+                <h3>AI Brain Activity</h3>
+                <div class="chart-placeholder line">
+                    <svg viewBox="0 0 100 40" class="line-chart">
+                        <path d="M0,35 Q10,10 20,30 T40,15 T60,25 T80,5 T100,20" fill="none" stroke="var(--neon-blue)"
+                            stroke-width="2" />
+                    </svg>
+                </div>
+            </div>
+            <div class="card glass usage-card">
+                <h3>Actions Usage</h3>
+                <div class="usage-container">
+                    <div class="usage-info">
+                        <span id="used-minutes">0</span> / <span id="total-minutes">2000</span>
+                        <small>Minutes Used</small>
+                    </div>
+                    <div class="usage-progress-bg">
+                        <div id="usage-bar" class="usage-bar" style="width: 0%"></div>
+                    </div>
+                    <div id="remaining-minutes-tag" class="pill success">Calculated: -- left</div>
+                </div>
+            </div>
+            <div class="card glass">
+                <h3>Trigger Events</h3>
+                <div class="stats-pills">
+                    <div class="pill">24h: <span id="runs-count">--</span> Runs</div>
+                    <div class="pill">Success: <span id="success-rate">--</span>%</div>
+                </div>
+                <div id="last-run-time" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 15px;">Last
+                    Run: --</div>
+            </div>
             </section>
 
             <section class="prompt-tweak-container glass">
@@ -101,7 +224,8 @@
                         <p>Generate viral funny shorts</p>
                         <small class="wf-status">Last: --</small>
                     </div>
-                    <button onclick="triggerWorkflow('daily_meme.yml')" class="btn-trigger neon-pink">Run Now</button>
+                    <button onclick="triggerWorkflow('daily_meme.yml')" class="btn-trigger neon-pink">Run
+                        Now</button>
                 </div>
                 <div class="trigger-card glass" id="workflow-daily_curiosity.yml">
                     <div class="status-indicator-mini" title="Status: Unknown"></div>
@@ -120,7 +244,8 @@
                         <p>Long form AI Storytelling</p>
                         <small class="wf-status">Last: --</small>
                     </div>
-                    <button onclick="triggerWorkflow('daily_long.yml')" class="btn-trigger neon-purple">Run Now</button>
+                    <button onclick="triggerWorkflow('daily_long.yml')" class="btn-trigger neon-purple">Run
+                        Now</button>
                 </div>
             </section>
 
@@ -171,6 +296,7 @@
         </div>
     </div>
 
+    <script src="auth.js"></script>
     <script src="app.js"></script>
 </body>
 

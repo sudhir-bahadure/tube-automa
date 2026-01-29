@@ -89,7 +89,7 @@ class VideoEditor:
                         # Process Image
                         img_clip = ImageClip(v_path).set_duration(duration)
                         
-                        if style == "stickman":
+                        if style == "stickman" or style == "psych_stickman":
                             # STICKMAN STYLE: Pure White BG, Centered, Fade In/Out, Pleasant Liveness
                             
                             # 1. CREATE PARTICLE BACKGROUND
@@ -159,7 +159,14 @@ class VideoEditor:
                             if v_action not in ['bouncing', 'jumping'] and not is_punchline:
                                 video_clip = video_clip.resize(lambda t: 1.0 + 0.015 * math.sin(2 * math.pi * 0.25 * t))
                             
-                            video_clip = video_clip.fadein(0.4).fadeout(0.4)
+                            # TRANSITION LOGIC
+                            if style == "stickman":
+                                # Original Meme Style: Fade In/Out (Blink)
+                                video_clip = video_clip.fadein(0.4).fadeout(0.4)
+                            else:
+                                # Professional Psych Stickman: Fade In only, no fade out (continuous)
+                                video_clip = video_clip.fadein(0.2)
+
                             final_scene_bg = CompositeVideoClip([bg_composite, video_clip.set_start(0)])
                             video_clip = final_scene_bg
                         else:
@@ -188,7 +195,7 @@ class VideoEditor:
                                 video_clip = video_clip.set_position('center')
                             
                             video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
-
+                            
                     else:
                         # Video Handling
                         video_clip = VideoFileClip(v_path)
@@ -207,8 +214,12 @@ class VideoEditor:
 
                 video_clip = video_clip.set_audio(audio_clip)
 
-                if i > 0 and style != "stickman": # Crossfade only for noir/standard
-                    video_clip = video_clip.crossfadein(0.5)
+                # Crossfade Mapping
+                if i > 0:
+                    if style == "psych_stickman":
+                        video_clip = video_clip.crossfadein(0.3)
+                    elif style != "stickman": # Noir/Standard
+                        video_clip = video_clip.crossfadein(0.5)
 
                 # Subtitles / Captions
                 txt_h = 400
