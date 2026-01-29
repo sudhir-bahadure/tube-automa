@@ -12,29 +12,48 @@ class YouTubeUploader:
     def __init__(self):
         self.youtube = self._get_authenticated_service()
 
-    def _get_authenticated_service(self, fallback_to_minimal=False):
+    def _get_authenticated_service(self, attempt=0):
         if not Config.YOUTUBE_REFRESH_TOKEN:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
             
-        try:
-            # We request multiple scopes for full features (Upload, Pin, Analytics)
-            # If fallback is triggered, we strictly use the minimal scope
-            if fallback_to_minimal:
-                scopes = ["https://www.googleapis.com/auth/youtube"]
-            else:
-                scopes = [
-                    "https://www.googleapis.com/auth/youtube",
-                    "https://www.googleapis.com/auth/youtube.force-ssl",
-                    "https://www.googleapis.com/auth/yt-analytics.readonly"
-                ]
+        # Fallback Strategy:
+        # Level 0 (Preferred): Full Access (Upload, Pin, Analytics)
+        # Level 1 (Compat): Standard YouTube (Broad)
+        # Level 2 (Restricted): Upload & Force-SSL (No Analytics)
+        # Level 3 (Minimal): Upload Only (Guaranteed Base)
+        
+        scope_levels = [
+            [ # Level 0
+                "https://www.googleapis.com/auth/youtube",
+                "https://www.googleapis.com/auth/youtube.force-ssl",
+                "https://www.googleapis.com/auth/yt-analytics.readonly"
+            ],
+            [ # Level 1
+                "https://www.googleapis.com/auth/youtube"
+            ],
+            [ # Level 2
+                "https://www.googleapis.com/auth/youtube.upload",
+                "https://www.googleapis.com/auth/youtube.force-ssl"
+            ],
+            [ # Level 3
+                "https://www.googleapis.com/auth/youtube.upload"
+            ]
+        ]
+        
+        if attempt >= len(scope_levels):
+            raise Exception("Failed to authenticate with all available scope combinations. Please check your Token permissions.")
 
+        current_scopes = scope_levels[attempt]
+        logger.info(f"Authenticating with Scopes Level {attempt}: {current_scopes}")
+
+        try:
             credentials = google.oauth2.credentials.Credentials(
                 None, # No access token initially
                 refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
                 token_uri="https://oauth2.googleapis.com/token",
                 client_id=Config.YOUTUBE_CLIENT_ID,
                 client_secret=Config.YOUTUBE_CLIENT_SECRET,
-                scopes=scopes
+                scopes=current_scopes
             )
             service = build("youtube", "v3", credentials=credentials)
             
@@ -43,10 +62,10 @@ class YouTubeUploader:
             try:
                 credentials.refresh(Request())
             except Exception as e:
-                # If we haven't already fallen back, and we hit a scope error, try again with minimal scopes.
-                if not fallback_to_minimal and ("invalid_scope" in str(e) or "access_denied" in str(e)):
-                    logger.warning("Requested scopes mismatch token permissions. Retrying with minimal 'youtube' scope...")
-                    return self._get_authenticated_service(fallback_to_minimal=True)
+                # If scope error, try next level
+                if "invalid_scope" in str(e) or "access_denied" in str(e) or "unauthorized_client" in str(e):
+                    logger.warning(f"Auth failed at Level {attempt} ({e}). Falling back to Level {attempt+1}...")
+                    return self._get_authenticated_service(attempt=attempt+1)
                 else:
                     raise
             
@@ -59,9 +78,17 @@ class YouTubeUploader:
                 logger.error("ACTION REQUIRED: Run 'python setup_youtube_auth.py' locally and update YOUTUBE_REFRESH_TOKEN in GitHub Secrets.")
                 logger.error("TIP: Ensure your Google Cloud Project OAuth Consent is set to 'Production' (Published) to avoid 7-day expiration.")
                 logger.error("-" * 60)
+                raise
+            elif "Failed to authenticate" in error_msg: # propagate up
+                raise 
             else:
+                # If it's a scope error outside the inner try, catch it here too just in case
+                if "invalid_scope" in error_msg or "access_denied" in error_msg:
+                     logger.warning(f"Auth failed at Level {attempt} ({e}). Falling back to Level {attempt+1}...")
+                     return self._get_authenticated_service(attempt=attempt+1)
+
                 logger.error(f"Failed to authenticate with YouTube: {e}")
-            raise
+                raise
 
     def upload_video(self, video_path, title, description, tags=None, privacy_status="private", publish_at=None, category_id="27", altered_content=False):
         try:
