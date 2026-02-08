@@ -86,8 +86,11 @@ class VideoEditor:
                 v_path = scene['video_path']
                 if os.path.exists(v_path):
                     if v_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        # Process Image
-                        img_clip = ImageClip(v_path).set_duration(duration)
+                        # Process Image - Use PIL to avoid imageio backend errors
+                        from PIL import Image as PILImage
+                        pil_img = PILImage.open(v_path)
+                        img_array = np.array(pil_img)
+                        img_clip = ImageClip(img_array).set_duration(duration)
                         
                         if style == "stickman" or style == "psych_stickman":
                             # STICKMAN STYLE: Pure White BG, Centered, Fade In/Out, Pleasant Liveness
@@ -169,32 +172,49 @@ class VideoEditor:
 
                             final_scene_bg = CompositeVideoClip([bg_composite, video_clip.set_start(0)])
                             video_clip = final_scene_bg
-                        else:
-                            # NOIR STYLE: Standard animated visuals
-                            anim_type = random.choice(['zoom_in', 'zoom_out', 'pan_left', 'pan_right'])
-                            base_scale = 1.3
+                        elif style == "noir":
+                            # NOIR STYLE: Cinematic, slow, creepy animations
+                            # We want to avoid "bouncy" or "fast" movements.
+                            # Focus on: Slow Zooms (Kenneth Burns), Slow Pans.
+                            
+                            anim_type = random.choice(['slow_zoom_in', 'slow_zoom_out', 'subtle_pan'])
+                            
+                            # Ensure we have enough resolution to crop/move
+                            base_scale = 1.2
                             if is_short:
                                 img_clip = img_clip.resize(height=int(target_h * base_scale))
                             else:
                                 img_clip = img_clip.resize(width=int(target_w * base_scale))
                                 
+                            # Center Crop Initial
                             img_clip = img_clip.crop(x_center=img_clip.w/2, y_center=img_clip.h/2, width=int(target_w * 1.1), height=int(target_h * 1.1))
+
+                            if anim_type == 'slow_zoom_in':
+                                # Very slow crawl in
+                                video_clip = img_clip.resize(lambda t: 1.0 + 0.05 * (t/duration))
+                            elif anim_type == 'slow_zoom_out':
+                                # Very slow crawl out
+                                video_clip = img_clip.resize(lambda t: 1.1 - 0.05 * (t/duration))
+                            elif anim_type == 'subtle_pan':
+                                # Horizontal drift
+                                video_clip = img_clip.set_position(lambda t: (int(-0.05 * target_w * (t/duration)), 'center'))
                             
-                            if anim_type == 'zoom_in':
-                                video_clip = img_clip.resize(lambda t: 1.0 + 0.15 * (t/duration))
-                            elif anim_type == 'zoom_out':
-                                video_clip = img_clip.resize(lambda t: 1.15 - 0.15 * (t/duration))
-                            elif anim_type == 'pan_left':
-                                video_clip = img_clip.set_position(lambda t: (int(-0.1 * target_w * (t/duration)), 'center'))
-                            elif anim_type == 'pan_right':
-                                video_clip = img_clip.set_position(lambda t: (int(-0.1 * target_w * (1 - t/duration)), 'center'))
-                            else:
-                                video_clip = img_clip
-                                
-                            if anim_type.startswith('zoom'):
+                            # Center anchor for zooms
+                            if 'zoom' in anim_type:
                                 video_clip = video_clip.set_position('center')
-                            
+                                
+                            # Final Crop to viewport
                             video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
+                            
+                            # Color Grading: High Contrast B&W (Noir)
+                            # MoviePy doesn't have robust color grading built-in without ImageMagick sometimes
+                            # But we can try simple saturation adjustments if available or assume image gen did it.
+                            # For now, rely on image prompt "noir, bw-photography".
+                            
+                            # Vignette (Optional, if we implemented a mask overlay)
+
+                        else:
+                            # STANDARD / FALLBACK STYLE
                             
                     else:
                         # Video Handling

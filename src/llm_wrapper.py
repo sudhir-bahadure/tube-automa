@@ -1,7 +1,7 @@
 import time
 import json
 from google import genai
-from .config import Config
+from config import Config
 
 class LLMWrapper:
     def __init__(self):
@@ -294,3 +294,10 @@ class LLMWrapper:
         except Exception as e:
             print(f"Error parsing psychology stickman script: {e}")
             return None
+
+# Singleton Instance
+try:
+    llm = LLMWrapper()
+except Exception as e:
+    print(f"LLM Init Warning: {e}")
+    llm = None

@@ -162,6 +162,38 @@ def generate_content_metadata(mode="meme", tweak=""):
             "visual_style": "sketch_static"
         }
     
+    elif mode == "noir":
+        # Director Mode (Dark Psychology)
+        # Tweak allows user override topic
+        topic = tweak if tweak else "The Dark Triad in Everyday Life"
+        
+        print(f"[*] Director Mode Topic: {topic}")
+        
+        # We use the new LLM method for high-quality scripts
+        # Ensure llm_wrapper has this method or use a generic fallback
+        try:
+            script_data = llm.generate_psychology_short_script(topic)
+        except AttributeError:
+            # Fallback if method missing in LLM wrapper (should not happen if synced)
+            print("[!] LLM Wrapper missing 'generate_psychology_short_script'. Using generic.")
+            script_data = generate_meme_script(topic) # Fallback
+
+        if not script_data:
+            print("[!] Failed to generate Noir script.")
+            return None
+            
+        return {
+            "mode": "noir",
+            "category": "education",
+            "topic": topic,
+            "title": script_data.get("title", f"The Psychology of {topic}"),
+            "description": script_data.get("description", "Deep dive."),
+            "tags": script_data.get("tags", ["psychology", "noir"]),
+            "script": script_data.get("scenes", []),
+            "visual_style": "noir",
+            "music_mood": script_data.get("music_mood", "tense")
+        }
+
     # Legacy/Long-form support would go here if needed, but we are focusing on MEMES.
     return None
 

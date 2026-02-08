@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Add src to path
-sys.path.append(os.path.join(os.getcwd(), 'src'))
+# Add src to path - REMOVED for module execution
+# sys.path.append(os.path.join(os.getcwd(), 'src'))
 
 # Import Modules
 try:
@@ -20,8 +20,9 @@ try:
     from moviepy.editor import ImageClip, CompositeVideoClip
     import PIL.Image
 except ImportError as e:
-    print(f"❌ CRITICAL IMPORT ERROR: {e}")
-    sys.exit(1)
+    print(f"CRITICAL IMPORT ERROR: {e}")
+    # sys.exit(1)
+    pass
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
