@@ -215,7 +215,7 @@ class VideoEditor:
 
                         else:
                             # STANDARD / FALLBACK STYLE
-                            
+                            video_clip = img_clip.set_position('center')
                     else:
                         # Video Handling
                         video_clip = VideoFileClip(v_path)
