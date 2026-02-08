@@ -1,7 +1,7 @@
 import time
 import json
 from google import genai
-from config import Config
+from .config import Config
 
 class LLMWrapper:
     def __init__(self):
