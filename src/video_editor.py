@@ -272,15 +272,15 @@ class VideoEditor:
                 if is_short:
                     txt_w = int(target_w * 0.9)
                     # MEME STYLE: Impact-like bold white with thick black stroke
-                        txt_clip = self._create_text_clip(
-                            scene['text'].upper(), # Memes usually have all-caps
-                            size=(txt_w, txt_h),
-                            fontsize=70, # Larger for memes
-                            color='white', 
-                            stroke_color='black', 
-                            stroke_width=5, # Thicker stroke
-                            duration=duration
-                        )
+                    txt_clip = self._create_text_clip(
+                        scene['text'].upper(), # Memes usually have all-caps
+                        size=(txt_w, txt_h),
+                        fontsize=70, # Larger for memes
+                        color='white', 
+                        stroke_color='black', 
+                        stroke_width=5, # Thicker stroke
+                        duration=duration
+                    )
                     txt_clip = txt_clip.set_pos(('center', target_h * 0.75)).set_duration(duration)
                     final_scene = CompositeVideoClip([video_clip, txt_clip])
                 else:
