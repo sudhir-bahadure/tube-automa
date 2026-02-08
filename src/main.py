@@ -64,7 +64,10 @@ async def main():
     script_data = None
     for attempt in range(2):
         if args.style == "stickman":
-             script_data = llm.generate_conversational_script(title, type=args.type)
+            if args.type == "short":
+                script_data = llm.generate_relatable_comedy_script(title)
+            else:
+                script_data = llm.generate_conversational_script(title, type=args.type)
         elif args.style == "psych_stickman":
              script_data = llm.generate_psychology_stickman_script(title)
         elif args.type == "long":

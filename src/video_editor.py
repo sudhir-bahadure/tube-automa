@@ -90,6 +90,10 @@ class VideoEditor:
                         from PIL import Image as PILImage
                         pil_img = PILImage.open(v_path)
                         img_array = np.array(pil_img)
+                        # FAIL-SAFE: Crop bottom 8% of the image to remove potential Pollinations logo
+                        h, w = img_array.shape[:2]
+                        crop_h = int(h * 0.08)
+                        img_array = img_array[:h-crop_h, :] 
                         img_clip = ImageClip(img_array).set_duration(duration)
                         
                         if style == "stickman" or style == "psych_stickman":
@@ -147,11 +151,15 @@ class VideoEditor:
                             
                             elif v_action == 'shaking' or is_punchline:
                                 # High frequency jitter (Intense for punchlines)
-                                intensity = 25 if is_punchline else 8
+                                intensity = 35 if is_punchline else 8 # Increase intensity
                                 video_clip = img_clip.set_position(lambda t, by=base_y, inst=intensity: 
                                                                   ('center', by + random.uniform(-inst, inst)))
                                 if is_punchline:
-                                    video_clip = video_clip.resize(lambda t: 1.1 + 0.05 * math.sin(2 * math.pi * 10 * t)) # Visual pop
+                                    # Sudden Zoom Punch
+                                    video_clip = video_clip.resize(lambda t: 1.15 + 0.1 * math.sin(2 * math.pi * 5 * t)) 
+                                    
+                                    # Add extra pop with opacity flicker? No, zoom is better.
+                                    video_clip = video_clip.set_start(0)
                             
                             elif v_action == 'waving':
                                 video_clip = img_clip.rotate(lambda t: 5 * math.sin(2 * math.pi * 0.5 * t)).set_position(base_pos)
@@ -233,6 +241,24 @@ class VideoEditor:
                     video_clip = ColorClip(size=(target_w, target_h), color=(0,0,0), duration=duration)
 
                 video_clip = video_clip.set_audio(audio_clip)
+                
+                # Overly Comedy SFX for Punchlines
+                if style == "stickman" and scene.get('is_punchline'):
+                    sfx_dir = "assets/sfx"
+                    if os.path.exists(sfx_dir):
+                        import glob
+                        sfx_files = glob.glob(os.path.join(sfx_dir, "*.mp3")) + glob.glob(os.path.join(sfx_dir, "*.wav"))
+                        if sfx_files:
+                            try:
+                                selected_sfx = random.choice(sfx_files)
+                                sfx_clip = AudioFileClip(selected_sfx).volumex(0.8)
+                                # Mix with original audio
+                                if sfx_clip.duration > video_clip.duration:
+                                    sfx_clip = sfx_clip.subclip(0, video_clip.duration)
+                                video_clip.audio = CompositeAudioClip([video_clip.audio, sfx_clip])
+                                print(f"DEBUG: Added comedy SFX: {os.path.basename(selected_sfx)}")
+                            except Exception as sfx_e:
+                                print(f"SFX Overlay Error: {sfx_e}")
 
                 # Crossfade Mapping
                 if i > 0:
@@ -245,16 +271,17 @@ class VideoEditor:
                 txt_h = 400
                 if is_short:
                     txt_w = int(target_w * 0.9)
-                    txt_clip = self._create_text_clip(
-                        scene['text'], 
-                        size=(txt_w, txt_h),
-                        fontsize=50, 
-                        color='black' if style == "stickman" else 'white', 
-                        stroke_color='white' if style == "stickman" else 'black', 
-                        stroke_width=2,
-                        duration=duration
-                    )
-                    txt_clip = txt_clip.set_pos(('center', target_h * 0.8)).set_duration(duration)
+                    # MEME STYLE: Impact-like bold white with thick black stroke
+                        txt_clip = self._create_text_clip(
+                            scene['text'].upper(), # Memes usually have all-caps
+                            size=(txt_w, txt_h),
+                            fontsize=70, # Larger for memes
+                            color='white', 
+                            stroke_color='black', 
+                            stroke_width=5, # Thicker stroke
+                            duration=duration
+                        )
+                    txt_clip = txt_clip.set_pos(('center', target_h * 0.75)).set_duration(duration)
                     final_scene = CompositeVideoClip([video_clip, txt_clip])
                 else:
                     txt_w = int(target_w * 0.8)

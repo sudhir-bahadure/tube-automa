@@ -18,6 +18,6 @@ class Config:
     YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
     # Content Settings
-    NICHE = os.getenv("NICHE", "Deep Dark Psychology and Human Behavior")
+    NICHE = os.getenv("NICHE", "Relatable Daily Life Humour and Human Experience")
     VIDEO_LANGUAGE = os.getenv("VIDEO_LANGUAGE", "en-US")
     VOICE_NAME = os.getenv("VOICE_NAME", "en-US-ChristopherNeural") # Deep, professional male voice

@@ -42,7 +42,8 @@ class AssetManager:
         import urllib.parse
         
         # Add flavor tags to the prompt to ensure rich, purely animated visuals
-        enhanced_prompt = f"{prompt}, centered composition, detailed textures, volumetric lighting, high dynamic range, digital art style, no people, no real humans, no text, no qr code, no watermark"
+        # Increased focus on removing any text/UI elements/watermarks
+        enhanced_prompt = f"{prompt}, high quality digital art, vibrant colors, centered composition, no text, no captions, no watermark, no logo, no qr code, no user interface, no signature"
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
         
         # Dimensions for Pollinations
@@ -56,7 +57,8 @@ class AssetManager:
         import random
         seed = random.randint(1, 1000000)
         
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&enhance=true&seed={seed}"
+        # Using specific parameters to avoid logos/text
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&enhance=true&seed={seed}&nofeed=true"
         
         return self.download_file(url, output_path)
 

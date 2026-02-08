@@ -201,6 +201,47 @@ class LLMWrapper:
         except:
             return None
 
+    def generate_relatable_comedy_script(self, topic):
+        """
+        Generates a script focused on Relatable Day-to-Day Comedy (POV style).
+        Focus: Observational humor, "That feeling when...", "POV: You just...".
+        """
+        prompt = f"""
+        Topic: {topic}
+        Role: A relatable observational comedian who finds the funny in everyday struggle.
+        
+        STRICT RULES:
+        1. CRITICAL: Total video MUST be under 60 seconds (10 scenes).
+        2. VIRAL HOOK (0-3s): Start with "POV:..." or "We all know that feeling when..." or "Why does every [topic] do this?"
+        3. RELATABILITY: Focus on the small, annoying, or awkward things humans do in daily life.
+        4. COMEDIC TIMING: Use ellipses (...) and shorter sentences for comedic beats.
+        5. Visuals: MUST be "minimalist stickman [ACTION]" that VISUALLY shows the joke.
+        6. Style: Fun, slightly sarcastic, human-to-human vibe. NO AI SLOP.
+        
+        FORMAT:
+        {{
+            "title": "POV: {topic}",
+            "description": "Honestly, why is this so real? 😂 #Relatable #DailyLife #Memes #POV",
+            "music_mood": "funny", // Choice: funny, upbeat, chill, tense
+            "scenes": [
+                {{
+                    "text": "spoken narration...",
+                    "audio_mood": "neutral", // or funny, energetic
+                    "vocal_action": "talking", // choice: jumping, shaking, bouncing, talking
+                    "visual_prompt": "minimalist stickman [doing something relatable]..."
+                }},
+                ... (10 scenes total)
+            ]
+        }}
+        """
+        try:
+            text = self._call_gemini(prompt)
+            if not text: return None
+            return self._extract_json(text)
+        except Exception as e:
+            print(f"Error parsing relatable comedy script: {e}")
+            return None
+
     def generate_conversational_script(self, topic, type="short"):
         """Generates a high-SEO, human-like script with dynamic stickman movements."""
         
