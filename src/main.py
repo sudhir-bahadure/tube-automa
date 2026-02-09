@@ -144,7 +144,8 @@ async def main():
     is_short = (args.type == "short")
     
     try:
-        success = editor.create_video(processed_scenes, output_file, is_short=is_short, bg_music_path=bg_music_path, style=args.style)
+        bg_color = script_data.get('bg_color', "#FFFFFF") # Default to white
+        success = editor.create_video(processed_scenes, output_file, is_short=is_short, bg_music_path=bg_music_path, style=args.style, bg_color=bg_color)
     except Exception as e:
         logger.error(f"CRITICAL RENDER ERROR: {e}")
         import traceback

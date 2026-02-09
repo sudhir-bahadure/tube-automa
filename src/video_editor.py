@@ -58,7 +58,7 @@ class VideoEditor:
         except Exception as e:
             print(f"PIL Text Render failed: {e}")
             return ColorClip(size=size, color=(0,0,0,0), duration=duration)
-    def create_video(self, scenes, output_path, is_short=True, bg_music_path=None, style="noir"):
+    def create_video(self, scenes, output_path, is_short=True, bg_music_path=None, style="noir", bg_color="#FFFFFF"):
         """
         Stitches visualization, audio and subtitles with dynamic animations and transitions.
         style: "noir" (Standard dark surreal) or "stickman" (Minimalist stick figures on white)
@@ -97,27 +97,34 @@ class VideoEditor:
                         img_clip = ImageClip(img_array).set_duration(duration)
                         
                         if style == "stickman" or style == "psych_stickman":
-                            # STICKMAN STYLE: Pure White BG, Centered, Fade In/Out, Pleasant Liveness
+                            # VIRAL STYLE: Solid Vibrant BG (Selected by AI), Centered, Pleasant Liveness
                             
-                            # 1. CREATE PARTICLE BACKGROUND
+                            # 1. CREATE SOLID BACKGROUND
+                            # Convert hex to RGB if necessary
+                            if isinstance(bg_color, str) and bg_color.startswith('#'):
+                                h = bg_color.lstrip('#')
+                                bg_rgb = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                            else:
+                                bg_rgb = (255, 255, 255) # Fallback to white
+
                             backgrounds = []
-                            # Base white layer
-                            bg_base = ColorClip(size=(target_w, target_h), color=(255, 255, 255)).set_duration(duration)
+                            # Base vibrant layer
+                            bg_base = ColorClip(size=(target_w, target_h), color=bg_rgb).set_duration(duration)
                             backgrounds.append(bg_base)
                             
-                            # Add 5 minimalist drifting particles (small gray dots/squares)
-                            for p_idx in range(5):
-                                p_size = random.randint(4, 10)
-                                p_color = (220, 220, 220) # Subtle gray
+                            # Add 3 minimalist drifting particles (reduced for clean look)
+                            for p_idx in range(3):
+                                p_size = random.randint(3, 8)
+                                p_color = (255, 255, 255) # white particles on vibrant BG
                                 p_clip = ColorClip(size=(p_size, p_size), color=p_color).set_duration(duration)
                                 
                                 start_x = random.randint(0, target_w)
                                 start_y = random.randint(0, target_h)
-                                speed_x = random.uniform(-20, 20)
-                                speed_y = random.uniform(-20, 20)
+                                speed_x = random.uniform(-15, 15)
+                                speed_y = random.uniform(-15, 15)
                                 
                                 p_clip = p_clip.set_position(lambda t, sx=start_x, sy=start_y, spx=speed_x, spy=speed_y: 
-                                                            (sx + spx*t, sy + spy*t)).set_opacity(0.3)
+                                                            (sx + spx*t, sy + spy*t)).set_opacity(0.15)
                                 backgrounds.append(p_clip)
                             
                             bg_composite = CompositeVideoClip(backgrounds, size=(target_w, target_h))

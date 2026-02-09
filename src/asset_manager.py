@@ -41,9 +41,9 @@ class AssetManager:
         """Generates an image using Pollinations.ai (Free) with enhanced styling."""
         import urllib.parse
         
-        # Add flavor tags to the prompt to ensure rich, purely animated visuals
-        # Increased focus on removing any text/UI elements/watermarks
-        enhanced_prompt = f"{prompt}, high quality digital art, vibrant colors, centered composition, no text, no captions, no watermark, no logo, no qr code, no user interface, no signature"
+        # Add flavor tags to the prompt to ensure clean, flat 2D visuals (Viral Style)
+        # Focus on flat design, clean lines, and minimalist icon style
+        enhanced_prompt = f"{prompt}, flat vector art, clean lines, minimalist character icon, sticker style, solid vibrant background, vibrant colors, centered composition, no text, no captions, no watermark, no logo, no qr code, no user interface, no signature"
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
         
         # Dimensions for Pollinations

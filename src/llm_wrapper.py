@@ -215,20 +215,22 @@ class LLMWrapper:
         2. VIRAL HOOK (0-3s): Start with "POV:..." or "We all know that feeling when..." or "Why does every [topic] do this?"
         3. RELATABILITY: Focus on the small, annoying, or awkward things humans do in daily life.
         4. COMEDIC TIMING: Use ellipses (...) and shorter sentences for comedic beats.
-        5. Visuals: MUST be "minimalist stickman [ACTION]" that VISUALLY shows the joke.
-        6. Style: Fun, slightly sarcastic, human-to-human vibe. NO AI SLOP.
+        5. Visuals: MUST be "flat minimalist character icon [ACTION]" (e.g., a cute robot, emoji face, or simple person) that VISUALLY shows the joke.
+        6. VIBRANT STYLE: Each scene should have a "bg_color" that is vibrant (Red, Blue, Green, Yellow, etc.). The character must be centered on this solid background.
+        7. Style: Fun, slightly sarcastic, human-to-human vibe. NO AI SLOP.
         
         FORMAT:
         {{
             "title": "POV: {topic}",
             "description": "Honestly, why is this so real? 😂 #Relatable #DailyLife #Memes #POV",
             "music_mood": "funny", // Choice: funny, upbeat, chill, tense
+            "bg_color": "#FF0000", // A single vibrant hex color for the whole video's theme or mood
             "scenes": [
                 {{
                     "text": "spoken narration...",
                     "audio_mood": "neutral", // or funny, energetic
                     "vocal_action": "talking", // choice: jumping, shaking, bouncing, talking
-                    "visual_prompt": "minimalist stickman [doing something relatable]..."
+                    "visual_prompt": "flat minimalist white character icon [doing something relatable] on a solid {topic} themed background"
                 }},
                 ... (10 scenes total)
             ]
