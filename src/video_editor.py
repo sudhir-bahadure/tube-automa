@@ -63,6 +63,12 @@ class VideoEditor:
         Stitches visualization, audio and subtitles with dynamic animations and transitions.
         style: "noir" (Standard dark surreal) or "stickman" (Minimalist stick figures on white)
         """
+        if is_short:
+            target_w, target_h = 1080, 1920
+        else:
+            target_w, target_h = 1920, 1080
+
+        clips = []
         for i, scene in enumerate(scenes):
             try:
                 # Load Audio
