@@ -58,194 +58,188 @@ class VideoEditor:
         except Exception as e:
             print(f"PIL Text Render failed: {e}")
             return ColorClip(size=size, color=(0,0,0,0), duration=duration)
-    def create_video(self, scenes, output_path, is_short=True, bg_music_path=None, style="noir", bg_color="#FFFFFF"):
+    def create_video(self, scenes, output_video_path, is_short=True, bg_music_path=None, style="noir", bg_color="#FFFFFF"):
         """
         Stitches visualization, audio and subtitles with dynamic animations and transitions.
         style: "noir" (Standard dark surreal) or "stickman" (Minimalist stick figures on white)
         """
-        import sys
-        sys.stdout.write(f"DEBUG: Entering create_video with {len(scenes)} scenes...\n")
-        sys.stdout.flush()
-        import random
-        import math
-        
-        # Target Dimensions
-        if is_short:
-            target_w, target_h = 1080, 1920
-        else:
-            target_w, target_h = 1920, 1080
-
-        clips = []
         for i, scene in enumerate(scenes):
             try:
                 # Load Audio
-                audio_clip = AudioFileClip(scene['audio_path'])
-                duration = audio_clip.duration
-                
-                # Load Visual (Video OR Image)
-                v_path = scene['video_path']
-                if os.path.exists(v_path):
-                    if v_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        # Process Image - Use PIL to avoid imageio backend errors
-                        from PIL import Image as PILImage
-                        pil_img = PILImage.open(v_path)
-                        img_array = np.array(pil_img)
-                        # FAIL-SAFE: Crop bottom 8% of the image to remove potential Pollinations logo
-                        h, w = img_array.shape[:2]
-                        crop_h = int(h * 0.08)
-                        img_array = img_array[:h-crop_h, :] 
-                        img_clip = ImageClip(img_array).set_duration(duration)
-                        
-                        if style == "stickman" or style == "psych_stickman":
-                            # VIRAL STYLE: Solid Vibrant BG (Selected by AI), Centered, Pleasant Liveness
-                            
-                            # 1. CREATE SOLID BACKGROUND
-                            # Convert hex to RGB if necessary
-                            if isinstance(bg_color, str) and bg_color.startswith('#'):
-                                h = bg_color.lstrip('#')
-                                bg_rgb = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                            else:
-                                bg_rgb = (255, 255, 255) # Fallback to white
-
-                            backgrounds = []
-                            # Base vibrant layer
-                            bg_base = ColorClip(size=(target_w, target_h), color=bg_rgb).set_duration(duration)
-                            backgrounds.append(bg_base)
-                            
-                            # Add 3 minimalist drifting particles (reduced for clean look)
-                            for p_idx in range(3):
-                                p_size = random.randint(3, 8)
-                                p_color = (255, 255, 255) # white particles on vibrant BG
-                                p_clip = ColorClip(size=(p_size, p_size), color=p_color).set_duration(duration)
-                                
-                                start_x = random.randint(0, target_w)
-                                start_y = random.randint(0, target_h)
-                                speed_x = random.uniform(-15, 15)
-                                speed_y = random.uniform(-15, 15)
-                                
-                                p_clip = p_clip.set_position(lambda t, sx=start_x, sy=start_y, spx=speed_x, spy=speed_y: 
-                                                            (sx + spx*t, sy + spy*t)).set_opacity(0.15)
-                                backgrounds.append(p_clip)
-                            
-                            bg_composite = CompositeVideoClip(backgrounds, size=(target_w, target_h))
-                            
-                            # 2. CHARACTER ANIMATION (SQUASH & STRETCH)
-                            img_clip = img_clip.resize(width=int(target_w * 0.7))
-                            v_action = scene.get('vocal_action', 'talking')
-                            is_punchline = scene.get('is_punchline', False)
-                            
-                            # Base floating position
-                            base_y = target_h/2 - img_clip.h/2
-                            base_pos = lambda t, by=base_y: ('center', by + 15 * math.sin(2 * math.pi * 0.33 * t))
-                            
-                            if v_action == 'jumping':
-                                # Intense vertical bounce with Stretch at peak and Squash at landing
-                                def jumping_pos(t, by=base_y):
-                                    jump_val = abs(150 * math.sin(2 * math.pi * 0.8 * t))
-                                    return ('center', by - jump_val)
-                                
-                                def jumping_scale(t):
-                                    # Squash when t makes sin close to 0 (landing), Stretch when sin close to 1 (peak)
-                                    cycle = abs(math.sin(2 * math.pi * 0.8 * t))
-                                    # Scale y inverse to x
-                                    return 1.0 + 0.1 * (cycle - 0.5) 
-                                
-                                video_clip = img_clip.set_position(jumping_pos).resize(jumping_scale)
-                            
-                            elif v_action == 'bouncing' or v_action == 'jumping':
-                                # Squash & Stretch Bounce
-                                video_clip = img_clip.resize(lambda t: 1.0 + 0.15 * abs(math.sin(2 * math.pi * 0.7 * t))).set_position(base_pos)
-                            
-                            elif v_action == 'shaking' or is_punchline:
-                                # High frequency jitter (Intense for punchlines)
-                                intensity = 35 if is_punchline else 8 # Increase intensity
-                                video_clip = img_clip.set_position(lambda t, by=base_y, inst=intensity: 
-                                                                  ('center', by + random.uniform(-inst, inst)))
-                                if is_punchline:
-                                    # Sudden Zoom Punch
-                                    video_clip = video_clip.resize(lambda t: 1.15 + 0.1 * math.sin(2 * math.pi * 5 * t)) 
-                                    
-                                    # Add extra pop with opacity flicker? No, zoom is better.
-                                    video_clip = video_clip.set_start(0)
-                            
-                            elif v_action == 'waving':
-                                video_clip = img_clip.rotate(lambda t: 5 * math.sin(2 * math.pi * 0.5 * t)).set_position(base_pos)
-                            else:
-                                video_clip = img_clip.set_position(base_pos)
-                            
-                            # Apply Breathing (Slow Scaling)
-                            if v_action not in ['bouncing', 'jumping'] and not is_punchline:
-                                video_clip = video_clip.resize(lambda t: 1.0 + 0.015 * math.sin(2 * math.pi * 0.25 * t))
-                            
-                            # TRANSITION LOGIC
-                            if style == "stickman":
-                                # Original Meme Style: Fade In/Out (Blink)
-                                video_clip = video_clip.fadein(0.4).fadeout(0.4)
-                            else:
-                                # Professional Psych Stickman: Fade In only, no fade out (continuous)
-                                video_clip = video_clip.fadein(0.2)
-
-                            final_scene_bg = CompositeVideoClip([bg_composite, video_clip.set_start(0)])
-                            video_clip = final_scene_bg
-                        elif style == "noir":
-                            # NOIR STYLE: Cinematic, slow, creepy animations
-                            # We want to avoid "bouncy" or "fast" movements.
-                            # Focus on: Slow Zooms (Kenneth Burns), Slow Pans.
-                            
-                            anim_type = random.choice(['slow_zoom_in', 'slow_zoom_out', 'subtle_pan'])
-                            
-                            # Ensure we have enough resolution to crop/move
-                            base_scale = 1.2
-                            if is_short:
-                                img_clip = img_clip.resize(height=int(target_h * base_scale))
-                            else:
-                                img_clip = img_clip.resize(width=int(target_w * base_scale))
-                                
-                            # Center Crop Initial
-                            img_clip = img_clip.crop(x_center=img_clip.w/2, y_center=img_clip.h/2, width=int(target_w * 1.1), height=int(target_h * 1.1))
-
-                            if anim_type == 'slow_zoom_in':
-                                # Very slow crawl in
-                                video_clip = img_clip.resize(lambda t: 1.0 + 0.05 * (t/duration))
-                            elif anim_type == 'slow_zoom_out':
-                                # Very slow crawl out
-                                video_clip = img_clip.resize(lambda t: 1.1 - 0.05 * (t/duration))
-                            elif anim_type == 'subtle_pan':
-                                # Horizontal drift
-                                video_clip = img_clip.set_position(lambda t: (int(-0.05 * target_w * (t/duration)), 'center'))
-                            
-                            # Center anchor for zooms
-                            if 'zoom' in anim_type:
-                                video_clip = video_clip.set_position('center')
-                                
-                            # Final Crop to viewport
-                            video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
-                            
-                            # Color Grading: High Contrast B&W (Noir)
-                            # MoviePy doesn't have robust color grading built-in without ImageMagick sometimes
-                            # But we can try simple saturation adjustments if available or assume image gen did it.
-                            # For now, rely on image prompt "noir, bw-photography".
-                            
-                            # Vignette (Optional, if we implemented a mask overlay)
-
-                        else:
-                            # STANDARD / FALLBACK STYLE
-                            video_clip = img_clip.set_position('center')
-                    else:
-                        # Video Handling
-                        video_clip = VideoFileClip(v_path)
-                        if video_clip.duration < duration:
-                            video_clip = video_clip.loop(duration=duration)
-                        else:
-                            video_clip = video_clip.subclip(0, duration)
-                        
-                        if video_clip.w / video_clip.h > target_w / target_h:
-                            video_clip = video_clip.resize(height=target_h)
-                        else:
-                            video_clip = video_clip.resize(width=target_w)
-                        video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
+                a_path = scene.get('audio_path', '')
+                if a_path and os.path.exists(a_path):
+                    audio_clip = AudioFileClip(a_path)
                 else:
-                    video_clip = ColorClip(size=(target_w, target_h), color=(0,0,0), duration=duration)
+                    # Silence fallback
+                    from moviepy.audio.AudioClip import AudioArrayClip
+                    audio_clip = AudioArrayClip(np.zeros((44100, 2)), fps=44100).set_duration(2)
+                
+                duration = audio_clip.duration
+                v_path = scene.get('video_path', '')
+                video_clip = None
+                
+                if v_path and os.path.exists(v_path):
+                    if v_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        try:
+                            # Process Image - Use PIL to avoid imageio backend errors
+                            from PIL import Image as PILImage
+                            pil_img = PILImage.open(v_path)
+                            img_array = np.array(pil_img)
+                            # FAIL-SAFE: Crop bottom 8% of the image to remove potential Pollinations logo
+                            h, w = img_array.shape[:2]
+                            crop_h = int(h * 0.08)
+                            img_array = img_array[:h-crop_h, :] 
+                            img_clip = ImageClip(img_array).set_duration(duration)
+                            
+                            # If we reached here, img_clip is valid. 
+                            # Let's handle the style logic inside the try block for safety.
+                            
+                            if style == "stickman" or style == "psych_stickman":
+                                # VIRAL STYLE: Solid Vibrant BG (Selected by AI), Centered, Pleasant Liveness
+                                
+                                # 1. CREATE SOLID BACKGROUND
+                                # Convert hex to RGB if necessary
+                                if isinstance(bg_color, str) and bg_color.startswith('#'):
+                                    hex_val = bg_color.lstrip('#')
+                                    bg_rgb = tuple(int(hex_val[i:i+2], 16) for i in (0, 2, 4))
+                                else:
+                                    bg_rgb = (255, 255, 255) # Fallback to white
+
+                                backgrounds = []
+                                # Base vibrant layer
+                                bg_base = ColorClip(size=(target_w, target_h), color=bg_rgb).set_duration(duration)
+                                backgrounds.append(bg_base)
+                                
+                                # Add 3 minimalist drifting particles (reduced for clean look)
+                                for p_idx in range(3):
+                                    p_size = random.randint(3, 8)
+                                    p_color = (255, 255, 255) # white particles on vibrant BG
+                                    p_clip = ColorClip(size=(p_size, p_size), color=p_color).set_duration(duration)
+                                    
+                                    start_x = random.randint(0, target_w)
+                                    start_y = random.randint(0, target_h)
+                                    speed_x = random.uniform(-15, 15)
+                                    speed_y = random.uniform(-15, 15)
+                                    
+                                    p_clip = p_clip.set_position(lambda t, sx=start_x, sy=start_y, spx=speed_x, spy=speed_y: 
+                                                                (sx + spx*t, sy + spy*t)).set_opacity(0.15)
+                                    backgrounds.append(p_clip)
+                                
+                                bg_composite = CompositeVideoClip(backgrounds, size=(target_w, target_h))
+                                
+                                # 2. CHARACTER ANIMATION (SQUASH & STRETCH)
+                                img_clip = img_clip.resize(width=int(target_w * 0.7))
+                                v_action = scene.get('vocal_action', 'talking')
+                                is_punchline = scene.get('is_punchline', False)
+                                
+                                # Base floating position
+                                base_y = target_h/2 - img_clip.h/2
+                                base_pos = lambda t, by=base_y: ('center', by + 15 * math.sin(2 * math.pi * 0.33 * t))
+                                
+                                if v_action == 'jumping':
+                                    # Intense vertical bounce with Stretch at peak and Squash at landing
+                                    def jumping_pos(t, by=base_y):
+                                        jump_val = abs(150 * math.sin(2 * math.pi * 0.8 * t))
+                                        return ('center', by - jump_val)
+                                    
+                                    def jumping_scale(t):
+                                        # Squash when t makes sin close to 0 (landing), Stretch when sin close to 1 (peak)
+                                        cycle = abs(math.sin(2 * math.pi * 0.8 * t))
+                                        # Scale y inverse to x
+                                        return 1.0 + 0.1 * (cycle - 0.5) 
+                                    
+                                    video_clip = img_clip.set_position(jumping_pos).resize(jumping_scale)
+                                
+                                elif v_action == 'bouncing' or v_action == 'jumping':
+                                    # Squash & Stretch Bounce
+                                    video_clip = img_clip.resize(lambda t: 1.0 + 0.15 * abs(math.sin(2 * math.pi * 0.7 * t))).set_position(base_pos)
+                                
+                                elif v_action == 'shaking' or is_punchline:
+                                    # High frequency jitter (Intense for punchlines)
+                                    intensity = 35 if is_punchline else 8 # Increase intensity
+                                    video_clip = img_clip.set_position(lambda t, by=base_y, inst=intensity: 
+                                                                    ('center', by + random.uniform(-inst, inst)))
+                                    if is_punchline:
+                                        # Sudden Zoom Punch
+                                        video_clip = video_clip.resize(lambda t: 1.15 + 0.1 * math.sin(2 * math.pi * 5 * t)) 
+                                        
+                                        # Add extra pop with opacity flicker? No, zoom is better.
+                                        video_clip = video_clip.set_start(0)
+                                
+                                elif v_action == 'waving':
+                                    video_clip = img_clip.rotate(lambda t: 5 * math.sin(2 * math.pi * 0.5 * t)).set_position(base_pos)
+                                else:
+                                    video_clip = img_clip.set_position(base_pos)
+                                
+                                # Apply Breathing (Slow Scaling)
+                                if v_action not in ['bouncing', 'jumping'] and not is_punchline:
+                                    video_clip = video_clip.resize(lambda t: 1.0 + 0.015 * math.sin(2 * math.pi * 0.25 * t))
+                                
+                                # TRANSITION LOGIC
+                                if style == "stickman":
+                                    # Original Meme Style: Fade In/Out (Blink)
+                                    video_clip = video_clip.fadein(0.4).fadeout(0.4)
+                                else:
+                                    # Professional Psych Stickman: Fade In only, no fade out (continuous)
+                                    video_clip = video_clip.fadein(0.2)
+
+                                video_clip = CompositeVideoClip([bg_composite, video_clip.set_start(0)])
+                                
+                            elif style == "noir":
+                                # NOIR STYLE: Cinematic, slow, creepy animations
+                                
+                                anim_type = random.choice(['slow_zoom_in', 'slow_zoom_out', 'subtle_pan'])
+                                
+                                # Ensure we have enough resolution to crop/move
+                                base_scale = 1.2
+                                if is_short:
+                                    img_clip = img_clip.resize(height=int(target_h * base_scale))
+                                else:
+                                    img_clip = img_clip.resize(width=int(target_w * base_scale))
+                                    
+                                # Center Crop Initial
+                                img_clip = img_clip.crop(x_center=img_clip.w/2, y_center=img_clip.h/2, width=int(target_w * 1.1), height=int(target_h * 1.1))
+
+                                if anim_type == 'slow_zoom_in':
+                                    video_clip = img_clip.resize(lambda t: 1.0 + 0.05 * (t/duration))
+                                elif anim_type == 'slow_zoom_out':
+                                    video_clip = img_clip.resize(lambda t: 1.1 - 0.05 * (t/duration))
+                                elif anim_type == 'subtle_pan':
+                                    video_clip = img_clip.set_position(lambda t: (int(-0.05 * target_w * (t/duration)), 'center'))
+                                
+                                if 'zoom' in anim_type:
+                                    video_clip = video_clip.set_position('center')
+                                    
+                                video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
+                            else:
+                                video_clip = img_clip.set_position('center')
+                                
+                        except Exception as img_err:
+                            print(f"  [ERROR] Image processing failed for {v_path}: {img_err}")
+                            video_clip = None
+                            
+                    elif v_path.lower().endswith(('.mp4', '.mov', '.avi')):
+                        try:
+                            video_clip = VideoFileClip(v_path)
+                            if video_clip.duration < duration:
+                                video_clip = video_clip.loop(duration=duration)
+                            else:
+                                video_clip = video_clip.subclip(0, duration)
+                            
+                            if video_clip.w / video_clip.h > target_w / target_h:
+                                video_clip = video_clip.resize(height=target_h)
+                            else:
+                                video_clip = video_clip.resize(width=target_w)
+                            video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
+                        except Exception as vid_err:
+                            print(f"  [ERROR] Video processing failed for {v_path}: {vid_err}")
+                            video_clip = None
+                
+                # FALLBACK: If visual is missing or failed to load
+                if video_clip is None:
+                    print(f"  [FALLBACK] Using color clip for scene {i+1} due to missing visual")
+                    fallback_color = (30, 30, 30) # Dark grey
+                    video_clip = ColorClip(size=(target_w, target_h), color=fallback_color, duration=duration)
 
                 video_clip = video_clip.set_audio(audio_clip)
                 
@@ -310,9 +304,7 @@ class VideoEditor:
                 print(f"Error processing scene: {e}")
         
         if clips:
-            print(f"DEBUG: Concatenating {len(clips)} clips...")
             final_video = concatenate_videoclips(clips, method="compose")
-            print("DEBUG: Concatenation successful.")
             
             # Add Background Music
             if bg_music_path and os.path.exists(bg_music_path):
@@ -333,11 +325,8 @@ class VideoEditor:
                 # Combine original voice (from final_video) with background music
                 final_audio = CompositeAudioClip([final_video.audio, bg_audio])
                 
-                print("DEBUG: Audio mixing successful.")
                 final_video = final_video.set_audio(final_audio)
 
-            print(f"DEBUG: Writing final video to {output_path}...")
-            final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", temp_audiofile="temp_audio.m4a", threads=4)
-            print("DEBUG: Write successful.")
+            final_video.write_videofile(output_video_path, fps=24, codec="libx264", audio_codec="aac", temp_audiofile="temp_audio.m4a", threads=4)
             return True
         return False

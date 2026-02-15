@@ -36,10 +36,13 @@ def generate_stickman_image(pose_description, output_path, niche="default", segm
         print(f"  [CRITICAL ERROR] Visual Generation Failed: {e}")
         # Last ditch: Error placeholder
         from PIL import Image, ImageDraw
-        img = Image.new('RGB', (1080, 1920), color=(200, 200, 255))
-        draw = ImageDraw.Draw(img)
-        draw.text((540, 960), "Error", fill=(0, 0, 0), anchor="mm")
-        img.save(output_path)
+        try:
+            img = Image.new('RGB', (1080, 1920), color=(30, 30, 30))
+            draw = ImageDraw.Draw(img)
+            draw.text((540, 960), "Visual Generation Error", fill=(255, 255, 255), anchor="mm")
+            img.save(output_path)
+        except:
+             pass
         return output_path
 
 if __name__ == "__main__":

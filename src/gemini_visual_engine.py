@@ -78,24 +78,27 @@ def generate_gemini_image(prompt, output_path):
             if "predictions" in result:
                 import base64
                 # Vertex/Gemini predict response often has bytesBase64Encoded
-                # Let's handle both common formats just in case
-                img_b64 = result["predictions"][0].get("bytesBase64Encoded") or result["predictions"][0].get("image64") or result["predictions"][0].get("mimeType") # Check struct
+                img_b64 = result["predictions"][0].get("bytesBase64Encoded") or result["predictions"][0].get("image64")
                 
-                # Careful inspection of response structure might be needed, but usually it's bytesBase64Encoded
-                if not img_b64:
-                     # Fallback check if it's direct string
-                     img_b64 = result["predictions"][0]
-                     if isinstance(img_b64, dict):
-                         img_b64 = img_b64.get("bytesBase64Encoded")
+                if not img_b64 and isinstance(result["predictions"][0], str):
+                    img_b64 = result["predictions"][0]
                 
                 if img_b64:
                     img_data = base64.b64decode(img_b64)
                     with open(output_path, "wb") as f:
                         f.write(img_data)
-                    print(f"  [SUCCESS] Image saved (REST) to {output_path}")
-                    return output_path
+                    
+                    # VERIFICATION
+                    try:
+                        with Image.open(output_path) as img:
+                            img.verify()
+                        print(f"  [SUCCESS] Image saved (REST) and verified to {output_path}")
+                        return output_path
+                    except Exception as verify_err:
+                        print(f"  [WARN] REST Image Verification failed: {verify_err}")
+                        if os.path.exists(output_path): os.remove(output_path)
             
-            print(f"  [ERROR] REST Response missing predictions: {result}")
+            print(f"  [ERROR] REST Response missing predictions or invalid: {result}")
         else:
             print(f"  [ERROR] REST API Failed {response.status_code}: {response.text}")
 

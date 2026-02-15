@@ -23,19 +23,49 @@ class AssetManager:
             print(f"Error searching video for {query}: {e}")
         return None
 
-    def download_file(self, url, output_path):
-        """Downloads a file from a URL."""
+    def download_file(self, url, output_path, max_retries=3):
+        """Downloads a file from a URL with retries and verification."""
         if not url: return False
-        try:
-            response = requests.get(url, stream=True)
-            with open(output_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024):
-                    if chunk:
-                        f.write(chunk)
-            return True
-        except Exception as e:
-            print(f"Error downloading {url}: {e}")
-            return False
+        
+        import time
+        from PIL import Image
+        
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, stream=True, timeout=15)
+                
+                if response.status_code != 200:
+                    print(f"  [WARN] Download failed (Status {response.status_code}) for attempt {attempt+1}")
+                    if response.status_code == 429: # Rate Limited
+                        time.sleep(5 * (attempt + 1))
+                    continue
+
+                # Check Content-Type to avoid saving HTML as Image
+                content_type = response.headers.get('Content-Type', '').lower()
+                if 'image' not in content_type:
+                    print(f"  [WARN] Unexpected content type: {content_type} on attempt {attempt+1}")
+                    continue
+
+                with open(output_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                
+                # VERIFICATION: Try to open with PIL
+                try:
+                    with Image.open(output_path) as img:
+                        img.verify() # Verify file integrity
+                    return True
+                except Exception as verify_err:
+                    print(f"  [WARN] Verification failed for {output_path}: {verify_err}")
+                    if os.path.exists(output_path):
+                        os.remove(output_path)
+            
+            except Exception as e:
+                print(f"  [ERROR] Download attempt {attempt+1} failed for {url}: {e}")
+                time.sleep(2)
+        
+        return False
 
     def generate_image(self, prompt, output_path, orientation="portrait"):
         """Generates an image using Pollinations.ai (Free) with enhanced styling."""
@@ -60,7 +90,10 @@ class AssetManager:
         # Using specific parameters to avoid logos/text
         url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&enhance=true&seed={seed}&nofeed=true"
         
-        return self.download_file(url, output_path)
+        success = self.download_file(url, output_path)
+        if not success:
+             print(f"  [ERROR] Failed to generate image via Pollinations for prompt: {prompt[:50]}")
+        return success
 
     def generate_thumbnail(self, title, output_path):
         """Generates a high-clickability thumbnail image."""

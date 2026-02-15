@@ -123,11 +123,13 @@ async def main():
         # Logic to ensure stickman usage for stickman styles even if prompt is generic (though script should provide it)
         # prompt already comes from script.
         
-        asset_mgr.generate_image(prompt, video_path, orientation=orientation)
+        success = asset_mgr.generate_image(prompt, video_path, orientation=orientation)
+        if not success:
+            logger.warning(f"Image generation failed for scene {i+1}. VideoEditor will use fallback visual.")
         
         processed_scenes.append({
             'audio_path': audio_path,
-            'video_path': video_path,
+            'video_path': video_path if success else None,
             'text': scene['text'],
             'is_punchline': scene.get('is_punchline', False)
         })

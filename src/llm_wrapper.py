@@ -83,8 +83,10 @@ class LLMWrapper:
                 
                 # If 429 or Quota, wait and then try the NEXT model to spread load
                 if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
-                    wait_time = min(5 * (2 ** (i // 2)), 60) # 5, 5, 10, 10, 20, 20... capping at 60s
-                    print(f"Rate Limited on {current_model}. Attempt {i+1}/{max_retries}. Swapping models and waiting {wait_time}s...")
+                    import random
+                    # Exponential backoff with jitter
+                    wait_time = min(5 * (2 ** (i // 2)), 60) + random.uniform(1, 5)
+                    print(f"Rate Limited on {current_model}. Attempt {i+1}/{max_retries}. Swapping models and waiting {wait_time:.1f}s...")
                     model_index += 1
                     time.sleep(wait_time)
                     continue

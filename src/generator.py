@@ -498,6 +498,13 @@ def create_video(metadata, output_path="final_video.mp4", pexels_key=None):
             image_path = f"temp_meme_visual_{i}.jpg"
             # AI Meme Character Generation (6 archetypes for variety)
             img = generate_stickman_image(visual_prompt, image_path, niche="meme", segment_index=i)
+            
+            if not img or not os.path.exists(image_path):
+                print(f"    [WARN] Visual generation failed for segment {i}, using fallback if possible")
+                # We could create a simple color image here as a local fallback
+                from PIL import Image
+                Image.new('RGB', (1080, 1920), color=(30, 30, 30)).save(image_path)
+            
             temp_files_to_clean.append(image_path)
             
             # --- C. Subtitle Generation (Brainrot Style) ---
