@@ -243,9 +243,54 @@ class VideoEditor:
                 
                 # FALLBACK: If visual is missing or failed to load
                 if video_clip is None:
-                    print(f"  [FALLBACK] Using color clip for scene {i+1} due to missing visual")
-                    fallback_color = (30, 30, 30) # Dark grey
-                    video_clip = ColorClip(size=(target_w, target_h), color=fallback_color, duration=duration)
+                    print(f"  [FALLBACK] Searching for fallback image for scene {i+1}")
+                    fallback_dir = "assets/fallbacks"
+                    fallback_file = None
+                    if os.path.exists(fallback_dir):
+                        # Try to find style-specific fallback
+                        style_file = f"fallback_{style}.jpg" if style in ["noir", "stickman"] else "fallback_generic.jpg"
+                        if os.path.exists(os.path.join(fallback_dir, style_file)):
+                            fallback_file = os.path.join(fallback_dir, style_file)
+                        else:
+                            # Fallback to generic if style-specific missing
+                            generic_file = os.path.join(fallback_dir, "fallback_generic.jpg")
+                            if os.path.exists(generic_file):
+                                fallback_file = generic_file
+                            else:
+                                # Pick any jpg in the dir
+                                import glob
+                                fallback_options = glob.glob(os.path.join(fallback_dir, "*.jpg"))
+                                if fallback_options:
+                                    fallback_file = random.choice(fallback_options)
+
+                    if fallback_file:
+                        print(f"  [FALLBACK] Using image asset: {fallback_file}")
+                        # Load and process the fallback image
+                        try:
+                            from PIL import Image as PILImage
+                            pil_img = PILImage.open(fallback_file)
+                            img_array = np.array(pil_img)
+                            # Resize to target
+                            fallback_clip = ImageClip(img_array).set_duration(duration)
+                            
+                            # Apply subtle movement
+                            if style == "noir":
+                                # Slow zoom for noir
+                                video_clip = fallback_clip.resize(lambda t: 1.0 + 0.05 * (t/duration)).set_position('center')
+                            else:
+                                # Gentle breathing for others
+                                video_clip = fallback_clip.resize(lambda t: 1.05 + 0.02 * math.sin(math.pi * t / duration)).set_position('center')
+                            
+                            video_clip = video_clip.crop(x_center=video_clip.w/2, y_center=video_clip.h/2, width=target_w, height=target_h)
+                        except Exception as fe:
+                            print(f"  [ERROR] Failed to load fallback image {fallback_file}: {fe}")
+                            video_clip = None
+
+                    if video_clip is None:
+                        # FINAL FAILSAFE: solid color
+                        print(f"  [FAILSAFE] Using solid color for scene {i+1}")
+                        fallback_color = (30, 30, 30) # Dark grey
+                        video_clip = ColorClip(size=(target_w, target_h), color=fallback_color, duration=duration)
 
                 video_clip = video_clip.set_audio(audio_clip)
                 

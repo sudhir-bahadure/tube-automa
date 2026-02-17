@@ -8,12 +8,14 @@ import numpy as np
 sys.path.append(os.path.join(os.getcwd(), 'src'))
 
 try:
-    from asset_manager import AssetManager
-    from video_editor import VideoEditor
-except ImportError:
-    # If running from within src
     from .asset_manager import AssetManager
     from .video_editor import VideoEditor
+except ImportError:
+    import sys
+    import os
+    sys.path.append(os.path.join(os.getcwd(), 'src'))
+    from asset_manager import AssetManager
+    from video_editor import VideoEditor
 
 def test_robust_download():
     print("\n--- Testing Robust Download ---")
@@ -88,19 +90,14 @@ def test_video_editor_fallback():
 
     print("[Test] Rendering video with corrupt/missing assets...")
     try:
-        # Create silent audio programmatically to avoid AudioFileClip crashes
-        from moviepy.audio.AudioClip import AudioArrayClip
-        import numpy as np
-        # 1 second of silence at 44.1kHz
-        silent_audio = AudioArrayClip(np.zeros((44100, 2)), fps=44100).set_duration(1)
-        silent_audio_path = "temp_silent.wav"
-        silent_audio.write_audiofile(silent_audio_path, fps=44100, logger=None)
-        
-        scenes[0]['audio_path'] = None
-        scenes[1]['audio_path'] = None
-
         print(f"Calling create_video with {len(scenes)} scenes...")
-        success = editor.create_video(scenes=scenes, output_video_path="robustness_test_output.mp4", is_short=True, style="stickman")
+        # Note: We're passing None for audio_path to trigger the internal silence fallback
+        success = editor.create_video(
+            scenes=scenes, 
+            output_video_path="robustness_test_output.mp4", 
+            is_short=True, 
+            style="stickman"
+        )
         print(f"Result: {'PASS' if success else 'FAIL'} (Rendering finished despite errors)")
     except Exception as e:
         print(f"Result: FAIL (Crashed in test script: {e})")
@@ -108,12 +105,19 @@ def test_video_editor_fallback():
         traceback.print_exc()
 
     # Cleanup
-    for f in ["corrupt_visual.jpg", "robustness_test_output.mp4", "temp_silent.wav"]:
+    print("Cleaning up...")
+    for f in ["corrupt_visual.jpg", "robustness_test_output.mp4", "temp_silent.wav", "temp_invalid.jpg"]:
         if os.path.exists(f): 
-            try: os.remove(f)
+            try: 
+                os.remove(f)
+                print(f" Removed {f}")
             except: pass
 
 if __name__ == "__main__":
-    if not os.path.exists("temp"): os.makedirs("temp")
-    test_robust_download()
-    test_video_editor_fallback()
+    try:
+        test_robust_download()
+        test_video_editor_fallback()
+    except Exception as e:
+        print(f"FATAL ERROR: {e}")
+        import traceback
+        traceback.print_exc()
