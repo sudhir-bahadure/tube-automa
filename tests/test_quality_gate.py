@@ -12,8 +12,8 @@ class QualityGateTests(unittest.TestCase):
         return {
             "format": {"duration": duration},
             "streams": [
-                {"codec_type": "video", "width": width, "height": height},
-                {"codec_type": "audio"},
+                {"codec_type": "video", "codec_name": "h264", "width": width, "height": height, "r_frame_rate": "24/1"},
+                {"codec_type": "audio", "codec_name": "aac"},
             ],
         }
 
