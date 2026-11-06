@@ -110,6 +110,34 @@ class YouTubeUploader:
             logger.error(f"Failed to upload video: {e}")
             return None
 
+    def wait_until_processed(self, video_id, timeout_seconds=2400, poll_interval=15):
+        """Wait for YouTube processing before setting a custom thumbnail or scheduling."""
+        import time
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            try:
+                response = self.youtube.videos().list(
+                    part="processingDetails,status",
+                    id=video_id,
+                    maxResults=1,
+                ).execute()
+                items = response.get("items", [])
+                if not items:
+                    raise RuntimeError(f"YouTube could not find uploaded video {video_id}.")
+                details = items[0].get("processingDetails", {})
+                state = details.get("processingStatus", "")
+                logger.info("YouTube processing status for %s: %s", video_id, state or "not reported")
+                if state == "succeeded":
+                    return True
+                if state in ("failed", "terminated"):
+                    logger.error("YouTube processing ended in state %s for %s", state, video_id)
+                    return False
+            except Exception as exc:
+                logger.warning("Could not check processing status for %s: %s", video_id, exc)
+            time.sleep(poll_interval)
+        logger.error("Timed out waiting for YouTube processing for %s", video_id)
+        return False
+
     def schedule_video(self, video_id, publish_at):
         """Schedule an already-uploaded private video only after thumbnail setup succeeds."""
         if not video_id or not publish_at:
