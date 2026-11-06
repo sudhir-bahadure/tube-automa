@@ -238,7 +238,7 @@ async def main():
             music_name = os.path.basename(bg_music_path).split('.')[0].replace('_', ' ').title()
             seo_description += f"\n\n🎵 Music: {music_name}"
         
-        seo_tags = script_data.get('tags', ['Viral', 'Trending'])
+        seo_tags = script_data.get('tags') or ['psychology', 'human behaviour', 'cognitive science']
         
         # Schedule against America/New_York so daylight-saving changes are handled.
         from datetime import datetime, timedelta, timezone
