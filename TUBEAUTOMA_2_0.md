@@ -7,7 +7,7 @@ This branch focuses on one educational channel and a controlled production pipel
 
 - One original psychology Short per day.
 - One long-form psychology documentary per week.
-- Synthetic narration and original illustrated visuals.
+- Synthetic narration, original illustrated visuals and free scholarly source lookup.
 - Free-tier-only Gemini usage with fail-closed quota handling.
 - Script originality and rendered-video quality gates.
 - YouTube destination verification before production and upload.
