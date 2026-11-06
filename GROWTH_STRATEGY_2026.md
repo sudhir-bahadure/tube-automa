@@ -11,10 +11,10 @@ The business objective is not upload volume. It is qualified long-form watch tim
 - Development branch: `feature/tube-automa-2.0`
 - Pull request: https://github.com/sudhir-bahadure/tube-automa/pull/1
 - Main branch is unchanged.
-- The latest observed CI run for the branch completed successfully: Python compilation and unit tests passed.
-- No live YouTube upload has been performed by this new pipeline.
+- CI has passed on multiple recent commits, including dependency pinning and the fail-closed rendering tests. Recheck the latest commit's Actions result before merging; a passing test suite still does not replace a real private YouTube upload.
+- No live YouTube upload has been performed by this new pipeline. The first upload must remain private and be inspected in YouTube Studio.
 - The scheduled workflows only run on the repository's default branch. They will become active after this work is merged into `main`.
-- YouTube OAuth credentials are not visible to the code integration. The runtime guard expects the authenticated channel title to be `MARROW PSYCHOLOGY`.
+- YouTube OAuth credentials are not visible to the code integration. The runtime guard requires both the authenticated channel title and exact channel ID to match `MARROW PSYCHOLOGY`. Public scheduling remains off until explicitly enabled after a private test.
 
 ## Monetization route
 
@@ -59,7 +59,7 @@ Do not start with seven Shorts every week. Start with a controlled cadence that 
 | Companion Shorts | 4/week | 30–50 seconds | Discovery and subscriber conversion |
 | Community post | 1/week when available | Poll/question | Learn audience interests and invite discussion |
 
-The existing branch currently schedules one Short daily and one long video weekly. Before the first public rollout, reduce the Short workflow to four days per week (for example Monday, Tuesday, Thursday and Saturday) and keep the Sunday long-form episode. Keep one consistent publish time and compare results rather than guessing the "best" time.
+The current schedule is four Shorts per week (Monday, Tuesday, Thursday and Saturday) plus one Sunday long-form episode. Keep this as a 90-day controlled experiment; do not increase frequency until retention, returning viewers and video quality justify it.
 
 Each Short should be a distinct mini-explainer related to the weekly long-form theme—not merely a duplicate cut-down. It should point viewers to the relevant full episode when a matching video exists.
 
