@@ -10,7 +10,7 @@ from src.asset_manager import AssetManager
 from src.video_editor import VideoEditor
 from src.youtube_uploader import YouTubeUploader
 from src.music_engine import MusicEngine
-from src.quality_gate import validate_video
+from src.quality_gate import validate_script_data, validate_video
 
 logger = setup_logging()
 
@@ -70,7 +70,10 @@ async def main():
             else:
                 script_data = llm.generate_conversational_script(title, type=args.type)
         elif args.style == "psych_stickman":
-             script_data = llm.generate_psychology_stickman_script(title)
+             if args.type == "long":
+                 script_data = llm.generate_psychology_script(title)
+             else:
+                 script_data = llm.generate_psychology_stickman_script(title)
         elif args.type == "long":
             script_data = llm.generate_psychology_script(title)
         else:
@@ -83,6 +86,13 @@ async def main():
 
     if not script_data:
         logger.error(f"Failed to generate {args.type} script after 2 attempts.")
+        sys.exit(1)
+
+    try:
+        script_check = validate_script_data(script_data, is_short=(args.type == "short"))
+        logger.info(f"Script quality gate passed: {script_check}")
+    except Exception as e:
+        logger.error(f"Script quality gate failed; refusing to render or upload: {e}")
         sys.exit(1)
 
     logger.info(f"Title: {script_data.get('title')}")
@@ -180,33 +190,26 @@ async def main():
         
         seo_tags = script_data.get('tags', ['Viral', 'Trending'])
         
-        # Preparation for Scheduling
-        from datetime import datetime, timedelta
-        
-        # Calculate publish time based on time slot
-        if args.schedule_for == "morning":
-            # 10:00 AM ET = 3:00 PM UTC (15:00)
-            target_hour_utc = 15
-        elif args.schedule_for == "afternoon":
-            # 2:00 PM ET = 7:00 PM UTC (19:00)
-            target_hour_utc = 19
-        elif args.schedule_for == "evening":
-            # 6:00 PM ET = 11:00 PM UTC (23:00)
-            target_hour_utc = 23
+        # Schedule against America/New_York so daylight-saving changes are handled.
+        from datetime import datetime, timedelta, timezone
+        from zoneinfo import ZoneInfo
+
+        target_hours_et = {"morning": 10, "afternoon": 14, "evening": 18}
+        now_utc = datetime.now(timezone.utc)
+        if args.schedule_for == "now":
+            schedule_date = now_utc + timedelta(hours=12)
         else:
-            # Default: 12 hours from now
-            schedule_date = datetime.utcnow() + timedelta(hours=12)
-            publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-            target_hour_utc = None
-        
-        if target_hour_utc is not None:
-            # Schedule for today if the hour hasn't passed, otherwise tomorrow
-            now = datetime.utcnow()
-            schedule_date = now.replace(hour=target_hour_utc, minute=0, second=0, microsecond=0)
-            if now.hour >= target_hour_utc:
-                schedule_date += timedelta(days=1)
-            publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-            logger.info(f"Scheduling video for {args.schedule_for} slot: {publish_at}")
+            eastern = now_utc.astimezone(ZoneInfo("America/New_York"))
+            target_local = eastern.replace(
+                hour=target_hours_et[args.schedule_for],
+                minute=0, second=0, microsecond=0
+            )
+            if eastern >= target_local:
+                target_local += timedelta(days=1)
+            schedule_date = target_local.astimezone(timezone.utc)
+
+        publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        logger.info(f"Scheduling video for {args.schedule_for} (America/New_York): {publish_at}")
 
         if not args.dry_run:
             # 4. Upload to YouTube
@@ -244,7 +247,8 @@ async def main():
                     tags=seo_tags,
                     publish_at=publish_at,
                     category_id=category_id,
-                    altered_content=True
+                    # Our current visuals are stylized illustrations, not photorealistic synthetic footage.
+                    altered_content=(os.getenv('YOUTUBE_SYNTHETIC_DISCLOSURE', 'false').lower() == 'true')
                 )
                 
                 if video_id:
