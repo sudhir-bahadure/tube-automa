@@ -207,7 +207,8 @@ Do not build the business around Shorts ad revenue alone. Shorts revenue is allo
 - Change Shorts cadence from daily to four days/week for the first experiment.
 
 ### P1 — growth instrumentation
-- Implement YouTube Analytics API reports.
+- Implemented an optional read-only YouTube Analytics API report; it saves a 28-day video-level snapshot as a private, 14-day GitHub Actions artifact when the OAuth token has the analytics.readonly scope.
+- Next: turn the snapshots into a weekly scorecard and topic-cluster feedback loop.
 - Save per-video metadata, research sources, script hash, visual hashes, generation settings and publish IDs.
 - Add a daily channel dashboard and weekly performance summary.
 - Build a topic-cluster scorecard; select topics using actual channel results, not LLM guesses of what is trending.
