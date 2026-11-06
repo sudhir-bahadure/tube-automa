@@ -63,6 +63,16 @@ The current schedule is four Shorts per week (Monday, Tuesday, Thursday and Satu
 
 Each Short should be a distinct mini-explainer related to the weekly long-form theme—not merely a duplicate cut-down. It should point viewers to the relevant full episode when a matching video exists.
 
+## 2026 format and audience evidence
+
+Use outside benchmarks as directional evidence, not promises. A 2026 Metricool analysis of 799,718 YouTube videos from 71,177 accounts reported that Shorts are a major discovery route, a steady Shorts habit was associated with higher long-form views, and daily posting is not a universal requirement. The sample is broad and not specific to a new psychology channel, so our four-Shorts-plus-one-long-form cadence remains a test rather than a guaranteed optimum.
+
+A 2026 observational study of 51 evidence-based psychotherapy videos reported higher viewer retention when role-play scenes were included. This is a small, context-specific sample, not proof that role-play will raise retention on MARROW. It supports testing concrete two-person scenarios and alternative interpretations in scripts rather than relying only on abstract narration.
+
+Sources:
+- Metricool, *YouTube Trends 2026* (29 July 2026): https://metricool.com/youtube-trends/
+- Frontiers in Psychology (2026), *Overcoming the novelty effect on YouTube: visibility patterns in evidence-based psychotherapy videos*: https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2026.1744748/full
+
 ## Repeatable editorial series
 
 Rotate across distinct series so the channel feels coherent without making every video interchangeable:
