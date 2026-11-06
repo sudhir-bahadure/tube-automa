@@ -44,7 +44,7 @@ jobs:
       - name: Generate and Upload Video
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: "models/gemini-3.8-flash"
+          GEMINI_MODEL: "gemini-3.8-flash"
           GEMINI_FREE_TIER_ONLY: "true"
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
