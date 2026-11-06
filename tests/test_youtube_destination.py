@@ -40,6 +40,18 @@ class YouTubeDestinationTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "YOUTUBE_EXPECTED_CHANNEL_ID"):
             self.uploader._verify_expected_channel()
 
+    def test_schedules_only_as_private(self):
+        self.uploader.youtube.videos.return_value.update.return_value.execute.return_value = {}
+        result = self.uploader.schedule_video("video-123", "2026-12-01T23:00:00Z")
+        self.assertTrue(result)
+        kwargs = self.uploader.youtube.videos.return_value.update.call_args.kwargs
+        self.assertEqual(kwargs["body"]["status"]["privacyStatus"], "private")
+        self.assertEqual(kwargs["body"]["status"]["publishAt"], "2026-12-01T23:00:00Z")
+
+    def test_schedule_failure_returns_false_and_keeps_failure_visible(self):
+        self.uploader.youtube.videos.return_value.update.return_value.execute.side_effect = RuntimeError("API unavailable")
+        self.assertFalse(self.uploader.schedule_video("video-123", "2026-12-01T23:00:00Z"))
+
 
 if __name__ == "__main__":
     unittest.main()
