@@ -23,7 +23,7 @@ The system creates original scripts, generates illustrated scenes, narrates them
 - Scheduling and source control: GitHub Actions on this public repository.
 - Background music is off by default to avoid using music with unverified licensing.
 
-This is designed to avoid paid subscriptions and API tiers. It cannot guarantee that third-party free services remain available or that an existing API key is configured without billing. Keep Gemini billing disabled in Google AI Studio/Cloud if an absolute zero-charge guarantee is required; free-tier quota exhaustion is intentionally fail-closed.
+This is designed to avoid paid subscriptions and API tiers. It cannot guarantee that third-party free services remain available or that an existing API key is configured without billing. Keep Google Cloud billing disabled for the Gemini project. The workflow requires `GEMINI_BILLING_DISABLED_CONFIRMED=true` as an operator attestation; code cannot independently inspect billing state. Free-tier quota exhaustion is intentionally fail-closed.
 
 ## Originality and quality controls
 
