@@ -200,6 +200,29 @@ class YouTubeUploader:
             logger.error(f"Failed to upload thumbnail: {e}")
             return False
 
+    def get_video_performance(self, video_ids):
+        """Fetch titles and public view counts for Analytics-ranked video IDs."""
+        ids = [str(video_id) for video_id in video_ids if video_id]
+        if not ids:
+            return []
+        try:
+            response = self.youtube.videos().list(
+                id=",".join(ids[:50]),
+                part="snippet,statistics",
+                maxResults=min(len(ids), 50),
+            ).execute()
+            return [
+                {
+                    "video_id": item.get("id", ""),
+                    "title": item.get("snippet", {}).get("title", ""),
+                    "views": int(item.get("statistics", {}).get("viewCount", 0)),
+                }
+                for item in response.get("items", [])
+            ]
+        except Exception as exc:
+            logger.warning("Could not resolve Analytics video titles: %s", exc)
+            return []
+
     def get_recent_performance(self, limit=5):
         """Fetches the titles and view counts of the last N uploaded videos."""
         try:
