@@ -13,6 +13,8 @@ jobs:
       contents: write
     
     strategy:
+      # Serialize jobs because they share and commit the same topic-history file.
+      max-parallel: 1
       matrix:
         time_slot: [morning, afternoon, evening]
       fail-fast: false  # Continue other jobs even if one fails
