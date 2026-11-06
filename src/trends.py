@@ -44,42 +44,36 @@ class TrendEngine:
         niche = Config.NICHE
         logger.info(f"Discovering viral {niche} trends...")
         
-        # ANALYTICS-DRIVEN PIVOTING
-        is_pivoting = False
         performance_str = ""
         if performance_context:
-            perf_list = [f"'{p['title']}' ({p['views']} views)" for p in performance_context]
-            performance_str = f"RECENT PERFORMANCE DATA:\n{', '.join(perf_list)}\n"
-            
-            avg_views = sum(p['views'] for p in performance_context) / len(performance_context) if performance_context else 0
-            if avg_views < 100 and len(performance_context) >= 3:
-                is_pivoting = True
-                logger.warning(f"Low performance detected (Avg: {avg_views:.0f}). Triggering VIRAL PIVOT.")
+            perf_list = [
+                f"'{p['title']}' ({p['views']} views)"
+                for p in performance_context
+            ]
+            performance_str = (
+                "RECENT CHANNEL PERFORMANCE (use only as directional context):\n"
+                + ", ".join(perf_list) + "\n"
+            )
 
-        pivot_instruction = ""
-        if is_pivoting:
-            pivot_instruction = f"""
-            CRITICAL: The channel is currently in 'Shorts Jail' (lost subscribers/low views). 
-            Do NOT return educational or subtle topics. 
-            Return 20 'DARK PSYCHOLOGY' titles that hit deep insecurities, social secrets, or human shadows. 
-            Examples: 'The truth about they look at you', 'Why you are being manipulated', 'The dark side of being nice'.
-            """
-
-        # We ask the LLM for many titles to increase the chance of finding an unused one
         prompt = f"""
-        Objective: Identify the top 20 viral, trending topics related to "{niche}" currently exploding in the USA.
-        Target: YouTube audience (high CTR, curious, conversational).
-        
+        You are the editorial researcher for an original educational channel about
+        everyday psychology, human behaviour, cognitive biases and social perception.
+
+        Generate 20 DISTINCT video-topic ideas with strong curiosity but honest framing.
+        Prefer concepts that can be explained accurately using established psychology,
+        such as cognitive biases, memory, attention, social influence, habits and decision
+        making. Each idea must support a useful explanation, a concrete everyday example,
+        and a nuance or limitation.
+
+        Do not claim that a topic is currently trending unless you have verified evidence.
+        Avoid pop-psychology myths, diagnoses, "secret signs" claims, fearbait, manipulation
+        instructions, gender stereotypes and claims that one behaviour proves intent.
+        Do not repeat these previously used topics:
+        {json.dumps(self.used_topics[-100:] if self.used_topics else [])}
+
         {performance_str}
-        {pivot_instruction}
-        
-        EXCLUSION LIST (DO NOT RETURN THESE):
-        {json.dumps(self.used_topics[-50:] if self.used_topics else [])}
-        
-        Format: Return ONLY a JSON list of strings.
-        ["Viral Title 1", "Viral Title 2", ...]
+        Return ONLY a JSON list of 20 short, distinct topic strings. No numbering or prose.
         """
-        
         try:
             response = llm._call_gemini(prompt)
             if not response:
