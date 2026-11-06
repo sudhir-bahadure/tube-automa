@@ -64,7 +64,7 @@ def validate_video(path, is_short=False, min_bytes=10000):
 
     command = [
         "ffprobe", "-v", "error", "-show_entries",
-        "format=duration:stream=codec_type,width,height",
+        "format=duration:stream=codec_type,codec_name,width,height,r_frame_rate",
         "-of", "json", path,
     ]
     try:
@@ -82,10 +82,18 @@ def validate_video(path, is_short=False, min_bytes=10000):
         raise ValueError("Rendered file has no video stream.")
     if not audios:
         raise ValueError("Rendered file has no audio stream.")
+    if videos[0].get("codec_name") not in (None, "h264"):
+        raise ValueError(f"Video codec must be H.264; found {videos[0].get('codec_name')}.")
+    if audios[0].get("codec_name") not in (None, "aac"):
+        raise ValueError(f"Audio codec must be AAC; found {audios[0].get('codec_name')}.")
 
     width, height = videos[0].get("width", 0), videos[0].get("height", 0)
     if not width or not height:
         raise ValueError("Video dimensions are missing.")
+    if is_short and (width < 720 or height < 1280):
+        raise ValueError(f"Shorts output must be at least 720x1280; found {width}x{height}.")
+    if not is_short and (width < 1280 or height < 720):
+        raise ValueError(f"Long-form output must be at least 1280x720; found {width}x{height}.")
     if is_short and height <= width:
         raise ValueError(f"Shorts output must be portrait; found {width}x{height}.")
     if not is_short and width <= height:
