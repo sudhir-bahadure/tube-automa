@@ -1,35 +1,17 @@
-# TubeAutoma 2.0 — Development Branch
+# TubeAutoma 2.0
 
-This branch contains incremental reliability improvements. The production `main` branch is unchanged.
+The current autonomous, faceless YouTube publishing design is documented in
+[AUTONOMOUS_PUBLISHING.md](AUTONOMOUS_PUBLISHING.md).
 
-## Changes in this branch
+This branch focuses on one educational channel and a controlled production pipeline:
 
-- Adds a pre-upload quality gate using FFprobe to check that rendered videos exist, contain both audio and video streams, have valid duration and dimensions, and use portrait dimensions for Shorts.
-- Records automatically selected topics only after the YouTube upload succeeds. A failed render or upload no longer consumes the topic.
-- Fixes missing `os` imports in image cleanup and audio post-processing paths.
-- Serializes the three meme matrix jobs to reduce concurrent writes to the shared topic-history file.
-- Adds unit tests and a CI workflow for Python compilation and quality-gate tests.
+- One original psychology Short per day.
+- One long-form psychology documentary per week.
+- Synthetic narration and original illustrated visuals.
+- Free-tier-only Gemini usage with fail-closed quota handling.
+- Script originality and rendered-video quality gates.
+- YouTube destination verification before production and upload.
+- Topic history recorded only after successful upload.
+- No paid voice API or unverified background music.
 
-## Automatic publishing
-
-The existing workflow continues to upload and schedule videos automatically using the configured GitHub Actions secrets. The quality gate runs before the upload code. If validation fails, the job exits without uploading.
-
-Required secrets remain the responsibility of the repository owner. Never commit API keys, OAuth refresh tokens, client secrets, or local `.env` files.
-
-## Validation
-
-CI runs:
-
-```bash
-python -m compileall -q src
-python -m unittest discover -s tests -v
-```
-
-## Rollout
-
-1. Review this branch and its CI results.
-2. Run a manual workflow test with a test channel or controlled upload configuration.
-3. Verify YouTube scheduling, thumbnails, and topic-history updates.
-4. Merge the pull request only after those checks pass.
-
-No claim of successful YouTube publishing is made by this code change alone; live publishing still depends on valid credentials, quota, channel status, and successful GitHub Actions runs.
+See [DEPLOY.md](DEPLOY.md) for the development and rollout status. The branch is not live until the pull request is merged and the first CI and YouTube destination checks pass.
