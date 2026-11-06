@@ -14,60 +14,39 @@ class YouTubeUploader:
         self._verify_expected_channel()
 
     def _verify_expected_channel(self):
-        """Fail closed if OAuth credentials point at a different channel."""
-        expected = os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE", "").strip()
-        if not expected:
-            return
-        response = self.youtube.channels().list(
-            mine=True, part="snippet", maxResults=5
-        ).execute()
-        items = response.get("items", [])
-        if not items:
-            raise RuntimeError("YouTube OAuth token did not resolve to a channel.")
-        actual_titles = [
-            item.get("snippet", {}).get("title", "").strip()
-            for item in items
-        ]
-        if expected.casefold() not in {title.casefold() for title in actual_titles}:
+        """Fail closed unless both the configured channel title and ID match."""
+        expected_title = os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE", "").strip()
+        expected_id = os.getenv("YOUTUBE_EXPECTED_CHANNEL_ID", "").strip()
+        if not expected_title or not expected_id:
             raise RuntimeError(
-                "Safety stop: YouTube OAuth credentials resolve to "
-                f"{actual_titles}, not the configured channel '{expected}'. "
-                "No video was uploaded."
+                "Safety stop: set YOUTUBE_EXPECTED_CHANNEL_TITLE and "
+                "YOUTUBE_EXPECTED_CHANNEL_ID before any YouTube operation."
             )
-        logger.info("YouTube destination verified: %s", expected)
+        response = self.youtube.channels().list(mine=True, part="snippet", maxResults=5).execute()
+        items = response.get("items", [])
+        if len(items) != 1:
+            raise RuntimeError(f"Safety stop: expected one authenticated channel, received {len(items)}.")
+        channel = items[0]
+        actual_id = channel.get("id", "")
+        actual_title = channel.get("snippet", {}).get("title", "").strip()
+        if actual_id != expected_id or actual_title.casefold() != expected_title.casefold():
+            raise RuntimeError(
+                "Safety stop: OAuth destination mismatch. "
+                f"Expected '{expected_title}' ({expected_id}); received '{actual_title}' ({actual_id})."
+            )
+        self.channel_id = actual_id
+        logger.info("YouTube destination verified: %s (%s)", actual_title, actual_id)
 
     def _get_authenticated_service(self, attempt=0):
         if not Config.YOUTUBE_REFRESH_TOKEN:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
             
-        # Fallback Strategy:
-        # Level 0 (Preferred): Full Access (Upload, Pin, Analytics)
-        # Level 1 (Compat): Standard YouTube (Broad)
-        # Level 2 (Restricted): Upload & Force-SSL (No Analytics)
-        # Level 3 (Minimal): Upload Only (Guaranteed Base)
-        
-        scope_levels = [
-            [ # Level 0
-                "https://www.googleapis.com/auth/youtube",
-                "https://www.googleapis.com/auth/youtube.force-ssl",
-                "https://www.googleapis.com/auth/yt-analytics.readonly"
-            ],
-            [ # Level 1
-                "https://www.googleapis.com/auth/youtube"
-            ],
-            [ # Level 2
-                "https://www.googleapis.com/auth/youtube.upload",
-                "https://www.googleapis.com/auth/youtube.force-ssl"
-            ],
-            [ # Level 3
-                "https://www.googleapis.com/auth/youtube.upload"
-            ]
+        # Least-privilege scopes: channel identity read, upload, optional analytics read.
+        current_scopes = [
+            "https://www.googleapis.com/auth/youtube.readonly",
+            "https://www.googleapis.com/auth/youtube.upload",
+            "https://www.googleapis.com/auth/yt-analytics.readonly",
         ]
-        
-        if attempt >= len(scope_levels):
-            raise Exception("Failed to authenticate with all available scope combinations. Please check your Token permissions.")
-
-        current_scopes = scope_levels[attempt]
         logger.info(f"Authenticating with Scopes Level {attempt}: {current_scopes}")
 
         try:
