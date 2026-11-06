@@ -63,11 +63,11 @@ Before any Gemini call, the repository variable `GEMINI_BILLING_DISABLED_CONFIRM
 
 ## Analytics reporting
 
-The publishing engine optionally collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed and subscribers gained. The report exists only on the ephemeral workflow runner and is neither logged nor uploaded as an artifact nor committed to the repository. Thumbnail impressions and click-through rate are reviewed in YouTube Studio. Analytics failure is non-blocking; the system falls back to recent public video view counts. Analytics-ranked video titles and watch minutes are also fed into topic discovery when available.
+The publishing engine optionally collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed and subscribers gained. The report exists only on the ephemeral workflow runner and is neither logged nor uploaded as an artifact nor committed to the repository. Thumbnail impressions and click-through rate are reviewed in YouTube Studio. Analytics failure is non-blocking; the system falls back to recent public video view counts. Titles of videos ranked locally by private watch time are passed into topic discovery; only their public titles and public view counts are sent to Gemini.
 
 The OAuth refresh token must include `https://www.googleapis.com/auth/yt-analytics.readonly`, and the YouTube Analytics API must be enabled in the same Google Cloud project. A code change cannot add permissions to an existing refresh token; reauthorize the intended channel and update the GitHub secret.
 
 
-## Private audit artifacts
+## Ephemeral audit files
 
 Each generation saves the research note, structured script and quality report under `output/` on the ephemeral runner for in-run audit. These drafts are not uploaded as artifacts or committed to the public repository. Use the private test upload in YouTube Studio to inspect the finished episode.
