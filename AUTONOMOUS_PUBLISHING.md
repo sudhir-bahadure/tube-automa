@@ -48,7 +48,7 @@ The workflows reuse the repository's existing secrets:
 - `CURIOSITY_REFRESH_TOKEN`
 - `YOUTUBE_EXPECTED_CHANNEL_ID`
 
-The OAuth credentials must resolve to exactly one channel whose title and ID match the configured **MARROW PSYCHOLOGY** destination. The exact ID is supplied through the `YOUTUBE_EXPECTED_CHANNEL_ID` secret. Missing or mismatched identity stops the run. No credential values are stored in source control.
+The OAuth credentials must resolve to exactly one channel whose title and ID match the configured **MARROW PSYCHOLOGY** destination. The exact ID is supplied through the `YOUTUBE_EXPECTED_CHANNEL_ID` secret. Scheduling uses `youtube.force-ssl` because the YouTube API requires it for `videos.update`; this scope is not used for comments or unrelated account operations. Missing or mismatched identity stops the run. No credential values are stored in source control.
 
 ## Important monetization reality
 
