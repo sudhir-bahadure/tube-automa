@@ -194,4 +194,7 @@ class AssetManager:
     def generate_thumbnail(self, title, output_path):
         """Generates a high-clickability thumbnail image."""
         prompt = f"Highly evocative, mysterious psychology thumbnail for '{title}', surrealist ink wash, dark moody atmosphere, psychological noir, minimalist, no text, 8k, cinematic"
-        return self.generate_image(prompt, output_path, orientation="thumbnail")
+        return self.generate_image(
+            prompt, output_path, orientation="thumbnail",
+            style="noir", video_type="long", allow_fallback=True
+        )
