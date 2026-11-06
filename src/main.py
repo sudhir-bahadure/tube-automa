@@ -302,6 +302,10 @@ async def main():
                 )
 
                 if video_id:
+                    if not uploader.wait_until_processed(video_id):
+                        raise RuntimeError(
+                            f"YouTube did not finish processing {video_id}; it remains private."
+                        )
                     if not uploader.set_thumbnail(video_id, thumbnail_path):
                         raise RuntimeError(
                             f"Thumbnail upload failed for {video_id}; video remains private."
