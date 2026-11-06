@@ -10,6 +10,7 @@ from src.asset_manager import AssetManager
 from src.video_editor import VideoEditor
 from src.youtube_uploader import YouTubeUploader
 from src.music_engine import MusicEngine
+from src.quality_gate import validate_video
 
 logger = setup_logging()
 
@@ -156,6 +157,12 @@ async def main():
     
     if success:
         logger.info(f"Video generated successfully: {output_file}")
+        try:
+            validation = validate_video(output_file, is_short=is_short)
+            logger.info(f"Production quality gate passed: {validation}")
+        except Exception as e:
+            logger.error(f"Production quality gate failed; refusing upload: {e}")
+            sys.exit(1)
 
         # Prepare SEO Metadata
         video_title = script_data.get('title', args.topic)
@@ -241,6 +248,8 @@ async def main():
                 )
                 
                 if video_id:
+                    if not args.topic:
+                        trend_engine.mark_used(title)
                     if os.path.exists(thumbnail_path):
                         uploader.set_thumbnail(video_id, thumbnail_path)
                     
