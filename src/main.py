@@ -35,6 +35,22 @@ async def main():
         )
         sys.exit(1)
 
+    if not args.dry_run:
+        required_youtube = (
+            "YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET",
+            "YOUTUBE_REFRESH_TOKEN", "YOUTUBE_EXPECTED_CHANNEL_TITLE",
+            "YOUTUBE_EXPECTED_CHANNEL_ID",
+        )
+        missing = [name for name in required_youtube if not os.getenv(name)]
+        if missing:
+            logger.error("YouTube safety stop; missing configuration: %s", ", ".join(missing))
+            sys.exit(1)
+        if not args.private_test_upload and os.getenv(
+            "YOUTUBE_AUTOPUBLISH_ENABLED", "false"
+        ).lower() != "true":
+            logger.error("Public scheduling is disabled; refusing to generate a scheduled upload.")
+            sys.exit(1)
+
     logger.info(f"Starting Media Automation in {args.style} style...")
     ensure_dir_exists("temp")
     ensure_dir_exists("output")
