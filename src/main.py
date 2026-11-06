@@ -118,7 +118,10 @@ async def main():
                 "remove_silence": True
             }
 
-        await voice.generate_audio(scene['text'], audio_path, mood=mood, **audio_kwargs)
+        audio_ok = await voice.generate_audio(scene['text'], audio_path, mood=mood, **audio_kwargs)
+        if not audio_ok or not os.path.isfile(audio_path) or os.path.getsize(audio_path) < 1000:
+            logger.error(f"Voice generation failed for scene {i+1}; refusing to publish a video with missing narration.")
+            sys.exit(1)
         
         # Visuals
         # Use landscape for long-form, portrait for shorts
@@ -147,9 +150,11 @@ async def main():
 
     # 3. Create Video
     # Select Background Music
-    music_engine = MusicEngine()
     music_mood = script_data.get('music_mood', 'chill')
-    bg_music_path, music_credits = music_engine.get_track(music_mood)
+    bg_music_path, music_credits = None, None
+    if os.getenv("MUSIC_ENABLED", "false").lower() == "true":
+        music_engine = MusicEngine()
+        bg_music_path, music_credits = music_engine.get_track(music_mood)
     
     editor = VideoEditor()
     output_file = f"output/final_{args.type}.mp4"
@@ -182,11 +187,11 @@ async def main():
         
         # Add Music Credits (License Awareness)
         if bg_music_path and music_credits:
-            seo_description += f"\n\n🎵 Music: {music_credits} (YouTube Audio Library - No Attribution Required)"
+            seo_description += f"\n\n🎵 Music: {music_credits}"
         elif bg_music_path:
             # Fallback if credits couldn't be parsed
             music_name = os.path.basename(bg_music_path).split('.')[0].replace('_', ' ').title()
-            seo_description += f"\n\n🎵 Music: {music_name} (YouTube Audio Library - No Attribution Required)"
+            seo_description += f"\n\n🎵 Music: {music_name}"
         
         seo_tags = script_data.get('tags', ['Viral', 'Trending'])
         
