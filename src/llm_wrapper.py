@@ -135,10 +135,14 @@ class LLMWrapper:
         except:
             return []
 
-    def generate_psychology_script(self, title):
+    def generate_psychology_script(self, title, research_context=None):
         """Generate a substantive long-form psychology explainer, not padded narration."""
+        research_notes = research_context or "No relevant scholarly abstracts were retrieved. Avoid precise empirical claims."
         prompt = f"""
         Write an original 8–10 minute educational documentary script about: "{title}".
+
+        RETRIEVED SCHOLARLY CONTEXT (use cautiously; do not overstate abstracts):
+        {research_notes}
 
         Editorial identity: MARROW Psychology. Explain everyday behaviour with nuance,
         curiosity and practical value. Do not present an AI narrator as a clinician or expert.
@@ -316,10 +320,14 @@ class LLMWrapper:
             print(f"Error parsing conversational script: {e}")
             return None
 
-    def generate_psychology_stickman_script(self, topic):
+    def generate_psychology_stickman_script(self, topic, research_context=None):
         """Create an original, practical psychology explainer with scene-specific visuals."""
+        research_notes = research_context or "No relevant scholarly abstracts were retrieved. Avoid precise empirical claims."
         prompt = f"""
         Create an original short-form educational story about this topic: "{topic}".
+
+        RETRIEVED SCHOLARLY CONTEXT (use cautiously; do not overstate abstracts):
+        {research_notes}
 
         Editorial identity: MARROW Psychology — calm, curious, evidence-aware explanations of
         everyday human behaviour. This is education, not therapy, diagnosis, or medical advice.
