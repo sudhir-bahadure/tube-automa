@@ -18,6 +18,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: tubeautoma-publish-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
