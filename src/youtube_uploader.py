@@ -57,7 +57,22 @@ class YouTubeUploader:
             client_secret=Config.YOUTUBE_CLIENT_SECRET, scopes=scopes,
         )
         from google.auth.transport.requests import Request
-        credentials.refresh(Request())
+        try:
+            credentials.refresh(Request())
+        except Exception as exc:
+            message = str(exc).lower()
+            if "invalid_grant" in message or "invalid refresh token" in message:
+                raise RuntimeError(
+                    "YouTube OAuth refresh token is expired or revoked. "
+                    "Re-run setup_youtube_auth.py using the Production consent screen "
+                    "and update CURIOSITY_REFRESH_TOKEN."
+                ) from exc
+            if "invalid_scope" in message or "access_denied" in message:
+                raise RuntimeError(
+                    "YouTube OAuth consent is missing a required scope. "
+                    "Re-run setup_youtube_auth.py and update CURIOSITY_REFRESH_TOKEN."
+                ) from exc
+            raise
         self.credentials = credentials
         # Actual permissions are verified by the channel lookup and upload request;
         # older refresh-token responses do not always return granted_scopes.
