@@ -12,6 +12,7 @@ from src.youtube_uploader import YouTubeUploader
 from src.music_engine import MusicEngine
 from src.quality_gate import validate_script_data, validate_video
 from src.research_engine import ResearchEngine
+from src.analytics_engine import AnalyticsEngine
 
 logger = setup_logging()
 
@@ -43,6 +44,26 @@ async def main():
         try:
             uploader_temp = YouTubeUploader()
             perf_data = uploader_temp.get_recent_performance(limit=10)
+            try:
+                analytics = AnalyticsEngine(uploader_temp.credentials)
+                snapshot = analytics.collect_video_report(days=28)
+                summary = analytics.summarize(snapshot)
+                logger.info(f"28-day channel analytics totals: {summary['totals']}")
+                top_rows = summary["top_videos"][:10]
+                top_ids = [row.get("video") for row in top_rows if row.get("video")]
+                title_rows = uploader_temp.get_video_performance(top_ids)
+                watch_by_id = {
+                    row.get("video"): float(row.get("estimatedMinutesWatched", 0) or 0)
+                    for row in top_rows
+                }
+                for item in title_rows:
+                    item["watch_minutes"] = watch_by_id.get(item.get("video_id"), 0.0)
+                perf_data = (perf_data or []) + title_rows
+            except Exception as analytics_error:
+                logger.warning(
+                    "Read-only Analytics API unavailable; continuing without analytics snapshot: "
+                    f"{analytics_error}"
+                )
         except Exception as e:
             if os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE"):
                 logger.error(f"YouTube destination/authentication check failed; stopping before production: {e}")
