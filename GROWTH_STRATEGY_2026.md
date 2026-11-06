@@ -132,7 +132,7 @@ Every upload should have:
 
 Test packaging with one variable at a time. Do not change title, thumbnail and content simultaneously if you want to learn what caused a change.
 
-## Analytics feedback loop — next engineering priority
+## Analytics feedback loop — implemented baseline
 
 The current code's performance input is only the last 10 videos' view counts. That is not enough to optimize a channel. Add YouTube Analytics API reporting (requires an OAuth token with the correct analytics scope and the API enabled) and store a daily CSV/JSON snapshot.
 
