@@ -252,60 +252,46 @@ async def main():
             try:
                 uploader = YouTubeUploader()
                 
-                # Generate Thumbnail
+                # Build and validate the thumbnail before creating the YouTube video.
                 ensure_dir_exists("assets/thumbnails")
                 thumbnail_path = f"assets/thumbnails/thumb_{args.type}.jpg"
                 logger.info(f"Generating Thumbnail for {video_title}...")
-                asset_mgr.generate_thumbnail(video_title, thumbnail_path)
-                
-                
-                # Engagement Strategy: Since Pinned Comments don't work for Scheduled (Private) videos,
-                # we move the Engagement Prompt to the TOP of the description for Shorts.
-                prompts = [
-                    f"Who else relates to this? Comment 'ME' below! 👇",
-                    f"How was the video? Comment 'Ready' if you reached the end! 👇",
-                    f"Did you know about this? Let's discuss in the comments! 💬",
-                    f"Should I do more videos about '{video_title[:20]}'? Let me know! 👇"
-                ]
-                engagement_prompt = random.choice(prompts)
-                
-                # Prepend to description for visibility
-                seo_description = f"{engagement_prompt}\n\n{seo_description}"
-                
-                # Determine category based on style
-                category_id = "23" if args.style == "stickman" else "27"
-                
+                if not asset_mgr.generate_thumbnail(video_title, thumbnail_path):
+                    raise RuntimeError("Thumbnail generation failed; refusing to upload.")
+                from PIL import Image
+                with Image.open(thumbnail_path) as thumb:
+                    thumb.verify()
+                with Image.open(thumbnail_path) as thumb:
+                    if thumb.size != (1280, 720):
+                        raise RuntimeError(f"Thumbnail must be 1280x720; found {thumb.size}.")
+                if os.path.getsize(thumbnail_path) < 5000:
+                    raise RuntimeError("Thumbnail file is unexpectedly small.")
+
+                # Always create a private upload first. Public scheduling is a second,
+                # explicit operation after thumbnail upload succeeds.
                 video_id = uploader.upload_video(
-                    output_file, 
-                    video_title, 
-                    seo_description, 
+                    output_file,
+                    video_title,
+                    seo_description,
                     tags=seo_tags,
-                    publish_at=publish_at,
+                    publish_at=None,
                     privacy_status="private",
                     category_id=category_id,
-                    # Our current visuals are stylized illustrations, not photorealistic synthetic footage.
                     altered_content=(os.getenv('YOUTUBE_SYNTHETIC_DISCLOSURE', 'false').lower() == 'true')
                 )
-                
+
                 if video_id:
+                    if not uploader.set_thumbnail(video_id, thumbnail_path):
+                        raise RuntimeError(
+                            f"Thumbnail upload failed for {video_id}; video remains private."
+                        )
+                    if publish_at and not uploader.schedule_video(video_id, publish_at):
+                        raise RuntimeError(
+                            f"Scheduling failed for {video_id}; video remains private."
+                        )
                     if not args.topic:
                         trend_engine.mark_used(title)
-                    if os.path.exists(thumbnail_path):
-                        uploader.set_thumbnail(video_id, thumbnail_path)
-                    
-                    # Attempt comment pinning only if NOT scheduled for far in the future
-                    # (Though uploader.pin_comment usually fails for private/scheduled videos)
-                    if not publish_at:
-                        import time
-                        logger.info("Waiting 15s for processing before pinning...")
-                        time.sleep(15)
-                        comment_id = uploader.add_comment(video_id, engagement_prompt)
-                        if comment_id:
-                            uploader.pin_comment(comment_id)
-                    else:
-                        logger.info("Video is scheduled. Engagement prompt has been added to the description instead.")
-                    
-                    logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
+                logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
                 else:
                     logger.error("YouTube upload returned no video ID; marking this workflow run as failed.")
                     sys.exit(1)
