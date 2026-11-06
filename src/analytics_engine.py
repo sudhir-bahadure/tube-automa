@@ -60,13 +60,9 @@ class AnalyticsEngine:
     @staticmethod
     def summarize(snapshot):
         rows = snapshot.get("rows", [])
-        totals = {
-            metric: sum(float(row.get(metric, 0) or 0) for row in rows)
-            for metric in ("views", "estimatedMinutesWatched", "subscribersGained")
-        }
         top_videos = sorted(
             rows,
             key=lambda row: float(row.get("estimatedMinutesWatched", 0) or 0),
             reverse=True,
         )[:10]
-        return {"totals": totals, "top_videos": top_videos}
+        return {"top_videos": top_videos}
