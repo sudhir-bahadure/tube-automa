@@ -1,6 +1,7 @@
 import edge_tts
 import os
 import asyncio
+import os
 from .config import Config
 from .elevenlabs_engine import ElevenLabsEngine
 
@@ -8,6 +9,7 @@ class VoiceEngine:
     def __init__(self):
         self.voice = Config.VOICE_NAME
         self.eleven = ElevenLabsEngine()
+        self.free_tts_only = os.getenv("FREE_TTS_ONLY", "false").lower() == "true"
 
     async def generate_audio(self, text, output_file, mood="neutral", **kwargs):
         """
@@ -20,7 +22,7 @@ class VoiceEngine:
             
             # 1. Try ElevenLabs first (High Quality / Cloned Voice)
             logger_print = f"--- Using ElevenLabs for: '{clean_text[:30]}...' ---"
-            if self.eleven.api_key and self.eleven.voice_id:
+            if not self.free_tts_only and self.eleven.api_key and self.eleven.voice_id:
                 print(logger_print)
                 success = self.eleven.generate_audio(clean_text, output_file, **kwargs)
                 if success:
