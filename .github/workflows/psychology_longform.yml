@@ -52,6 +52,7 @@ jobs:
           NICHE: "Everyday psychology, human behaviour, cognitive biases and practical self-understanding"
           VOICE_NAME: "en-US-ChristopherNeural"
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
+          YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
         run: |
           python -m src.main --type long --style psych_stickman --schedule-for evening
 
