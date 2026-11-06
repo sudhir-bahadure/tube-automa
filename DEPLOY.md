@@ -8,7 +8,7 @@ The current automated publishing design and rollout notes are maintained in
 - Work is isolated on `feature/tube-automa-2.0`.
 - Pull request: https://github.com/sudhir-bahadure/tube-automa/pull/1
 - `main` has not been modified by this implementation.
-- Do not enable scheduled publishing until CI passes and the configured YouTube OAuth credentials are confirmed to resolve to MARROW PSYCHOLOGY.
+- Scheduled publishing is disabled unless the repository variable `YOUTUBE_AUTOPUBLISH_ENABLED` is exactly `true`. Before enabling it, pass CI, configure the exact `YOUTUBE_EXPECTED_CHANNEL_ID`, and complete a private test upload.
 
 ## Required GitHub Actions secrets
 
@@ -16,6 +16,7 @@ The current automated publishing design and rollout notes are maintained in
 - `CURIOSITY_CLIENT_ID`
 - `CURIOSITY_CLIENT_SECRET`
 - `CURIOSITY_REFRESH_TOKEN`
+- `YOUTUBE_EXPECTED_CHANNEL_ID` (exact channel ID for MARROW PSYCHOLOGY)
 
 The workflow uses one configured Gemini free-tier model, Edge TTS, Pollinations with a local Pillow fallback, MoviePy and FFmpeg. ElevenLabs is not used by the scheduled publishing workflows.
 
@@ -32,7 +33,7 @@ python -m compileall -q src
 python -m unittest discover -s tests -v
 ```
 
-A passing CI run is necessary but not sufficient. The first publishing run must also confirm the destination channel and complete a successful test upload before the schedule is considered operational.
+A passing CI run is necessary but not sufficient. Run the manual workflow with `private_test_upload=true`, verify the private video, thumbnail, description, audio, visuals and processing in YouTube Studio, and only then set the repository variable `YOUTUBE_AUTOPUBLISH_ENABLED=true` to activate scheduled public releases.
 
 ## Important
 
