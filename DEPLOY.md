@@ -48,3 +48,8 @@ Automated publishing does not guarantee views, YPP approval or income. YouTube c
 ## YouTube Analytics
 
 Optional private reporting uses the `https://www.googleapis.com/auth/yt-analytics.readonly` OAuth scope. The refresh token must be reauthorized with this scope; enabling it in code does not modify an existing token. Reports exist only on the ephemeral workflow runner and are not logged, uploaded as artifacts or committed to source control. The Analytics API must also be enabled in the same Google Cloud project.
+
+
+## OAuth consent screen — important for unattended operation
+
+In Google Cloud Console, enable **YouTube Data API v3** and **YouTube Analytics API**. Configure an OAuth Desktop application and include the exact scopes listed in `setup_youtube_auth.py`. Do not leave an External OAuth consent screen in **Testing** for production use: Google states that authorizations and refresh tokens for Testing projects expire after seven days when non-basic scopes are requested. Move the app to **Production** and complete any verification Google requires for the sensitive scopes. A production/unverified warning may still appear to the account owner; follow Google's current consent flow. See [Google's OAuth testing-mode expiry guidance](https://support.google.com/cloud/answer/15549945) and [OAuth verification requirements](https://developers.google.com/identity/protocols/oauth2/policies).
