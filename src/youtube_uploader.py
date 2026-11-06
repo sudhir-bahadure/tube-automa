@@ -67,18 +67,21 @@ class YouTubeUploader:
         try:
             logger.info(f"Uploading video: {title}")
             
+            status = {
+                'privacyStatus': 'private' if publish_at else privacy_status,
+                'selfDeclaredMadeForKids': False,
+            }
+            if publish_at:
+                status['publishAt'] = publish_at  # ISO 8601 UTC timestamp
+
             body = {
                 'snippet': {
                     'title': title,
                     'description': description,
-                    'tags': tags if tags else ['Viral', 'Trending'],
+                    'tags': tags if tags else [],
                     'categoryId': category_id
                 },
-                'status': {
-                    'privacyStatus': privacy_status if not publish_at else 'private',
-                    'selfDeclaredMadeForKids': False,
-                    'publishAt': publish_at # ISO 8601 format: YYYY-MM-DDThh:mm:ss.sZ
-                }
+                'status': status,
             }
             
             # Add altered content declaration if specified
