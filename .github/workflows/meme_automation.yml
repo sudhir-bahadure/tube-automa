@@ -5,8 +5,16 @@ on:
   # Re-enable only after a separate meme-channel OAuth credential set is configured.
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: tubeautoma-publish-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   meme_automation:
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -32,8 +40,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick fonts-liberation
-          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+          sudo apt-get install -y ffmpeg fonts-liberation
 
       - name: Generate and Schedule Meme Short
         env:
@@ -46,13 +53,6 @@ jobs:
           VOICE_NAME: "en-US-GuyNeural"
           TIME_SLOT: ${{ matrix.time_slot }}
         run: |
-          # Fix ImageMagick security policy
-          sudo sed -i 's/policy domain="resource" name="width" value="16KP"/policy domain="resource" name="width" value="64KP"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="resource" name="height" value="16KP"/policy domain="resource" name="height" value="64KP"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="resource" name="area" value="128MP"/policy domain="resource" name="area" value="1GP"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="resource" name="memory" value="256MiB"/policy domain="resource" name="memory" value="2GiB"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="coder" rights="none" pattern="PDF"/policy domain="coder" rights="read,write" pattern="PDF"/g' /etc/ImageMagick-6/policy.xml
-
           python -m src.main --type short --style stickman --schedule-for ${{ matrix.time_slot }}
 
       - name: Persist used topics
@@ -60,7 +60,6 @@ jobs:
         run: |
           git config --global user.name "sudhir.tbahadure"
           git config --global user.email "sudhir.tbahadure@users.noreply.github.com"
-          git pull origin main --rebase || true
           git add -f output/used_topics.json || echo "No topic file found"
           git commit -m "chore: update topic history [${{ matrix.time_slot }}] [skip ci]" || echo "No changes to commit"
-          git push origin main || echo "Push failed"
+          git push origin "$GITHUB_REF_NAME" || echo "Push failed"
