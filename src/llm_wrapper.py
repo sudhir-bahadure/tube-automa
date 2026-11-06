@@ -132,39 +132,57 @@ class LLMWrapper:
             return []
 
     def generate_psychology_script(self, title):
-        """Generates a high-retention psychology script with noir-style visuals."""
+        """Generate a substantive long-form psychology explainer, not padded narration."""
         prompt = f"""
-        Title: {title}
-        Role: A lead writer for a top-tier Psychology & Insight channel.
-        Tone: Mysterious, authoritative, and deeply engaging (Psychological Noir).
-        
-        STRICT RULES:
-        1. VIRAL HOOK (0-5s): Start with a shocking psychological paradox or a "Curiosity Gap" question that forces them to stay.
-        2. Content: Focus on "Deep Social Truths" or "Hidden Human Behaviors" (e.g. why we fear silence, the dark side of kindness).
-        3. Visual Style: 'Surrealist Psychological Noir' - cinematic, dark, moody, ink wash textures, dramatic shadows.
-        4. Scene Count: 30-40 detailed scenes for a long-form deep dive.
-        
-        STRICT OUTPUT FORMAT (Valid JSON ONLY):
+        Write an original 8–10 minute educational documentary script about: "{title}".
+
+        Editorial identity: MARROW Psychology. Explain everyday behaviour with nuance,
+        curiosity and practical value. Do not present an AI narrator as a clinician or expert.
+
+        REQUIRED STORY STRUCTURE:
+        - Cold open with a vivid everyday scenario and a precise question.
+        - Define the central psychological concept in plain language.
+        - Explain its mechanism and distinguish it from nearby concepts.
+        - Use at least three varied, realistic examples.
+        - Include limitations, alternative explanations and what the concept cannot prove.
+        - Give viewers practical reflection questions or low-risk actions.
+        - Finish with a concise synthesis and a natural invitation to discuss.
+
+        FACTUAL SAFETY:
+        - Do not invent studies, author names, dates, sample sizes, percentages, quotes or citations.
+        - Do not state that one behaviour proves deception, trauma, a disorder or intent.
+        - Do not diagnose viewers or third parties, and do not provide treatment advice.
+        - Separate established findings from hypotheses and popular interpretations.
+        - Avoid fearbait, manipulation tactics, stereotypes and absolute claims.
+        - Never copy or paraphrase a single article as the whole script.
+
+        CRAFT:
+        - 1,100–1,500 spoken words across 28–36 scenes.
+        - Each scene must advance the argument or story; no padding or repeated summaries.
+        - Use conversational narration with varied sentence length and natural transitions.
+        - Give each scene a distinct surrealist ink-and-wash illustration prompt.
+        - Use original examples, concrete details and balanced counterexamples.
+
+        Return ONLY valid JSON:
         {{
-            "title": "Title",
-            "description": "Exploding the hidden truths of {{title}}. #Psychology #HumanBehavior #Wisdom",
-            "tags": ["Psychology", "Human Behavior", "Mental Health", "Mindset", "Deep Truths", "Noir"],
-            "music_mood": "dark", // Choice: dark, suspenseful, chill, tense
-            "deduced_angle": "Brief explanation of the psychological angle",
-            "scenes": [
-                {{
-                    "text": "spoken narration...",
-                    "visual_prompt": "moody cinematic ink wash illustration of..."
-                }},
-                ...
-            ]
+          "title": "Accurate, compelling title",
+          "description": "Original summary explaining what viewers will learn.",
+          "tags": ["psychology", "human behaviour", "cognitive science"],
+          "music_mood": "dark",
+          "deduced_angle": "The thesis and central concept",
+          "chapters": ["00:00 The question", "01:20 The concept"],
+          "scenes": [
+            {{"text": "Narration.", "visual_prompt": "Distinct cinematic ink-wash scene."}}
+          ]
         }}
         """
         try:
-            text = self._call_gemini(prompt)
-            if not text: return None
+            text = self._call_gemini(prompt, max_retries=5)
+            if not text:
+                return None
             return self._extract_json(text)
-        except:
+        except Exception as e:
+            print(f"Error parsing psychology long-form script: {e}")
             return None
 
     def generate_psychology_short_script(self, title):
