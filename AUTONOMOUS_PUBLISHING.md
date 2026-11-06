@@ -15,7 +15,7 @@ The system creates original scripts, generates illustrated scenes, narrates them
 
 ## Zero-subscription design
 
-- Gemini API: one configured free-tier model only (`models/gemini-3.8-flash`). Free-tier quota exhaustion stops the run; the application does not switch to another model or a paid provider.
+- Gemini API: one configured free-tier model only (`gemini-3.8-flash`). Free-tier quota exhaustion stops the run; the application does not switch to another model or a paid provider.
 - Narration: Edge TTS. ElevenLabs credentials are deliberately not passed to the publishing workflows.
 - Research: free Europe PMC scholarly abstract lookup; relevant source links are added to video descriptions when available.
 - Illustrations: Pollinations public image endpoint with a locally generated Pillow fallback.
