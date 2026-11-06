@@ -53,11 +53,12 @@ jobs:
           VOICE_NAME: "en-US-ChristopherNeural"
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
+          YOUTUBE_EXPECTED_CHANNEL_ID: ${{ secrets.YOUTUBE_EXPECTED_CHANNEL_ID }}
         run: |
           python -m src.main --type long --style psych_stickman --schedule-for evening
 
       - name: Persist topic history on this branch
-        if: always()
+        if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
