@@ -47,11 +47,15 @@ class TrendEngine:
         performance_str = ""
         if performance_context:
             perf_list = [
-                f"'{p['title']}' ({p['views']} views)"
-                for p in performance_context
+                (
+                    f"'{p['title']}' ({p.get('views', 0)} views"
+                    + (f", {p['watch_minutes']:.1f} watch minutes" if p.get("watch_minutes") is not None else "")
+                    + ")"
+                )
+                for p in performance_context if p.get("title")
             ]
             performance_str = (
-                "RECENT CHANNEL PERFORMANCE (use only as directional context):\n"
+                "RECENT CHANNEL PERFORMANCE (prioritize topics with strong watch time and viewer interest; directional evidence only):\n"
                 + ", ".join(perf_list) + "\n"
             )
 
