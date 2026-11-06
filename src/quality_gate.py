@@ -1,7 +1,57 @@
-"""Pre-upload validation for generated video files."""
+"""Pre-upload validation for scripts and generated video files."""
 import json
 import os
+import re
 import subprocess
+
+
+def validate_script_data(script_data, is_short=False):
+    """Reject malformed, empty or obviously repetitive LLM output."""
+    if not isinstance(script_data, dict):
+        raise ValueError("Script response must be a JSON object.")
+    title = script_data.get("title")
+    scenes = script_data.get("scenes")
+    if not isinstance(title, str) or len(title.strip()) < 8:
+        raise ValueError("Script title is missing or too short.")
+    if not isinstance(scenes, list):
+        raise ValueError("Script scenes must be a list.")
+
+    minimum_scenes = 7 if is_short else 24
+    maximum_scenes = 12 if is_short else 40
+    if not minimum_scenes <= len(scenes) <= maximum_scenes:
+        raise ValueError(
+            f"Expected {minimum_scenes}-{maximum_scenes} scenes; received {len(scenes)}."
+        )
+
+    spoken = []
+    visual_prompts = []
+    for index, scene in enumerate(scenes, start=1):
+        if not isinstance(scene, dict):
+            raise ValueError(f"Scene {index} is not an object.")
+        narration = scene.get("text")
+        visual = scene.get("visual_prompt")
+        if not isinstance(narration, str) or len(narration.strip()) < 12:
+            raise ValueError(f"Scene {index} has missing or trivial narration.")
+        if not isinstance(visual, str) or len(visual.strip()) < 12:
+            raise ValueError(f"Scene {index} has no useful visual direction.")
+        spoken.append(narration.strip())
+        visual_prompts.append(visual.strip().lower())
+
+    normalized = [re.sub(r"[^a-z0-9]+", " ", text.lower()).strip() for text in spoken]
+    if len(set(normalized)) / len(normalized) < 0.8:
+        raise ValueError("Script repeats scene narration; refusing low-value output.")
+
+    words = sum(len(text.split()) for text in spoken)
+    if is_short and not 65 <= words <= 190:
+        raise ValueError(f"Short script must contain 65-190 spoken words; found {words}.")
+    if not is_short and not 850 <= words <= 2200:
+        raise ValueError(
+            f"Long-form script must contain 850-2200 spoken words; found {words}."
+        )
+
+    if len(set(visual_prompts)) / len(visual_prompts) < 0.75:
+        raise ValueError("Visual prompts are too repetitive.")
+    return {"scenes": len(scenes), "words": words}
 
 
 def validate_video(path, is_short=False, min_bytes=10000):
