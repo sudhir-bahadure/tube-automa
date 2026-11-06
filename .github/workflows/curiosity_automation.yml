@@ -81,15 +81,3 @@ jobs:
           git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
           git push origin "$GITHUB_REF_NAME"
 
-      - name: Upload private analytics snapshot
-        if: always() && (hashFiles('output/analytics_snapshot.json') != '' || hashFiles('output/script_data.json') != '')
-        uses: actions/upload-artifact@v4
-        with:
-          name: marrow-analytics-${{ github.run_id }}
-          path: |
-            output/analytics_snapshot.json
-            output/research_note.json
-            output/script_data.json
-            output/quality_report.json
-          if-no-files-found: ignore
-          retention-days: 14
