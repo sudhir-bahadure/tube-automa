@@ -291,7 +291,7 @@ async def main():
                         )
                     if not args.topic:
                         trend_engine.mark_used(title)
-                logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
+                    logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
                 else:
                     logger.error("YouTube upload returned no video ID; marking this workflow run as failed.")
                     sys.exit(1)
