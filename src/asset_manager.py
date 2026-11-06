@@ -70,13 +70,41 @@ class AssetManager:
         
         return False
 
-    def generate_image(self, prompt, output_path, orientation="portrait"):
-        """Generates an image using Pollinations.ai (Free) with enhanced styling."""
+    def generate_image(
+        self, prompt, output_path, orientation="portrait",
+        style="psych_stickman", video_type="short", allow_fallback=False
+    ):
+        """Generate a scene-specific illustration; never silently publish generic fallbacks."""
         import urllib.parse
-        
-        # Add flavor tags to the prompt to ensure clean, flat 2D visuals (Viral Style)
-        # Focus on flat design, clean lines, and minimalist icon style
-        enhanced_prompt = f"{prompt}, flat vector art, clean lines, minimalist character icon, sticker style, solid vibrant background, vibrant colors, centered composition, no text, no captions, no watermark, no logo, no qr code, no user interface, no signature"
+
+        if video_type == "long":
+            visual_style = (
+                "editorial surrealist ink-and-wash illustration, painterly paper texture, "
+                "cinematic lighting, layered composition, metaphorical objects, restrained "
+                "charcoal and muted accent palette, sophisticated documentary art direction"
+            )
+        elif style == "psych_stickman":
+            visual_style = (
+                "original hand-drawn minimalist stick-figure illustration, expressive body "
+                "language, scene-specific props, varied camera framing and composition, "
+                "clean editorial linework, restrained dark palette with one accent colour"
+            )
+        elif style == "noir":
+            visual_style = (
+                "surrealist psychological noir illustration, ink drawing, dramatic shadows, "
+                "symbolic composition, cinematic contrast and restrained colour"
+            )
+        else:
+            visual_style = (
+                "original clean vector illustration, expressive character acting, "
+                "scene-specific props, varied composition and bright but controlled colour"
+            )
+
+        enhanced_prompt = (
+            f"{prompt}. Art direction: {visual_style}. "
+            "Make the scene visually distinct and faithful to the described action. "
+            "No text, captions, watermark, logo, QR code, user interface or signature."
+        )
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
         
         # Dimensions for Pollinations
@@ -94,9 +122,11 @@ class AssetManager:
         url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&enhance=true&seed={seed}&nofeed=true"
         
         success = self.download_file(url, output_path)
-        if not success:
-            print(f"  [WARN] Image service unavailable; creating original local fallback for: {prompt[:50]}")
+        if not success and allow_fallback:
+            print(f"  [WARN] Image service unavailable; creating local preview fallback for: {prompt[:50]}")
             success = self.generate_fallback_visual(prompt, output_path, orientation)
+        elif not success:
+            print(f"  [ERROR] Scene illustration unavailable; refusing generic fallback for: {prompt[:50]}")
         return success
 
     def generate_fallback_visual(self, prompt, output_path, orientation="portrait"):
