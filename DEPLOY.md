@@ -37,3 +37,12 @@ A passing CI run is necessary but not sufficient. The first publishing run must 
 ## Important
 
 Automated publishing does not guarantee views, YPP approval or income. YouTube can reject repetitive, mass-produced or reused content even when it was generated with AI tools. See the official [YouTube monetization policies](https://support.google.com/youtube/answer/1311392).
+
+
+## Optional YouTube Analytics permission
+
+The growth-engine branch can collect read-only video-level reports when the refresh token has the scope:
+
+`https://www.googleapis.com/auth/yt-analytics.readonly`
+
+Existing refresh tokens do not gain new permissions merely because code requests a new scope. If the Analytics API returns an insufficient-permissions error, reauthorize the intended channel with this read-only scope and update the relevant GitHub secret. Analytics collection is optional and does not block video production. Reports are uploaded as 14-day GitHub Actions artifacts and are not committed to the public repository.
