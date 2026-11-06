@@ -24,7 +24,7 @@ class LLMWrapper:
         try:
             print("Refreshing available generative models...")
             models = list(self.client.models.list())
-            self.available_gen_models = [m.name for m in models if 'generateContent' in m.supported_actions]
+            self.available_gen_models = [m.name.removeprefix('models/') for m in models if 'generateContent' in m.supported_actions]
             if Config.GEMINI_FREE_TIER_ONLY:
                 if Config.GEMINI_MODEL not in self.available_gen_models:
                     raise RuntimeError(
