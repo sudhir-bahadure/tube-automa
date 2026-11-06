@@ -52,6 +52,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: "gemini-3.8-flash"
           GEMINI_FREE_TIER_ONLY: "true"
+          FREE_TTS_ONLY: "true"
           GEMINI_BILLING_DISABLED_CONFIRMED: ${{ vars.GEMINI_BILLING_DISABLED_CONFIRMED }}
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
