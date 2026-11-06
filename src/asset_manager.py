@@ -112,8 +112,8 @@ class AssetManager:
 
         accent = (80 + digest[0] % 150, 80 + digest[1] % 150, 100 + digest[2] % 130)
         base = (12 + digest[3] % 24, 16 + digest[4] % 28, 28 + digest[5] % 36)
-        image = Image.new("RGB", (width, height), base)
-        draw = ImageDraw.Draw(image, "RGBA")
+        image = Image.new("RGBA", (width, height), (*base, 255))
+        draw = ImageDraw.Draw(image)
 
         # Abstract backdrop, unique per prompt.
         for n in range(7):
@@ -158,7 +158,7 @@ class AssetManager:
         draw.ellipse((prop_x-7, prop_y-7, prop_x+7, prop_y+7), fill=(*accent, 255))
 
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-        image.save(output_path, format="JPEG", quality=90, optimize=True)
+        image.convert("RGB").save(output_path, format="JPEG", quality=90, optimize=True)
         return os.path.isfile(output_path) and os.path.getsize(output_path) > 1000
 
     def generate_thumbnail(self, title, output_path):
