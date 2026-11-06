@@ -48,7 +48,7 @@ def get_authenticated_service():
         
         # Use run_local_server for a local browser flow
         # This will open a window in the default browser
-        credentials = flow.run_local_server(port=0)
+        credentials = flow.run_local_server(port=0, prompt="consent", access_type="offline")
         from googleapiclient.discovery import build
         youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
         channels = youtube.channels().list(mine=True, part="snippet", maxResults=5).execute()
