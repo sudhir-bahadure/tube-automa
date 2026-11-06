@@ -51,7 +51,7 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}
-          NICHE: "Deep Dark Psychology and Human Behavior"
+          NICHE: "Everyday psychology, human behaviour, cognitive biases and practical self-understanding"
           VOICE_NAME: "en-US-ChristopherNeural"
         run: |
           TYPE="${{ github.event.inputs.type }}"
