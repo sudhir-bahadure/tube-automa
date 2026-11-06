@@ -58,3 +58,10 @@ For ad revenue, the current full YPP threshold is 1,000 subscribers plus either 
 ## Rollout
 
 This branch is not live until the pull request is merged. Before enabling scheduled publishing, confirm that the existing OAuth secrets point to MARROW PSYCHOLOGY and that the first GitHub Actions run passes. The code will stop rather than silently publish to a different channel.
+
+
+## Analytics reporting
+
+The growth-engine branch optionally queries the read-only YouTube Analytics API for a 28-day video-level snapshot. The report is saved as a GitHub Actions artifact with 14-day retention; it is not committed to the public repository. The workflow continues safely if Analytics access is unavailable.
+
+For this feature to return data, the YouTube OAuth refresh token must have been authorized with the `https://www.googleapis.com/auth/yt-analytics.readonly` scope and the YouTube Analytics API must be enabled in the same Google Cloud project. Adding a scope in code does not retroactively grant it to an old refresh token. If the report is unavailable due to insufficient permissions, reauthorize the same channel with the read-only Analytics scope and replace the corresponding GitHub refresh-token secret. Never commit analytics snapshots or OAuth credentials.
