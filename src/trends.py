@@ -47,11 +47,7 @@ class TrendEngine:
         performance_str = ""
         if performance_context:
             perf_list = [
-                (
-                    f"'{p['title']}' ({p.get('views', 0)} views"
-                    + (f", {p['watch_minutes']:.1f} watch minutes" if p.get("watch_minutes") is not None else "")
-                    + ")"
-                )
+                f"'{p['title']}' ({p.get('views', 0)} public views)"
                 for p in performance_context if p.get("title")
             ]
             performance_str = (
