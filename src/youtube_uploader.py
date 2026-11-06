@@ -37,61 +37,38 @@ class YouTubeUploader:
         self.channel_id = actual_id
         logger.info("YouTube destination verified: %s (%s)", actual_title, actual_id)
 
-    def _get_authenticated_service(self, attempt=0):
+    def _get_authenticated_service(self):
+        """Authenticate with the minimum scopes required; never broaden permissions silently."""
         if not Config.YOUTUBE_REFRESH_TOKEN:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
-            
-        # Least-privilege scopes: channel identity read, upload, optional analytics read.
-        current_scopes = [
+        if not Config.YOUTUBE_CLIENT_ID or not Config.YOUTUBE_CLIENT_SECRET:
+            raise ValueError("YouTube OAuth client ID/secret are missing.")
+
+        scopes = [
             "https://www.googleapis.com/auth/youtube.readonly",
             "https://www.googleapis.com/auth/youtube.upload",
             "https://www.googleapis.com/auth/yt-analytics.readonly",
         ]
-        logger.info(f"Authenticating with Scopes Level {attempt}: {current_scopes}")
-
-        try:
-            credentials = google.oauth2.credentials.Credentials(
-                None, # No access token initially
-                refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
-                token_uri="https://oauth2.googleapis.com/token",
-                client_id=Config.YOUTUBE_CLIENT_ID,
-                client_secret=Config.YOUTUBE_CLIENT_SECRET,
-                scopes=current_scopes
+        credentials = google.oauth2.credentials.Credentials(
+            None, refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=Config.YOUTUBE_CLIENT_ID,
+            client_secret=Config.YOUTUBE_CLIENT_SECRET, scopes=scopes,
+        )
+        from google.auth.transport.requests import Request
+        credentials.refresh(Request())
+        self.credentials = credentials
+        granted = set(credentials.granted_scopes or [])
+        required = {
+            "https://www.googleapis.com/auth/youtube.readonly",
+            "https://www.googleapis.com/auth/youtube.upload",
+        }
+        if not required.issubset(granted):
+            raise RuntimeError(
+                "OAuth token lacks required youtube.readonly/youtube.upload scopes. "
+                "Reauthorize the intended channel; no broader scope fallback is attempted."
             )
-            service = build("youtube", "v3", credentials=credentials)
-            
-            # Force a token refresh to verify credentials immediately
-            from google.auth.transport.requests import Request
-            try:
-                credentials.refresh(Request())
-            except Exception as e:
-                # If scope error, try next level
-                if "invalid_scope" in str(e) or "access_denied" in str(e) or "unauthorized_client" in str(e):
-                    logger.warning(f"Auth failed at Level {attempt} ({e}). Falling back to Level {attempt+1}...")
-                    return self._get_authenticated_service(attempt=attempt+1)
-                else:
-                    raise
-            
-            return service
-        except Exception as e:
-            error_msg = str(e)
-            if "invalid_grant" in error_msg:
-                logger.error("-" * 60)
-                logger.error("CRITICAL AUTH ERROR: Your YouTube Refresh Token has expired or been revoked.")
-                logger.error("ACTION REQUIRED: Run 'python setup_youtube_auth.py' locally and update YOUTUBE_REFRESH_TOKEN in GitHub Secrets.")
-                logger.error("TIP: Ensure your Google Cloud Project OAuth Consent is set to 'Production' (Published) to avoid 7-day expiration.")
-                logger.error("-" * 60)
-                raise
-            elif "Failed to authenticate" in error_msg: # propagate up
-                raise 
-            else:
-                # If it's a scope error outside the inner try, catch it here too just in case
-                if "invalid_scope" in error_msg or "access_denied" in error_msg:
-                     logger.warning(f"Auth failed at Level {attempt} ({e}). Falling back to Level {attempt+1}...")
-                     return self._get_authenticated_service(attempt=attempt+1)
-
-                logger.error(f"Failed to authenticate with YouTube: {e}")
-                raise
+        return build("youtube", "v3", credentials=credentials, cache_discovery=False)
 
     def upload_video(self, video_path, title, description, tags=None, privacy_status="private", publish_at=None, category_id="27", altered_content=False):
         try:
