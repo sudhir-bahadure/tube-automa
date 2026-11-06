@@ -14,6 +14,11 @@ on:
         options:
           - short
           - long
+      private_test_upload:
+        description: 'Upload privately without scheduling public release (recommended for first test)'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -24,6 +29,7 @@ concurrency:
 
 jobs:
   generate:
+    if: github.event_name != 'schedule' || vars.YOUTUBE_AUTOPUBLISH_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -49,6 +55,7 @@ jobs:
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
           YOUTUBE_EXPECTED_CHANNEL_ID: ${{ secrets.YOUTUBE_EXPECTED_CHANNEL_ID }}
+          YOUTUBE_AUTOPUBLISH_ENABLED: ${{ vars.YOUTUBE_AUTOPUBLISH_ENABLED }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
@@ -58,7 +65,11 @@ jobs:
         run: |
           TYPE="${{ github.event.inputs.type }}"
           if [ -z "$TYPE" ]; then TYPE="short"; fi
-          python -m src.main --type "$TYPE" --style psych_stickman --schedule-for evening
+          if [ "${{ github.event.inputs.private_test_upload }}" = "true" ]; then
+            python -m src.main --type "$TYPE" --style psych_stickman --schedule-for evening --private-test-upload
+          else
+            python -m src.main --type "$TYPE" --style psych_stickman --schedule-for evening
+          fi
 
       - name: Persist used topics
         if: success()
