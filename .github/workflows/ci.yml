@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - feature/tube-automa-2.0
+      - feature/tube-automa-2.0
+      - feature/marrow-growth-engine
   pull_request:
     branches:
       - main
