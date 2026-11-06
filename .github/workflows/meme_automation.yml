@@ -1,9 +1,8 @@
 name: Daily Meme Shorts (High CTR)
 
 on:
-  schedule:
-    # Run once daily at 12:00 UTC (7:00 AM ET) to generate all 3 shorts
-    - cron: '0 12 * * *'
+  # Manual only: the default YouTube credentials are shared with the psychology workflow.
+  # Re-enable only after a separate meme-channel OAuth credential set is configured.
   workflow_dispatch:
 
 jobs:
