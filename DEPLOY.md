@@ -15,10 +15,10 @@ The current automated publishing design and rollout notes are maintained in
 - `GEMINI_API_KEY`
 - `CURIOSITY_CLIENT_ID`
 - `CURIOSITY_CLIENT_SECRET`
-- `CURIOSITY_REFRESH_TOKEN`
-- `YOUTUBE_EXPECTED_CHANNEL_ID` (exact channel ID for MARROW PSYCHOLOGY)
+- `CURIOSITY_REFRESH_TOKEN` (authorized with the scopes listed in `setup_youtube_auth.py`)
+- `YOUTUBE_EXPECTED_CHANNEL_ID` (exact channel ID printed by the OAuth setup script)
 
-The workflow uses one configured Gemini free-tier model, Edge TTS, Pollinations with a local Pillow fallback, MoviePy and FFmpeg. ElevenLabs is not used by the scheduled publishing workflows.
+The workflow uses one configured Gemini free-tier model, Edge TTS, Pollinations image generation, MoviePy and FFmpeg. Thumbnail generation uses original art plus a title overlay. No paid image, voice or video API is used.
 
 ## Cost and quota safety
 
