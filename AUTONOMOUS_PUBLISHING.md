@@ -62,6 +62,6 @@ This branch is not live until the pull request is merged. Before enabling schedu
 
 ## Analytics reporting
 
-The growth-engine branch optionally queries the read-only YouTube Analytics API for a 28-day video-level snapshot. The report is saved as a GitHub Actions artifact with 14-day retention; it is not committed to the public repository. The workflow continues safely if Analytics access is unavailable.
+The growth-engine branch optionally queries the read-only YouTube Analytics API for a 28-day video-level snapshot of views, watch time, average view duration, average percentage viewed and subscribers gained. The report is saved as a GitHub Actions artifact with 14-day retention; it is not committed to the public repository. Thumbnail impressions and impressions click-through rate are not included because they are not supported as standard metrics in this Analytics API video report; review those in YouTube Studio. The workflow continues safely if Analytics access is unavailable.
 
 For this feature to return data, the YouTube OAuth refresh token must have been authorized with the `https://www.googleapis.com/auth/yt-analytics.readonly` scope and the YouTube Analytics API must be enabled in the same Google Cloud project. Adding a scope in code does not retroactively grant it to an old refresh token. If the report is unavailable due to insufficient permissions, reauthorize the same channel with the read-only Analytics scope and replace the corresponding GitHub refresh-token secret. Never commit analytics snapshots or OAuth credentials.
