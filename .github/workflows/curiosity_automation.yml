@@ -48,6 +48,7 @@ jobs:
           GEMINI_FREE_TIER_ONLY: "true"
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
+          YOUTUBE_EXPECTED_CHANNEL_ID: ${{ secrets.YOUTUBE_EXPECTED_CHANNEL_ID }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
@@ -60,10 +61,10 @@ jobs:
           python -m src.main --type "$TYPE" --style psych_stickman --schedule-for evening
 
       - name: Persist used topics
-        if: always()
+        if: success()
         run: |
           git config --global user.name "sudhir.tbahadure"
           git config --global user.email "sudhir.tbahadure@users.noreply.github.com"
           git add -f output/used_topics.json || echo "No topic file found"
           git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
-          git push origin "$GITHUB_REF_NAME" || echo "Push failed"
+          git push origin "$GITHUB_REF_NAME"
