@@ -11,6 +11,30 @@ logger = logging.getLogger(__name__)
 class YouTubeUploader:
     def __init__(self):
         self.youtube = self._get_authenticated_service()
+        self._verify_expected_channel()
+
+    def _verify_expected_channel(self):
+        """Fail closed if OAuth credentials point at a different channel."""
+        expected = os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE", "").strip()
+        if not expected:
+            return
+        response = self.youtube.channels().list(
+            mine=True, part="snippet", maxResults=5
+        ).execute()
+        items = response.get("items", [])
+        if not items:
+            raise RuntimeError("YouTube OAuth token did not resolve to a channel.")
+        actual_titles = [
+            item.get("snippet", {}).get("title", "").strip()
+            for item in items
+        ]
+        if expected.casefold() not in {title.casefold() for title in actual_titles}:
+            raise RuntimeError(
+                "Safety stop: YouTube OAuth credentials resolve to "
+                f"{actual_titles}, not the configured channel '{expected}'. "
+                "No video was uploaded."
+            )
+        logger.info("YouTube destination verified: %s", expected)
 
     def _get_authenticated_service(self, attempt=0):
         if not Config.YOUTUBE_REFRESH_TOKEN:
