@@ -25,13 +25,19 @@ India is included in the expanded YPP country list.
 - 3 valid public uploads in the last 90 days
 - Either 3,000 valid public long-form watch hours in the last 12 months OR 3 million valid public Shorts views in the last 90 days
 
-**Full ad revenue eligibility:**
+**Full ad revenue eligibility — current through January 31, 2027:**
 - 1,000 subscribers
-- Either 4,000 valid public long-form watch hours in the last 12 months OR 10 million valid public Shorts views in the last 90 days
+- Either 4,000 qualified public long-form watch hours in the last 12 months OR 10 million qualified public Shorts views in the last 90 days
 
-Shorts Feed watch time does not count towards the 4,000 public watch-hour route. Reaching a threshold does not guarantee acceptance: YouTube reviews the whole channel for policy compliance.
+**Announced threshold for new applicants from February 1, 2027:**
+- 1,000 subscribers
+- Either 8,000 qualified public long-form watch hours in the last 12 months OR 20 million qualified public Shorts views in the last 90 days
 
-**Strategic choice:** pursue the 4,000-hour long-form route. Use Shorts for discovery and subscriber acquisition, not as the primary ad-revenue plan. At a 4-minute average view duration, 4,000 hours requires approximately 60,000 valid long-form views; at 5 minutes, approximately 48,000. These are arithmetic illustrations, not view forecasts.
+The expanded YPP early-access thresholds (500 subscribers, 3 valid public uploads, and either 3,000 watch hours or 3 million Shorts views) are for fan-funding/eligible Shopping features, not full Watch Page ad revenue. YouTube says the early-access thresholds remain unchanged in the announced update.
+
+Shorts Feed watch time does not count towards the long-form watch-hour route. Private and unlisted videos also do not count. Reaching a threshold does not guarantee acceptance: YouTube reviews the whole channel for policy compliance.
+
+**Strategic choice:** build toward the announced 8,000-hour long-form route now, because a new channel that applies after February 1, 2027 will face the higher threshold. Use Shorts for discovery and subscriber acquisition, not as the primary ad-revenue plan. At a 4-minute average view duration, 8,000 hours requires approximately 120,000 qualified long-form views; at 5 minutes, approximately 96,000. Across 52 weekly long-form videos, that averages about 2,308 or 1,846 qualified views per episode respectively. These are arithmetic planning benchmarks, not forecasts.
 
 ## Editorial positioning
 
@@ -254,8 +260,8 @@ Do not build the business around Shorts ad revenue alone. Shorts revenue is allo
 ## Current YouTube policy notes (November 2026)
 
 - India is included in the expanded YPP country list.
-- Full ad revenue requires 1,000 subscribers plus 4,000 qualified public long-form watch hours in 12 months OR 10 million qualified public Shorts views in 90 days.
-- Shorts Feed watch time does not count towards the 4,000-hour route.
+- Full ad revenue threshold is 1,000 subscribers plus 4,000 qualified public long-form watch hours OR 10 million qualified Shorts views through Jan 31, 2027; announced new-applicant threshold from Feb 1, 2027 is 8,000 watch hours OR 20 million Shorts views.
+- Shorts Feed watch time does not count towards the long-form watch-hour route; private and unlisted views do not count.
 - Repetitive or mass-produced content is treated as inauthentic content and can be ineligible for monetization.
 - Non-realistic animated content and AI production assistance generally do not require the altered/synthetic disclosure; photorealistic generated/altered scenes, realistic impersonations and AI-generated music as the main focus do.
 - YouTube has announced YPP terms updates beginning February 1, 2027; revisit the terms before that date.
