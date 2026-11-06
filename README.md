@@ -29,7 +29,7 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 
 1. Read [DEPLOY.md](DEPLOY.md) and [AUTONOMOUS_PUBLISHING.md](AUTONOMOUS_PUBLISHING.md).
 2. Create a Google AI Studio API key for the free tier. Disable billing on the associated Google Cloud project before setting the billing confirmation variable.
-3. Run `python setup_youtube_auth.py` locally using the Google account that owns MARROW PSYCHOLOGY. Confirm the printed channel title and ID.
+3. Enable YouTube Data API v3 and YouTube Analytics API. Set the OAuth consent screen to Production (not Testing) and complete any required Google verification; Testing-mode refresh tokens expire after seven days. Run `python setup_youtube_auth.py` locally using the Google account that owns MARROW PSYCHOLOGY. Confirm the printed channel title and ID.
 4. Add the required GitHub Actions secrets: `GEMINI_API_KEY`, `CURIOSITY_CLIENT_ID`, `CURIOSITY_CLIENT_SECRET`, `CURIOSITY_REFRESH_TOKEN`, and `YOUTUBE_EXPECTED_CHANNEL_ID`.
 5. Add repository variable `GEMINI_BILLING_DISABLED_CONFIRMED=true` only after confirming billing is disabled.
 6. Run the appropriate workflow manually with `private_test_upload=true`. Inspect the private video in YouTube Studio.
