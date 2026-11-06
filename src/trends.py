@@ -20,6 +20,12 @@ class TrendEngine:
                 logger.error(f"Failed to load used topics: {e}")
         return []
 
+    def mark_used(self, topic):
+        """Persist a topic after its associated video uploads successfully."""
+        if not topic or topic in self.used_topics:
+            return
+        self._save_used_topic(topic)
+
     def _save_used_topic(self, topic):
         """Persists a new topic to the used list."""
         self.used_topics.append(topic)
@@ -91,7 +97,7 @@ class TrendEngine:
                 return self._get_fallback_topic(llm)
                 
             selected = unused[0] # Pick the top one
-            self._save_used_topic(selected)
+            # Reserve only after the video uploads successfully.
             return selected
             
         except Exception as e:
