@@ -11,6 +11,7 @@ from src.video_editor import VideoEditor
 from src.youtube_uploader import YouTubeUploader
 from src.music_engine import MusicEngine
 from src.quality_gate import validate_script_data, validate_video
+from src.research_engine import ResearchEngine
 
 logger = setup_logging()
 
@@ -64,6 +65,10 @@ async def main():
         voice.voice = "en-GB-RyanNeural" 
         logger.info(f"Using deep voice: {voice.voice}")
     
+    logger.info(f"Retrieving free scholarly context for: {title}")
+    research_data = ResearchEngine().search(title, limit=3)
+    research_context = research_data.get("notes", "")
+
     logger.info(f"Generating {args.type} script for Title: {title}")
     
     script_data = None
@@ -75,9 +80,9 @@ async def main():
                 script_data = llm.generate_conversational_script(title, type=args.type)
         elif args.style == "psych_stickman":
              if args.type == "long":
-                 script_data = llm.generate_psychology_script(title)
+                 script_data = llm.generate_psychology_script(title, research_context=research_context)
              else:
-                 script_data = llm.generate_psychology_stickman_script(title)
+                 script_data = llm.generate_psychology_stickman_script(title, research_context=research_context)
         elif args.type == "long":
             script_data = llm.generate_psychology_script(title)
         else:
@@ -186,6 +191,13 @@ async def main():
         # Prepare SEO Metadata
         video_title = script_data.get('title', args.topic)
         seo_description = script_data.get('description', f"{video_title}")
+        research_sources = research_data.get("sources", [])
+        if research_sources:
+            source_lines = [
+                f"- {source['title']} ({source['journal']}, {source['year']}): {source['url']}"
+                for source in research_sources
+            ]
+            seo_description += "\n\nFurther reading (scholarly sources):\n" + "\n".join(source_lines)
         if args.type == "long" and 'chapters' in script_data:
             seo_description += "\n\nChapters:\n" + "\n".join(script_data['chapters'])
         
