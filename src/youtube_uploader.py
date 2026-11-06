@@ -93,6 +93,7 @@ class YouTubeUploader:
                 else:
                     raise
             
+            self.credentials = credentials
             return service
         except Exception as e:
             error_msg = str(e)
