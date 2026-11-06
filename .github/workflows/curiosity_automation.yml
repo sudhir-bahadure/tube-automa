@@ -44,12 +44,13 @@ jobs:
       - name: Generate and Upload Video
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: "models/gemini-3.8-flash"
+          GEMINI_FREE_TIER_ONLY: "true"
+          YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.CURIOSITY_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.CURIOSITY_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.CURIOSITY_REFRESH_TOKEN }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
           NICHE: "Deep Dark Psychology and Human Behavior"
           VOICE_NAME: "en-US-ChristopherNeural"
         run: |
