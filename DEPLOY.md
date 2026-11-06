@@ -47,4 +47,4 @@ Automated publishing does not guarantee views, YPP approval or income. YouTube c
 
 ## YouTube Analytics
 
-Optional private reporting uses the `https://www.googleapis.com/auth/yt-analytics.readonly` OAuth scope. The refresh token must be reauthorized with this scope; enabling it in code does not modify an existing token. Reports are stored as 14-day workflow artifacts, not committed to source control. The Analytics API must also be enabled in the same Google Cloud project.
+Optional private reporting uses the `https://www.googleapis.com/auth/yt-analytics.readonly` OAuth scope. The refresh token must be reauthorized with this scope; enabling it in code does not modify an existing token. Reports exist only on the ephemeral workflow runner and are not logged, uploaded as artifacts or committed to source control. The Analytics API must also be enabled in the same Google Cloud project.
