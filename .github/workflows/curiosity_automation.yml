@@ -2,8 +2,8 @@ name: Curiosity Automation
 
 on:
   schedule:
-    # One original psychology Short per day. Publishing is scheduled for 6 PM New York time.
-    - cron: '30 15 * * *'
+    # Four original psychology Shorts per week (Mon/Tue/Thu/Sat). Publish at 6 PM New York time.
+    - cron: '30 15 * * 1,2,4,6'
   workflow_dispatch:
     inputs:
       type:
