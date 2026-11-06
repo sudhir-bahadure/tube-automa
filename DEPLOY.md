@@ -8,7 +8,7 @@ The current automated publishing design and rollout notes are maintained in
 - Work is isolated on `feature/tube-automa-2.0`.
 - Pull request: https://github.com/sudhir-bahadure/tube-automa/pull/1
 - `main` has not been modified by this implementation.
-- Scheduled publishing is disabled unless the repository variable `YOUTUBE_AUTOPUBLISH_ENABLED` is exactly `true`. Before enabling it, pass CI, configure the exact `YOUTUBE_EXPECTED_CHANNEL_ID`, and complete a private test upload.
+- The system requires repository variable `GEMINI_BILLING_DISABLED_CONFIRMED=true` before it will call Gemini. Set this only after you manually verify billing is disabled in the Google Cloud project. Scheduled publishing is separately disabled unless `YOUTUBE_AUTOPUBLISH_ENABLED=true`. Before enabling it, pass CI, configure the exact `YOUTUBE_EXPECTED_CHANNEL_ID`, and complete a private test upload.
 
 ## Required GitHub Actions secrets
 
