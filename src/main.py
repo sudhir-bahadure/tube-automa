@@ -18,6 +18,7 @@ logger = setup_logging()
 async def main():
     parser = argparse.ArgumentParser(description="Media Generation Engine")
     parser.add_argument("--dry-run", action="store_true", help="Generate video but do not upload")
+    parser.add_argument("--private-test-upload", action="store_true", help="Upload a private test video with no public schedule")
     parser.add_argument("--topic", type=str, help="Specific topic to generate")
     parser.add_argument("--type", type=str, choices=["long", "short"], default="long", help="Type of video to generate")
     parser.add_argument("--style", type=str, choices=["noir", "stickman", "psych_stickman"], default="noir", help="Visual style of the video")
@@ -236,8 +237,14 @@ async def main():
                 target_local += timedelta(days=1)
             schedule_date = target_local.astimezone(timezone.utc)
 
-        publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-        logger.info(f"Scheduling video for {args.schedule_for} (America/New_York): {publish_at}")
+        publish_at = None if args.private_test_upload else schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        if args.private_test_upload:
+            logger.info("Private test mode: video will remain private with no public publish schedule.")
+        else:
+            if os.getenv("YOUTUBE_AUTOPUBLISH_ENABLED", "false").lower() != "true":
+                logger.error("Public scheduling is disabled. Set repository variable YOUTUBE_AUTOPUBLISH_ENABLED=true only after private test approval.")
+                sys.exit(1)
+            logger.info(f"Scheduling video for {args.schedule_for} (America/New_York): {publish_at}")
 
         if not args.dry_run:
             # 4. Upload to YouTube
@@ -274,6 +281,7 @@ async def main():
                     seo_description, 
                     tags=seo_tags,
                     publish_at=publish_at,
+                    privacy_status="private",
                     category_id=category_id,
                     # Our current visuals are stylized illustrations, not photorealistic synthetic footage.
                     altered_content=(os.getenv('YOUTUBE_SYNTHETIC_DISCLOSURE', 'false').lower() == 'true')
