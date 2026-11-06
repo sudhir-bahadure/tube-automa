@@ -192,9 +192,62 @@ class AssetManager:
         return os.path.isfile(output_path) and os.path.getsize(output_path) > 1000
 
     def generate_thumbnail(self, title, output_path):
-        """Generates a high-clickability thumbnail image."""
-        prompt = f"Highly evocative, mysterious psychology thumbnail for '{title}', surrealist ink wash, dark moody atmosphere, psychological noir, minimalist, no text, 8k, cinematic"
-        return self.generate_image(
-            prompt, output_path, orientation="thumbnail",
-            style="noir", video_type="long", allow_fallback=True
+        """Create an original 16:9 visual and add a readable, restrained title overlay."""
+        from PIL import Image, ImageDraw, ImageFont
+        prompt = (
+            f"Editorial psychology documentary thumbnail about '{title}', "
+            "one strong visual metaphor, a single clear focal subject, cinematic ink wash, "
+            "dark charcoal background with one muted accent, generous negative space, "
+            "high contrast, no text, no lettering, no logo, no watermark"
         )
+        if not self.generate_image(
+            prompt, output_path, orientation="thumbnail",
+            style="noir", video_type="long", allow_fallback=False
+        ):
+            return False
+
+        try:
+            image = Image.open(output_path).convert("RGB")
+            if image.size != (1280, 720):
+                image = image.resize((1280, 720), Image.Resampling.LANCZOS)
+            draw = ImageDraw.Draw(image, "RGBA")
+            # Subtle bottom gradient panel keeps text legible without hiding the artwork.
+            panel_top = 470
+            for y in range(panel_top, 720):
+                alpha = int(190 * ((y - panel_top) / 250))
+                draw.line((0, y, 1280, y), fill=(5, 8, 14, alpha))
+            try:
+                font = ImageFont.truetype(
+                    "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf", 62
+                )
+            except OSError:
+                font = ImageFont.load_default()
+
+            words = title.strip().split()
+            lines = []
+            current = ""
+            for word in words:
+                candidate = (current + " " + word).strip()
+                if len(candidate) > 24 and current:
+                    lines.append(current)
+                    current = word
+                else:
+                    current = candidate
+                if len(lines) == 2:
+                    break
+            if current and len(lines) < 2:
+                lines.append(current)
+            if len(words) > sum(len(line.split()) for line in lines):
+                lines[-1] = lines[-1].rstrip(" .,:;") + "…"
+
+            y = 520 if len(lines) == 1 else 490
+            for line in lines:
+                draw.text((58, y), line, font=font, fill=(255, 255, 255, 255),
+                          stroke_width=2, stroke_fill=(0, 0, 0, 210))
+                y += 82
+
+            image.save(output_path, format="JPEG", quality=94, optimize=True)
+            return os.path.isfile(output_path) and os.path.getsize(output_path) > 5000
+        except Exception as exc:
+            print(f"Thumbnail composition failed: {exc}")
+            return False
