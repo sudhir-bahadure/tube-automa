@@ -103,7 +103,7 @@ Avoid generic intros, long disclaimers, filler, artificial cliffhangers and repe
 - Use custom thumbnails for long-form: one concept, one visual metaphor, 2–4 words maximum, no false promise.
 - Use original diagrams and illustrations wherever possible. Keep a source/license record for any stock asset.
 - Avoid background music unless the asset has a verified, compatible licence. Silence is better than copyright uncertainty.
-- The current local fallback illustration is a resilience mechanism, not an acceptable substitute for a visually rich final video. If the image service fails, consider failing the render rather than publishing a visibly generic fallback.
+- Production rendering now fails closed if a scene illustration cannot be generated; the local Pillow fallback remains available for preview/testing only. This avoids publicly releasing generic placeholder visuals.
 
 ## Research and factual quality
 
