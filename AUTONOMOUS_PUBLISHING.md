@@ -59,3 +59,10 @@ For ad revenue, the current full YPP threshold is 1,000 subscribers plus either 
 ## Rollout
 
 Scheduled workflows remain gated until the repository variable `YOUTUBE_AUTOPUBLISH_ENABLED` is exactly `true`. Manual workflow runs default to a private test upload with no public schedule. Enable public scheduling only after CI passes, the exact channel ID is configured, and the private test video is inspected in YouTube Studio.
+
+
+## Analytics reporting
+
+The publishing engine optionally collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed and subscribers gained. The report is uploaded as a private GitHub Actions artifact with 14-day retention and is never committed to the repository. Thumbnail impressions and click-through rate are reviewed in YouTube Studio. Analytics failure is non-blocking; the system falls back to recent public video view counts.
+
+The OAuth refresh token must include `https://www.googleapis.com/auth/yt-analytics.readonly`, and the YouTube Analytics API must be enabled in the same Google Cloud project. A code change cannot add permissions to an existing refresh token; reauthorize the intended channel and update the GitHub secret.
