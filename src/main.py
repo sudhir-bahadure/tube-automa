@@ -41,7 +41,11 @@ async def main():
         try:
             uploader_temp = YouTubeUploader()
             perf_data = uploader_temp.get_recent_performance(limit=10)
-        except:
+        except Exception as e:
+            if os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE"):
+                logger.error(f"YouTube destination/authentication check failed; stopping before production: {e}")
+                sys.exit(1)
+            logger.warning(f"Analytics unavailable; continuing without performance context: {e}")
             perf_data = None
         
         title = trend_engine.get_viral_topic(llm, performance_context=perf_data)
