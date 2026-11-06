@@ -13,8 +13,19 @@ def validate_script_data(script_data, is_short=False):
     scenes = script_data.get("scenes")
     if not isinstance(title, str) or len(title.strip()) < 8:
         raise ValueError("Script title is missing or too short.")
+    if len(title.strip()) > 100:
+        raise ValueError("Video title exceeds YouTube's 100-character limit.")
     if not isinstance(scenes, list):
         raise ValueError("Script scenes must be a list.")
+    description = script_data.get("description")
+    if description is not None and (not isinstance(description, str) or len(description) > 5000):
+        raise ValueError("Video description must be text and stay within 5,000 characters.")
+    tags = script_data.get("tags")
+    if tags is not None:
+        if not isinstance(tags, list) or len(tags) > 30:
+            raise ValueError("Video tags must be a list of no more than 30 entries.")
+        if any(not isinstance(tag, str) or len(tag) > 30 for tag in tags):
+            raise ValueError("Each video tag must be text no longer than 30 characters.")
 
     minimum_scenes = 7 if is_short else 24
     maximum_scenes = 12 if is_short else 40
