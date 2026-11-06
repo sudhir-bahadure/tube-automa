@@ -39,6 +39,13 @@ Shorts Feed watch time does not count towards the long-form watch-hour route. Pr
 
 **Strategic choice:** build toward the announced 8,000-hour long-form route now, because a new channel that applies after February 1, 2027 will face the higher threshold. Use Shorts for discovery and subscriber acquisition, not as the primary ad-revenue plan. At a 4-minute average view duration, 8,000 hours requires approximately 120,000 qualified long-form views; at 5 minutes, approximately 96,000. Across 52 weekly long-form videos, that averages about 2,308 or 1,846 qualified views per episode respectively. These are arithmetic planning benchmarks, not forecasts.
 
+
+Official policy references:
+- Current YPP overview and qualified-view/watch-hour definitions: https://support.google.com/youtube/answer/72851
+- Expanded YPP early access and eligible-country list (India included): https://support.google.com/youtube/answer/13429240
+- Announced February 1, 2027 YPP terms and higher new-applicant ad thresholds: https://blog.google/intl/en-mena/product-updates/connect-communicate/new-opportunities-to-earn-and-changes-to-the-youtube-partner-program/
+- YouTube inauthentic-content and monetization policy: https://support.google.com/youtube/answer/1311392
+
 ## Editorial positioning
 
 **Promise:** "Understand the psychology behind everyday decisions, habits and relationships—without pop-psychology myths."
