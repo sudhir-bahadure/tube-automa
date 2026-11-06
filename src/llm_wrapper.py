@@ -76,7 +76,9 @@ class LLMWrapper:
                 
                 # If 404, the model name is definitely wrong or retired, move to next model immediately
                 if "404" in err_msg or "not found" in err_msg:
-                    print(f"Model {current_model} NOT FOUND (404). Swapping...")
+                    print(f"Model {current_model} NOT FOUND (404).")
+                    if Config.GEMINI_FREE_TIER_ONLY:
+                        return None
                     model_index += 1
                     continue
                 
