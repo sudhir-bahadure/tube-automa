@@ -17,6 +17,7 @@ The system creates original scripts, generates illustrated scenes, narrates them
 
 - Gemini API: one configured free-tier model only (`models/gemini-3.8-flash`). Free-tier quota exhaustion stops the run; the application does not switch to another model or a paid provider.
 - Narration: Edge TTS. ElevenLabs credentials are deliberately not passed to the publishing workflows.
+- Research: free Europe PMC scholarly abstract lookup; relevant source links are added to video descriptions when available.
 - Illustrations: Pollinations public image endpoint with a locally generated Pillow fallback.
 - Editing: MoviePy, FFmpeg and Pillow on GitHub-hosted runners.
 - Scheduling and source control: GitHub Actions on this public repository.
@@ -29,6 +30,7 @@ This is designed to avoid paid subscriptions and API tiers. It cannot guarantee 
 - Scripts use a distinct explanatory structure: relatable scenario, named concept, everyday example, nuance/limitation and practical reflection.
 - Prompts prohibit invented studies, statistics, diagnoses, false certainty, fearbait and manipulation instructions.
 - Script validation rejects malformed, too-short, overlong or repetitive narration and repeated visual directions.
+- Psychology prompts use retrieved abstracts cautiously and prohibit fabricated study names, statistics and citations.
 - Video validation checks file size, audio/video streams, duration and portrait orientation for Shorts.
 - Missing narration stops the run. Missing generated imagery falls back to original local illustrations.
 - Used topics are recorded only after a successful upload.
