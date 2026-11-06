@@ -8,7 +8,7 @@ The system creates original scripts, generates illustrated scenes, narrates them
 
 ## Publishing cadence
 
-- One Short every day.
+- Four Shorts per week (Monday, Tuesday, Thursday and Saturday).
 - One 8–10 minute documentary every Sunday.
 - Target publish time: 6:00 PM America/New_York. Python's `zoneinfo` handles daylight-saving changes.
 - Workflows serialize publishing to protect topic history and avoid overlapping renders.
