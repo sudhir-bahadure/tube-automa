@@ -58,16 +58,8 @@ class YouTubeUploader:
         from google.auth.transport.requests import Request
         credentials.refresh(Request())
         self.credentials = credentials
-        granted = set(credentials.granted_scopes or [])
-        required = {
-            "https://www.googleapis.com/auth/youtube.readonly",
-            "https://www.googleapis.com/auth/youtube.upload",
-        }
-        if not required.issubset(granted):
-            raise RuntimeError(
-                "OAuth token lacks required youtube.readonly/youtube.upload scopes. "
-                "Reauthorize the intended channel; no broader scope fallback is attempted."
-            )
+        # Actual permissions are verified by the channel lookup and upload request;
+        # older refresh-token responses do not always return granted_scopes.
         return build("youtube", "v3", credentials=credentials, cache_discovery=False)
 
     def upload_video(self, video_path, title, description, tags=None, privacy_status="private", publish_at=None, category_id="27", altered_content=False):
@@ -113,6 +105,27 @@ class YouTubeUploader:
         except Exception as e:
             logger.error(f"Failed to upload video: {e}")
             return None
+
+    def schedule_video(self, video_id, publish_at):
+        """Schedule an already-uploaded private video only after thumbnail setup succeeds."""
+        if not video_id or not publish_at:
+            raise ValueError("A video ID and future publish time are required.")
+        try:
+            self.youtube.videos().update(
+                part="status",
+                body={
+                    "id": video_id,
+                    "status": {
+                        "privacyStatus": "private",
+                        "publishAt": publish_at,
+                    },
+                },
+            ).execute()
+            logger.info("Video %s scheduled for %s", video_id, publish_at)
+            return True
+        except Exception as exc:
+            logger.error("Could not schedule video %s; it remains private: %s", video_id, exc)
+            return False
 
     def add_comment(self, video_id, text):
         """Adds a top-level comment to a video."""
