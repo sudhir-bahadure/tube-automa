@@ -295,46 +295,51 @@ class LLMWrapper:
             return None
 
     def generate_psychology_stickman_script(self, topic):
-        """
-        Generates a high-retention psychology script with STICKMAN visuals.
-        Requested by user feedback: Natural punctuation, stickman synced visuals.
-        """
-        scene_count = 10
-        duration_note = "CRITICAL: Total video MUST be under 60 seconds."
-        
+        """Create an original, practical psychology explainer with scene-specific visuals."""
         prompt = f"""
-        Topic: {topic}
-        Role: A charismatic Psychology Storyteller who reveals hidden social secrets.
-        
-        STRICT RULES:
-        1. {duration_note}
-        2. VIRAL HOOK (0-3s): Start with "Did you know..." or "Psychology says..." or a "POV" that hits a social pain point.
-        3. NATURAL PUNCTUATION: You MUST use commas, periods, and ellipses (...) specifically to guide the AI Voiceover's breathing and pacing. Do not write run-on sentences.
-        4. Psychology Focus: Make it about relatable social hacks, human nature, or dark truths.
-        5. Visual Synced Animation: {scene_count} scenes.
-           - `visual_prompt`: MUST be "minimalist stickman [ACTION]" (e.g. "minimalist stickman holding head in pain", "minimalist stickman running fast").
-           - `vocal_action`: Use "jumping", "shaking", "bouncing" or "talking" to match the emotion.
-        6. JSON VALIDITY: Ensure all strings are correctly quoted and escaped.
-        
-        FORMAT:
+        Create an original short-form educational story about this topic: "{topic}".
+
+        Editorial identity: MARROW Psychology — calm, curious, evidence-aware explanations of
+        everyday human behaviour. This is education, not therapy, diagnosis, or medical advice.
+
+        Build a complete mini-story, not a list of generic facts:
+        1. Open with a concrete, relatable moment or surprising question. Never begin with
+           "Psychology says" or claim that a behaviour proves what someone secretly thinks.
+        2. Explain ONE clearly named, established psychological concept in plain language.
+        3. Show a specific everyday example, then explain why the first interpretation can
+           sometimes be wrong. Include a useful nuance or alternative explanation.
+        4. End with one practical reflection or small action, not a manipulative CTA.
+        5. Do not invent study names, statistics, quotes, expert credentials, diagnoses,
+           brain scans, or claims of scientific certainty. If evidence is mixed, say so.
+        6. Avoid absolute statements about what "narcissists", "psychopaths", partners,
+           coworkers, or any demographic always do. No fearbait or instructions to manipulate.
+        7. Write 95–135 spoken words across 8–10 scenes. Each scene must add new information.
+        8. Narration should sound natural when read aloud by a neutral synthetic narrator.
+        9. Every scene gets a distinct, specific visual action. Use minimalist stickman
+           illustrations, expressive poses, simple props and varied compositions.
+        10. Do not reuse stock phrases, filler intros, repeated conclusions or generic CTAs.
+
+        Return ONLY valid JSON in this exact structure:
         {{
-            "title": "{topic}",
-            "description": "Deep psychological insights about {topic}. #Insight #SelfImprovement #Shorts",
-            "music_mood": "chill", // Choice: upbeat, funny, chill, tense
-            "scenes": [
-                {{
-                    "text": "spoken narration with breathing room...",
-                    "audio_mood": "serious",
-                    "vocal_action": "talking",
-                    "visual_prompt": "minimalist stickman illustration of..."
-                }},
-                ...
-            ]
+          "title": "Clear, intriguing title without misleading certainty",
+          "description": "Two-sentence original summary, then relevant topic hashtags.",
+          "tags": ["psychology", "human behaviour", "cognitive bias"],
+          "music_mood": "chill",
+          "deduced_angle": "The specific concept and narrative angle",
+          "scenes": [
+            {{
+              "text": "One short narration beat.",
+              "audio_mood": "curious",
+              "vocal_action": "talking",
+              "visual_prompt": "Minimalist stickman [specific action with props and composition]."
+            }}
+          ]
         }}
         """
         try:
-            text = self._call_gemini(prompt)
-            if not text: return None
+            text = self._call_gemini(prompt, max_retries=5)
+            if not text:
+                return None
             return self._extract_json(text)
         except Exception as e:
             print(f"Error parsing psychology stickman script: {e}")
