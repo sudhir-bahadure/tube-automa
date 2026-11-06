@@ -46,8 +46,9 @@ The workflows reuse the repository's existing secrets:
 - `CURIOSITY_CLIENT_ID`
 - `CURIOSITY_CLIENT_SECRET`
 - `CURIOSITY_REFRESH_TOKEN`
+- `YOUTUBE_EXPECTED_CHANNEL_ID`
 
-The OAuth credentials must resolve to a YouTube channel whose title is exactly **MARROW PSYCHOLOGY** (case-insensitive). If they resolve to another channel, the workflow stops before generating or uploading. No credential values are stored in source control.
+The OAuth credentials must resolve to exactly one channel whose title and ID match the configured **MARROW PSYCHOLOGY** destination. The exact ID is supplied through the `YOUTUBE_EXPECTED_CHANNEL_ID` secret. Missing or mismatched identity stops the run. No credential values are stored in source control.
 
 ## Important monetization reality
 
@@ -57,4 +58,4 @@ For ad revenue, the current full YPP threshold is 1,000 subscribers plus either 
 
 ## Rollout
 
-This branch is not live until the pull request is merged. Before enabling scheduled publishing, confirm that the existing OAuth secrets point to MARROW PSYCHOLOGY and that the first GitHub Actions run passes. The code will stop rather than silently publish to a different channel.
+Scheduled workflows remain gated until the repository variable `YOUTUBE_AUTOPUBLISH_ENABLED` is exactly `true`. Manual workflow runs default to a private test upload with no public schedule. Enable public scheduling only after CI passes, the exact channel ID is configured, and the private test video is inspected in YouTube Studio.
