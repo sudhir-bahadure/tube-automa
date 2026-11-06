@@ -26,6 +26,14 @@ async def main():
     parser.add_argument("--schedule-for", type=str, choices=["morning", "afternoon", "evening", "now"], default="now", help="Time slot for scheduling (US ET)")
     args = parser.parse_args()
 
+    if os.getenv("GEMINI_BILLING_DISABLED_CONFIRMED", "false").lower() != "true":
+        logger.error(
+            "Zero-cost safety stop: set repository variable "
+            "GEMINI_BILLING_DISABLED_CONFIRMED=true only after confirming "
+            "Google Cloud billing is disabled for the Gemini API project."
+        )
+        sys.exit(1)
+
     logger.info(f"Starting Media Automation in {args.style} style...")
     ensure_dir_exists("temp")
     ensure_dir_exists("output")
