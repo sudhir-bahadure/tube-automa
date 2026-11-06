@@ -14,8 +14,7 @@ class AnalyticsEngine:
 
     METRICS = ",".join([
         "views", "estimatedMinutesWatched", "averageViewDuration",
-        "averageViewPercentage", "subscribersGained", "impressions",
-        "impressionsClickThroughRate",
+        "averageViewPercentage", "subscribersGained",
     ])
 
     def __init__(self, credentials):
@@ -63,7 +62,7 @@ class AnalyticsEngine:
         rows = snapshot.get("rows", [])
         totals = {
             metric: sum(float(row.get(metric, 0) or 0) for row in rows)
-            for metric in ("views", "estimatedMinutesWatched", "subscribersGained", "impressions")
+            for metric in ("views", "estimatedMinutesWatched", "subscribersGained")
         }
         top_videos = sorted(
             rows,
