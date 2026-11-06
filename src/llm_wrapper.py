@@ -152,6 +152,7 @@ class LLMWrapper:
         - Define the central psychological concept in plain language.
         - Explain its mechanism and distinguish it from nearby concepts.
         - Use at least three varied, realistic examples.
+        - Include one brief two-person role-play/re-enactment that shows how the same situation can be interpreted differently; make clear it is an illustrative scenario, not a study.
         - Include limitations, alternative explanations and what the concept cannot prove.
         - Give viewers practical reflection questions or low-risk actions.
         - Finish with a concise synthesis and a natural invitation to discuss.
@@ -337,7 +338,8 @@ class LLMWrapper:
            "Psychology says" or claim that a behaviour proves what someone secretly thinks.
         2. Explain ONE clearly named, established psychological concept in plain language.
         3. Show a specific everyday example, then explain why the first interpretation can
-           sometimes be wrong. Include a useful nuance or alternative explanation.
+           sometimes be wrong. Include a brief two-person mini-role-play and a useful nuance
+           or alternative explanation.
         4. End with one practical reflection or small action, not a manipulative CTA.
         5. Do not invent study names, statistics, quotes, expert credentials, diagnoses,
            brain scans, or claims of scientific certainty. If evidence is mixed, say so.
