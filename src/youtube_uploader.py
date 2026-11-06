@@ -123,7 +123,8 @@ class YouTubeUploader:
                 ).execute()
                 items = response.get("items", [])
                 if not items:
-                    raise RuntimeError(f"YouTube could not find uploaded video {video_id}.")
+                    logger.error("YouTube could not find uploaded video %s.", video_id)
+                    return False
                 details = items[0].get("processingDetails", {})
                 state = details.get("processingStatus", "")
                 logger.info("YouTube processing status for %s: %s", video_id, state or "not reported")
@@ -133,6 +134,13 @@ class YouTubeUploader:
                     logger.error("YouTube processing ended in state %s for %s", state, video_id)
                     return False
             except Exception as exc:
+                status_code = getattr(getattr(exc, "resp", None), "status", None)
+                if status_code in (400, 401, 403, 404):
+                    logger.error(
+                        "Non-retryable YouTube API error while checking %s (HTTP %s): %s",
+                        video_id, status_code, exc
+                    )
+                    return False
                 logger.warning("Could not check processing status for %s: %s", video_id, exc)
             time.sleep(poll_interval)
         logger.error("Timed out waiting for YouTube processing for %s", video_id)
