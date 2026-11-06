@@ -78,3 +78,11 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "chore: update psychology topic history [skip ci]"
           git push origin "$GITHUB_REF_NAME"
+
+      - name: Upload private analytics snapshot
+        if: always() && hashFiles('output/analytics_snapshot.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: marrow-analytics-${{ github.run_id }}
+          path: output/analytics_snapshot.json
+          retention-days: 14
