@@ -38,3 +38,8 @@ A passing CI run is necessary but not sufficient. Run the manual workflow with `
 ## Important
 
 Automated publishing does not guarantee views, YPP approval or income. YouTube can reject repetitive, mass-produced or reused content even when it was generated with AI tools. See the official [YouTube monetization policies](https://support.google.com/youtube/answer/1311392).
+
+
+## YouTube Analytics
+
+Optional private reporting uses the `https://www.googleapis.com/auth/yt-analytics.readonly` OAuth scope. The refresh token must be reauthorized with this scope; enabling it in code does not modify an existing token. Reports are stored as 14-day workflow artifacts, not committed to source control. The Analytics API must also be enabled in the same Google Cloud project.
