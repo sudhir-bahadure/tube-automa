@@ -101,14 +101,14 @@ def validate_video(path, is_short=False, min_bytes=10000):
     width, height = videos[0].get("width", 0), videos[0].get("height", 0)
     if not width or not height:
         raise ValueError("Video dimensions are missing.")
-    if is_short and (width < 720 or height < 1280):
-        raise ValueError(f"Shorts output must be at least 720x1280; found {width}x{height}.")
-    if not is_short and (width < 1280 or height < 720):
-        raise ValueError(f"Long-form output must be at least 1280x720; found {width}x{height}.")
     if is_short and height <= width:
         raise ValueError(f"Shorts output must be portrait; found {width}x{height}.")
     if not is_short and width <= height:
         raise ValueError(f"Long-form output must be landscape; found {width}x{height}.")
+    if is_short and (width < 720 or height < 1280):
+        raise ValueError(f"Shorts output must be at least 720x1280; found {width}x{height}.")
+    if not is_short and (width < 1280 or height < 720):
+        raise ValueError(f"Long-form output must be at least 1280x720; found {width}x{height}.")
 
     try:
         duration = float(metadata["format"]["duration"])
