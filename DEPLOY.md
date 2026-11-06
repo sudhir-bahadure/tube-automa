@@ -18,6 +18,11 @@ The current automated publishing design and rollout notes are maintained in
 - `CURIOSITY_REFRESH_TOKEN` (authorized with the scopes listed in `setup_youtube_auth.py`)
 - `YOUTUBE_EXPECTED_CHANNEL_ID` (exact channel ID printed by the OAuth setup script)
 
+## Required GitHub repository variables
+
+- `GEMINI_BILLING_DISABLED_CONFIRMED=true` only after manually verifying Google Cloud billing is disabled.
+- `YOUTUBE_AUTOPUBLISH_ENABLED=true` only after a successful private test upload and human inspection. Leave unset/false until then.
+
 The workflow uses one configured Gemini free-tier model, Edge TTS, Pollinations image generation, MoviePy and FFmpeg. Thumbnail generation uses original art plus a title overlay. No paid image, voice or video API is used.
 
 ## Cost and quota safety
