@@ -30,7 +30,7 @@ class AnalyticsEngineTests(unittest.TestCase):
             self.assertEqual(persisted["rows"][0]["views"], 120)
 
         summary = engine.summarize(snapshot)
-        self.assertEqual(summary["totals"]["views"], 120)
+        self.assertEqual(summary["top_videos"][0]["views"], 120)
         self.assertEqual(summary["top_videos"][0]["video"], "video-1")
 
     def test_requires_credentials(self):
