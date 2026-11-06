@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import os
 import sys
 import random
@@ -10,17 +11,45 @@ from src.asset_manager import AssetManager
 from src.video_editor import VideoEditor
 from src.youtube_uploader import YouTubeUploader
 from src.music_engine import MusicEngine
+from src.quality_gate import validate_script_data, validate_video
+from src.research_engine import ResearchEngine
+from src.analytics_engine import AnalyticsEngine
 
 logger = setup_logging()
 
 async def main():
     parser = argparse.ArgumentParser(description="Media Generation Engine")
     parser.add_argument("--dry-run", action="store_true", help="Generate video but do not upload")
+    parser.add_argument("--private-test-upload", action="store_true", help="Upload a private test video with no public schedule")
     parser.add_argument("--topic", type=str, help="Specific topic to generate")
     parser.add_argument("--type", type=str, choices=["long", "short"], default="long", help="Type of video to generate")
     parser.add_argument("--style", type=str, choices=["noir", "stickman", "psych_stickman"], default="noir", help="Visual style of the video")
     parser.add_argument("--schedule-for", type=str, choices=["morning", "afternoon", "evening", "now"], default="now", help="Time slot for scheduling (US ET)")
     args = parser.parse_args()
+
+    if os.getenv("GEMINI_BILLING_DISABLED_CONFIRMED", "false").lower() != "true":
+        logger.error(
+            "Zero-cost safety stop: set repository variable "
+            "GEMINI_BILLING_DISABLED_CONFIRMED=true only after confirming "
+            "Google Cloud billing is disabled for the Gemini API project."
+        )
+        sys.exit(1)
+
+    if not args.dry_run:
+        required_youtube = (
+            "YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET",
+            "YOUTUBE_REFRESH_TOKEN", "YOUTUBE_EXPECTED_CHANNEL_TITLE",
+            "YOUTUBE_EXPECTED_CHANNEL_ID",
+        )
+        missing = [name for name in required_youtube if not os.getenv(name)]
+        if missing:
+            logger.error("YouTube safety stop; missing configuration: %s", ", ".join(missing))
+            sys.exit(1)
+        if not args.private_test_upload and os.getenv(
+            "YOUTUBE_AUTOPUBLISH_ENABLED", "false"
+        ).lower() != "true":
+            logger.error("Public scheduling is disabled; refusing to generate a scheduled upload.")
+            sys.exit(1)
 
     logger.info(f"Starting Media Automation in {args.style} style...")
     ensure_dir_exists("temp")
@@ -40,7 +69,26 @@ async def main():
         try:
             uploader_temp = YouTubeUploader()
             perf_data = uploader_temp.get_recent_performance(limit=10)
-        except:
+            try:
+                analytics = AnalyticsEngine(uploader_temp.credentials)
+                snapshot = analytics.collect_video_report(days=28)
+                summary = analytics.summarize(snapshot)
+                top_rows = summary["top_videos"][:10]
+                top_ids = [row.get("video") for row in top_rows if row.get("video")]
+                title_rows = uploader_temp.get_video_performance(top_ids)
+                # Private watch-time values select the titles locally. Only public titles
+                # and public view counts are passed to the free-tier model.
+                perf_data = (perf_data or []) + title_rows
+            except Exception as analytics_error:
+                logger.warning(
+                    "Read-only Analytics API unavailable; continuing without analytics snapshot: "
+                    f"{analytics_error}"
+                )
+        except Exception as e:
+            if os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE"):
+                logger.error(f"YouTube destination/authentication check failed; stopping before production: {e}")
+                sys.exit(1)
+            logger.warning(f"Analytics unavailable; continuing without performance context: {e}")
             perf_data = None
         
         title = trend_engine.get_viral_topic(llm, performance_context=perf_data)
@@ -59,6 +107,13 @@ async def main():
         voice.voice = "en-GB-RyanNeural" 
         logger.info(f"Using deep voice: {voice.voice}")
     
+    logger.info(f"Retrieving free scholarly context for: {title}")
+    research_data = ResearchEngine().search(title, limit=3)
+    research_context = research_data.get("notes", "")
+    with open("output/research_note.json", "w", encoding="utf-8") as handle:
+        json.dump({"topic": title, "sources": research_data.get("sources", []),
+                   "notes": research_context}, handle, ensure_ascii=False, indent=2)
+
     logger.info(f"Generating {args.type} script for Title: {title}")
     
     script_data = None
@@ -69,7 +124,10 @@ async def main():
             else:
                 script_data = llm.generate_conversational_script(title, type=args.type)
         elif args.style == "psych_stickman":
-             script_data = llm.generate_psychology_stickman_script(title)
+             if args.type == "long":
+                 script_data = llm.generate_psychology_script(title, research_context=research_context)
+             else:
+                 script_data = llm.generate_psychology_stickman_script(title, research_context=research_context)
         elif args.type == "long":
             script_data = llm.generate_psychology_script(title)
         else:
@@ -82,6 +140,17 @@ async def main():
 
     if not script_data:
         logger.error(f"Failed to generate {args.type} script after 2 attempts.")
+        sys.exit(1)
+    with open("output/script_data.json", "w", encoding="utf-8") as handle:
+        json.dump(script_data, handle, ensure_ascii=False, indent=2)
+
+    try:
+        script_check = validate_script_data(script_data, is_short=(args.type == "short"))
+        logger.info(f"Script quality gate passed: {script_check}")
+        with open("output/quality_report.json", "w", encoding="utf-8") as handle:
+            json.dump({"script": script_check}, handle, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Script quality gate failed; refusing to render or upload: {e}")
         sys.exit(1)
 
     logger.info(f"Title: {script_data.get('title')}")
@@ -107,7 +176,10 @@ async def main():
                 "remove_silence": True
             }
 
-        await voice.generate_audio(scene['text'], audio_path, mood=mood, **audio_kwargs)
+        audio_ok = await voice.generate_audio(scene['text'], audio_path, mood=mood, **audio_kwargs)
+        if not audio_ok or not os.path.isfile(audio_path) or os.path.getsize(audio_path) < 1000:
+            logger.error(f"Voice generation failed for scene {i+1}; refusing to publish a video with missing narration.")
+            sys.exit(1)
         
         # Visuals
         # Use landscape for long-form, portrait for shorts
@@ -123,9 +195,16 @@ async def main():
         # Logic to ensure stickman usage for stickman styles even if prompt is generic (though script should provide it)
         # prompt already comes from script.
         
-        success = asset_mgr.generate_image(prompt, video_path, orientation=orientation)
+        success = asset_mgr.generate_image(
+            prompt, video_path, orientation=orientation,
+            style=args.style, video_type=args.type, allow_fallback=False
+        )
         if not success:
-            logger.warning(f"Image generation failed for scene {i+1}. VideoEditor will use fallback visual.")
+            logger.error(
+                f"Scene {i+1} illustration could not be generated. "
+                "Stopping rather than publishing a generic placeholder video."
+            )
+            sys.exit(1)
         
         processed_scenes.append({
             'audio_path': audio_path,
@@ -136,9 +215,11 @@ async def main():
 
     # 3. Create Video
     # Select Background Music
-    music_engine = MusicEngine()
     music_mood = script_data.get('music_mood', 'chill')
-    bg_music_path, music_credits = music_engine.get_track(music_mood)
+    bg_music_path, music_credits = None, None
+    if os.getenv("MUSIC_ENABLED", "false").lower() == "true":
+        music_engine = MusicEngine()
+        bg_music_path, music_credits = music_engine.get_track(music_mood)
     
     editor = VideoEditor()
     output_file = f"output/final_{args.type}.mp4"
@@ -156,50 +237,64 @@ async def main():
     
     if success:
         logger.info(f"Video generated successfully: {output_file}")
+        try:
+            validation = validate_video(output_file, is_short=is_short)
+            logger.info(f"Production quality gate passed: {validation}")
+            with open("output/quality_report.json", "w", encoding="utf-8") as handle:
+                json.dump({"script": script_check, "video": validation}, handle, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f"Production quality gate failed; refusing upload: {e}")
+            sys.exit(1)
 
         # Prepare SEO Metadata
         video_title = script_data.get('title', args.topic)
         seo_description = script_data.get('description', f"{video_title}")
+        research_sources = research_data.get("sources", [])
+        if research_sources:
+            source_lines = [
+                f"- {source['title']} ({source['journal']}, {source['year']}): {source['url']}"
+                for source in research_sources
+            ]
+            seo_description += "\n\nFurther reading (scholarly sources):\n" + "\n".join(source_lines)
         if args.type == "long" and 'chapters' in script_data:
             seo_description += "\n\nChapters:\n" + "\n".join(script_data['chapters'])
         
         # Add Music Credits (License Awareness)
         if bg_music_path and music_credits:
-            seo_description += f"\n\n🎵 Music: {music_credits} (YouTube Audio Library - No Attribution Required)"
+            seo_description += f"\n\n🎵 Music: {music_credits}"
         elif bg_music_path:
             # Fallback if credits couldn't be parsed
             music_name = os.path.basename(bg_music_path).split('.')[0].replace('_', ' ').title()
-            seo_description += f"\n\n🎵 Music: {music_name} (YouTube Audio Library - No Attribution Required)"
+            seo_description += f"\n\n🎵 Music: {music_name}"
         
-        seo_tags = script_data.get('tags', ['Viral', 'Trending'])
+        seo_tags = script_data.get('tags') or ['psychology', 'human behaviour', 'cognitive science']
         
-        # Preparation for Scheduling
-        from datetime import datetime, timedelta
-        
-        # Calculate publish time based on time slot
-        if args.schedule_for == "morning":
-            # 10:00 AM ET = 3:00 PM UTC (15:00)
-            target_hour_utc = 15
-        elif args.schedule_for == "afternoon":
-            # 2:00 PM ET = 7:00 PM UTC (19:00)
-            target_hour_utc = 19
-        elif args.schedule_for == "evening":
-            # 6:00 PM ET = 11:00 PM UTC (23:00)
-            target_hour_utc = 23
+        # Schedule against America/New_York so daylight-saving changes are handled.
+        from datetime import datetime, timedelta, timezone
+        from zoneinfo import ZoneInfo
+
+        target_hours_et = {"morning": 10, "afternoon": 14, "evening": 18}
+        now_utc = datetime.now(timezone.utc)
+        if args.schedule_for == "now":
+            schedule_date = now_utc + timedelta(hours=12)
         else:
-            # Default: 12 hours from now
-            schedule_date = datetime.utcnow() + timedelta(hours=12)
-            publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-            target_hour_utc = None
-        
-        if target_hour_utc is not None:
-            # Schedule for today if the hour hasn't passed, otherwise tomorrow
-            now = datetime.utcnow()
-            schedule_date = now.replace(hour=target_hour_utc, minute=0, second=0, microsecond=0)
-            if now.hour >= target_hour_utc:
-                schedule_date += timedelta(days=1)
-            publish_at = schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-            logger.info(f"Scheduling video for {args.schedule_for} slot: {publish_at}")
+            eastern = now_utc.astimezone(ZoneInfo("America/New_York"))
+            target_local = eastern.replace(
+                hour=target_hours_et[args.schedule_for],
+                minute=0, second=0, microsecond=0
+            )
+            if eastern >= target_local:
+                target_local += timedelta(days=1)
+            schedule_date = target_local.astimezone(timezone.utc)
+
+        publish_at = None if args.private_test_upload else schedule_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        if args.private_test_upload:
+            logger.info("Private test mode: video will remain private with no public publish schedule.")
+        else:
+            if os.getenv("YOUTUBE_AUTOPUBLISH_ENABLED", "false").lower() != "true":
+                logger.error("Public scheduling is disabled. Set repository variable YOUTUBE_AUTOPUBLISH_ENABLED=true only after private test approval.")
+                sys.exit(1)
+            logger.info(f"Scheduling video for {args.schedule_for} (America/New_York): {publish_at}")
 
         if not args.dry_run:
             # 4. Upload to YouTube
@@ -207,58 +302,53 @@ async def main():
             try:
                 uploader = YouTubeUploader()
                 
-                # Generate Thumbnail
+                # Build and validate the thumbnail before creating the YouTube video.
                 ensure_dir_exists("assets/thumbnails")
                 thumbnail_path = f"assets/thumbnails/thumb_{args.type}.jpg"
                 logger.info(f"Generating Thumbnail for {video_title}...")
-                asset_mgr.generate_thumbnail(video_title, thumbnail_path)
-                
-                
-                # Engagement Strategy: Since Pinned Comments don't work for Scheduled (Private) videos,
-                # we move the Engagement Prompt to the TOP of the description for Shorts.
-                prompts = [
-                    f"Who else relates to this? Comment 'ME' below! 👇",
-                    f"How was the video? Comment 'Ready' if you reached the end! 👇",
-                    f"Did you know about this? Let's discuss in the comments! 💬",
-                    f"Should I do more videos about '{video_title[:20]}'? Let me know! 👇"
-                ]
-                engagement_prompt = random.choice(prompts)
-                
-                # Prepend to description for visibility
-                seo_description = f"{engagement_prompt}\n\n{seo_description}"
-                
-                # Determine category based on style
-                category_id = "23" if args.style == "stickman" else "27"
-                
+                if not asset_mgr.generate_thumbnail(video_title, thumbnail_path):
+                    raise RuntimeError("Thumbnail generation failed; refusing to upload.")
+                from PIL import Image
+                with Image.open(thumbnail_path) as thumb:
+                    thumb.verify()
+                with Image.open(thumbnail_path) as thumb:
+                    if thumb.size != (1280, 720):
+                        raise RuntimeError(f"Thumbnail must be 1280x720; found {thumb.size}.")
+                if os.path.getsize(thumbnail_path) < 5000:
+                    raise RuntimeError("Thumbnail file is unexpectedly small.")
+
+                # Always create a private upload first. Public scheduling is a second,
+                # explicit operation after thumbnail upload succeeds.
                 video_id = uploader.upload_video(
-                    output_file, 
-                    video_title, 
-                    seo_description, 
+                    output_file,
+                    video_title,
+                    seo_description,
                     tags=seo_tags,
-                    publish_at=publish_at,
+                    publish_at=None,
+                    privacy_status="private",
                     category_id=category_id,
-                    altered_content=True
+                    altered_content=(os.getenv('YOUTUBE_SYNTHETIC_DISCLOSURE', 'false').lower() == 'true')
                 )
-                
+
                 if video_id:
-                    if os.path.exists(thumbnail_path):
-                        uploader.set_thumbnail(video_id, thumbnail_path)
-                    
-                    # Attempt comment pinning only if NOT scheduled for far in the future
-                    # (Though uploader.pin_comment usually fails for private/scheduled videos)
-                    if not publish_at:
-                        import time
-                        logger.info("Waiting 15s for processing before pinning...")
-                        time.sleep(15)
-                        comment_id = uploader.add_comment(video_id, engagement_prompt)
-                        if comment_id:
-                            uploader.pin_comment(comment_id)
-                    else:
-                        logger.info("Video is scheduled. Engagement prompt has been added to the description instead.")
-                    
+                    if not uploader.wait_until_processed(video_id):
+                        raise RuntimeError(
+                            f"YouTube did not finish processing {video_id}; it remains private."
+                        )
+                    if not uploader.set_thumbnail(video_id, thumbnail_path):
+                        raise RuntimeError(
+                            f"Thumbnail upload failed for {video_id}; video remains private."
+                        )
+                    if publish_at and not uploader.schedule_video(video_id, publish_at):
+                        raise RuntimeError(
+                            f"Scheduling failed for {video_id}; video remains private."
+                        )
+                    if not args.topic:
+                        trend_engine.mark_used(title)
                     logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
-                elif video_id:
-                    logger.info(f"Successfully uploaded video: https://youtu.be/{video_id}")
+                else:
+                    logger.error("YouTube upload returned no video ID; marking this workflow run as failed.")
+                    sys.exit(1)
             except Exception as e:
                 logger.error(f"Upload process failed: {e}")
                 sys.exit(1)

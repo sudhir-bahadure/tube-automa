@@ -1,4 +1,7 @@
 import requests
+import os
+import hashlib
+import math
 from .config import Config
 
 class AssetManager:
@@ -67,13 +70,41 @@ class AssetManager:
         
         return False
 
-    def generate_image(self, prompt, output_path, orientation="portrait"):
-        """Generates an image using Pollinations.ai (Free) with enhanced styling."""
+    def generate_image(
+        self, prompt, output_path, orientation="portrait",
+        style="psych_stickman", video_type="short", allow_fallback=False
+    ):
+        """Generate a scene-specific illustration; never silently publish generic fallbacks."""
         import urllib.parse
-        
-        # Add flavor tags to the prompt to ensure clean, flat 2D visuals (Viral Style)
-        # Focus on flat design, clean lines, and minimalist icon style
-        enhanced_prompt = f"{prompt}, flat vector art, clean lines, minimalist character icon, sticker style, solid vibrant background, vibrant colors, centered composition, no text, no captions, no watermark, no logo, no qr code, no user interface, no signature"
+
+        if video_type == "long":
+            visual_style = (
+                "editorial surrealist ink-and-wash illustration, painterly paper texture, "
+                "cinematic lighting, layered composition, metaphorical objects, restrained "
+                "charcoal and muted accent palette, sophisticated documentary art direction"
+            )
+        elif style == "psych_stickman":
+            visual_style = (
+                "original hand-drawn minimalist stick-figure illustration, expressive body "
+                "language, scene-specific props, varied camera framing and composition, "
+                "clean editorial linework, restrained dark palette with one accent colour"
+            )
+        elif style == "noir":
+            visual_style = (
+                "surrealist psychological noir illustration, ink drawing, dramatic shadows, "
+                "symbolic composition, cinematic contrast and restrained colour"
+            )
+        else:
+            visual_style = (
+                "original clean vector illustration, expressive character acting, "
+                "scene-specific props, varied composition and bright but controlled colour"
+            )
+
+        enhanced_prompt = (
+            f"{prompt}. Art direction: {visual_style}. "
+            "Make the scene visually distinct and faithful to the described action. "
+            "No text, captions, watermark, logo, QR code, user interface or signature."
+        )
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
         
         # Dimensions for Pollinations
@@ -91,11 +122,132 @@ class AssetManager:
         url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&enhance=true&seed={seed}&nofeed=true"
         
         success = self.download_file(url, output_path)
-        if not success:
-             print(f"  [ERROR] Failed to generate image via Pollinations for prompt: {prompt[:50]}")
+        if not success and allow_fallback:
+            print(f"  [WARN] Image service unavailable; creating local preview fallback for: {prompt[:50]}")
+            success = self.generate_fallback_visual(prompt, output_path, orientation)
+        elif not success:
+            print(f"  [ERROR] Scene illustration unavailable; refusing generic fallback for: {prompt[:50]}")
         return success
 
+    def generate_fallback_visual(self, prompt, output_path, orientation="portrait"):
+        """Create an original, license-safe illustrated fallback using Pillow only."""
+        from PIL import Image, ImageDraw
+        digest = hashlib.sha256(prompt.encode("utf-8", errors="ignore")).digest()
+        if orientation == "portrait":
+            width, height = 1080, 1920
+        elif orientation == "landscape":
+            width, height = 1920, 1080
+        else:
+            width, height = 1280, 720
+
+        accent = (80 + digest[0] % 150, 80 + digest[1] % 150, 100 + digest[2] % 130)
+        base = (12 + digest[3] % 24, 16 + digest[4] % 28, 28 + digest[5] % 36)
+        image = Image.new("RGBA", (width, height), (*base, 255))
+        draw = ImageDraw.Draw(image)
+
+        # Abstract backdrop, unique per prompt.
+        for n in range(7):
+            x = int(width * (0.12 + ((digest[n] / 255) * 0.76)))
+            y = int(height * (0.10 + ((digest[n + 7] / 255) * 0.75)))
+            radius = int(min(width, height) * (0.04 + digest[n + 14] / 2550))
+            draw.ellipse((x-radius, y-radius, x+radius, y+radius),
+                         fill=(*accent, 22), outline=(*accent, 45), width=4)
+
+        cx, head_y = width // 2, int(height * 0.36)
+        unit = min(width, height) * 0.12
+        line = (235, 238, 245, 255)
+        stroke = max(12, int(unit * 0.075))
+        head_r = int(unit * 0.23)
+        draw.ellipse((cx-head_r, head_y-head_r, cx+head_r, head_y+head_r),
+                     outline=line, width=stroke)
+        shoulder_y = head_y + int(unit * 0.38)
+        hip_y = head_y + int(unit * 1.55)
+        draw.line((cx, head_y+head_r, cx, hip_y), fill=line, width=stroke)
+
+        left_angle = (digest[20] / 255) * math.pi
+        right_angle = (digest[21] / 255) * math.pi
+        arm_len = int(unit * 0.9)
+        left_end = (int(cx - math.cos(left_angle) * arm_len),
+                    int(shoulder_y - math.sin(left_angle) * arm_len))
+        right_end = (int(cx + math.cos(right_angle) * arm_len),
+                     int(shoulder_y - math.sin(right_angle) * arm_len))
+        draw.line((cx, shoulder_y, *left_end), fill=line, width=stroke)
+        draw.line((cx, shoulder_y, *right_end), fill=line, width=stroke)
+
+        leg_spread = int(unit * (0.42 + digest[22] / 700))
+        leg_drop = int(unit * (0.95 + digest[23] / 500))
+        draw.line((cx, hip_y, cx-leg_spread, hip_y+leg_drop), fill=line, width=stroke)
+        draw.line((cx, hip_y, cx+leg_spread, hip_y+leg_drop), fill=line, width=stroke)
+
+        # A simple scene prop makes fallback frames less interchangeable.
+        prop_x = int(width * (0.18 + digest[24] / 255 * 0.64))
+        prop_y = int(height * (0.68 + digest[25] / 255 * 0.12))
+        prop_r = int(unit * 0.22)
+        draw.rounded_rectangle((prop_x-prop_r, prop_y-prop_r, prop_x+prop_r, prop_y+prop_r),
+                               radius=12, outline=(*accent, 230), width=stroke)
+        draw.ellipse((prop_x-7, prop_y-7, prop_x+7, prop_y+7), fill=(*accent, 255))
+
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        image.convert("RGB").save(output_path, format="JPEG", quality=90, optimize=True)
+        return os.path.isfile(output_path) and os.path.getsize(output_path) > 1000
+
     def generate_thumbnail(self, title, output_path):
-        """Generates a high-clickability thumbnail image."""
-        prompt = f"Highly evocative, mysterious psychology thumbnail for '{title}', surrealist ink wash, dark moody atmosphere, psychological noir, minimalist, no text, 8k, cinematic"
-        return self.generate_image(prompt, output_path, orientation="thumbnail")
+        """Create an original 16:9 visual and add a readable, restrained title overlay."""
+        from PIL import Image, ImageDraw, ImageFont
+        prompt = (
+            f"Editorial psychology documentary thumbnail about '{title}', "
+            "one strong visual metaphor, a single clear focal subject, cinematic ink wash, "
+            "dark charcoal background with one muted accent, generous negative space, "
+            "high contrast, no text, no lettering, no logo, no watermark"
+        )
+        if not self.generate_image(
+            prompt, output_path, orientation="thumbnail",
+            style="noir", video_type="long", allow_fallback=False
+        ):
+            return False
+
+        try:
+            image = Image.open(output_path).convert("RGB")
+            if image.size != (1280, 720):
+                image = image.resize((1280, 720), Image.Resampling.LANCZOS)
+            draw = ImageDraw.Draw(image, "RGBA")
+            # Subtle bottom gradient panel keeps text legible without hiding the artwork.
+            panel_top = 470
+            for y in range(panel_top, 720):
+                alpha = int(190 * ((y - panel_top) / 250))
+                draw.line((0, y, 1280, y), fill=(5, 8, 14, alpha))
+            try:
+                font = ImageFont.truetype(
+                    "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf", 62
+                )
+            except OSError:
+                font = ImageFont.load_default()
+
+            words = title.strip().split()
+            lines = []
+            current = ""
+            for word in words:
+                candidate = (current + " " + word).strip()
+                if len(candidate) > 24 and current:
+                    lines.append(current)
+                    current = word
+                else:
+                    current = candidate
+                if len(lines) == 2:
+                    break
+            if current and len(lines) < 2:
+                lines.append(current)
+            if len(words) > sum(len(line.split()) for line in lines):
+                lines[-1] = lines[-1].rstrip(" .,:;") + "…"
+
+            y = 520 if len(lines) == 1 else 490
+            for line in lines:
+                draw.text((58, y), line, font=font, fill=(255, 255, 255, 255),
+                          stroke_width=2, stroke_fill=(0, 0, 0, 210))
+                y += 82
+
+            image.save(output_path, format="JPEG", quality=94, optimize=True)
+            return os.path.isfile(output_path) and os.path.getsize(output_path) > 5000
+        except Exception as exc:
+            print(f"Thumbnail composition failed: {exc}")
+            return False

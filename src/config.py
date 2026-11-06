@@ -6,6 +6,9 @@ load_dotenv()
 
 class Config:
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    # Use one free-tier model only; fail closed on quota exhaustion rather than switching tiers.
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    GEMINI_FREE_TIER_ONLY = os.getenv("GEMINI_FREE_TIER_ONLY", "true").lower() == "true"
     PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
     YOUTUBE_REFRESH_TOKEN = os.getenv("YOUTUBE_REFRESH_TOKEN")
     YOUTUBE_CLIENT_ID = os.getenv("YOUTUBE_CLIENT_ID")
@@ -15,7 +18,12 @@ class Config:
     YOUTUBE_CLIENT_SECRET_FILE = "client_secrets.json"
     YOUTUBE_API_SERVICE_NAME = "youtube"
     YOUTUBE_API_VERSION = "v3"
-    YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+    YOUTUBE_SCOPES = [
+        "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtube.force-ssl",
+        "https://www.googleapis.com/auth/yt-analytics.readonly",
+    ]
 
     # Content Settings
     NICHE = os.getenv("NICHE", "Relatable Daily Life Humour and Human Experience")

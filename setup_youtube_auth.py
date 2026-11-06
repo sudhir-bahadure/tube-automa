@@ -1,18 +1,19 @@
 import os
+import getpass
 import google_auth_oauthlib.flow
 from dotenv import load_dotenv
 
 def get_authenticated_service():
     load_dotenv()
     
-    print("YouTube API Refresh Token Generator - MEME WORKFLOW (yoDailyMemeDose)")
+    print("YouTube OAuth Setup - MARROW PSYCHOLOGY")
     print("-----------------------------------")
-    print("IMPORTANT: We are generating a token for the MEME channel.")
-    print("This token will unlock Views Analytics and Comment Pinning.")
+    print("IMPORTANT: Select the Google account that owns MARROW PSYCHOLOGY.")
+    print("This token grants channel read, video upload/update, thumbnail and read-only analytics access.")
     print("-----------------------------------")
     
-    client_id = input("Enter your MEME YouTube Client ID: ").strip()
-    client_secret = input("Enter your MEME YouTube Client Secret: ").strip()
+    client_id = input("Enter your Google OAuth Client ID: ").strip()
+    client_secret = getpass.getpass("Enter your Google OAuth Client Secret (input hidden): ").strip()
         
     if not client_id or not client_secret:
         print("Error: Client ID and Client Secret are required.")
@@ -36,9 +37,10 @@ def get_authenticated_service():
         json.dump(client_config, f)
         
     scopes = [
-        "https://www.googleapis.com/auth/youtube",
+        "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/youtube.upload",
         "https://www.googleapis.com/auth/youtube.force-ssl",
-        "https://www.googleapis.com/auth/yt-analytics.readonly"
+        "https://www.googleapis.com/auth/yt-analytics.readonly",
     ]
     
     try:
@@ -47,14 +49,23 @@ def get_authenticated_service():
         
         # Use run_local_server for a local browser flow
         # This will open a window in the default browser
-        credentials = flow.run_local_server(port=0)
-        
+        credentials = flow.run_local_server(port=0, prompt="consent", access_type="offline")
+        from googleapiclient.discovery import build
+        youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
+        channels = youtube.channels().list(mine=True, part="snippet", maxResults=5).execute()
+        items = channels.get("items", [])
+        if len(items) != 1:
+            raise RuntimeError(f"Expected exactly one selected channel, found {len(items)}.")
+        channel = items[0]
+        print(f"Authorized channel: {channel.get('snippet', {}).get('title', '')}")
+        print(f"Channel ID: {channel.get('id', '')}")
+
         print("\nSUCCESS! Authentication complete.")
         print("-" * 60)
         print(f"Refresh Token: {credentials.refresh_token}")
         print("-" * 60)
         print("Please update your GitHub Repository Secrets with this token.")
-        print("Secret Name: YOUTUBE_REFRESH_TOKEN (or CURIOSITY_REFRESH_TOKEN)")
+        print("Update the GitHub secret: CURIOSITY_REFRESH_TOKEN")
         
     except Exception as e:
         print(f"\nAn error occurred: {e}")

@@ -11,101 +11,92 @@ logger = logging.getLogger(__name__)
 class YouTubeUploader:
     def __init__(self):
         self.youtube = self._get_authenticated_service()
+        self._verify_expected_channel()
 
-    def _get_authenticated_service(self, attempt=0):
+    def _verify_expected_channel(self):
+        """Fail closed unless both the configured channel title and ID match."""
+        expected_title = os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE", "").strip()
+        expected_id = os.getenv("YOUTUBE_EXPECTED_CHANNEL_ID", "").strip()
+        if not expected_title or not expected_id:
+            raise RuntimeError(
+                "Safety stop: set YOUTUBE_EXPECTED_CHANNEL_TITLE and "
+                "YOUTUBE_EXPECTED_CHANNEL_ID before any YouTube operation."
+            )
+        response = self.youtube.channels().list(mine=True, part="snippet", maxResults=5).execute()
+        items = response.get("items", [])
+        if len(items) != 1:
+            raise RuntimeError(f"Safety stop: expected one authenticated channel, received {len(items)}.")
+        channel = items[0]
+        actual_id = channel.get("id", "")
+        actual_title = channel.get("snippet", {}).get("title", "").strip()
+        if actual_id != expected_id or actual_title.casefold() != expected_title.casefold():
+            raise RuntimeError(
+                "Safety stop: OAuth destination mismatch. "
+                f"Expected '{expected_title}' ({expected_id}); received '{actual_title}' ({actual_id})."
+            )
+        self.channel_id = actual_id
+        logger.info("YouTube destination verified: %s (%s)", actual_title, actual_id)
+
+    def _get_authenticated_service(self):
+        """Authenticate with the minimum scopes required; never broaden permissions silently."""
         if not Config.YOUTUBE_REFRESH_TOKEN:
             raise ValueError("YOUTUBE_REFRESH_TOKEN is missing from configuration/secrets.")
-            
-        # Fallback Strategy:
-        # Level 0 (Preferred): Full Access (Upload, Pin, Analytics)
-        # Level 1 (Compat): Standard YouTube (Broad)
-        # Level 2 (Restricted): Upload & Force-SSL (No Analytics)
-        # Level 3 (Minimal): Upload Only (Guaranteed Base)
-        
-        scope_levels = [
-            [ # Level 0
-                "https://www.googleapis.com/auth/youtube",
-                "https://www.googleapis.com/auth/youtube.force-ssl",
-                "https://www.googleapis.com/auth/yt-analytics.readonly"
-            ],
-            [ # Level 1
-                "https://www.googleapis.com/auth/youtube"
-            ],
-            [ # Level 2
-                "https://www.googleapis.com/auth/youtube.upload",
-                "https://www.googleapis.com/auth/youtube.force-ssl"
-            ],
-            [ # Level 3
-                "https://www.googleapis.com/auth/youtube.upload"
-            ]
+        if not Config.YOUTUBE_CLIENT_ID or not Config.YOUTUBE_CLIENT_SECRET:
+            raise ValueError("YouTube OAuth client ID/secret are missing.")
+
+        scopes = [
+            "https://www.googleapis.com/auth/youtube.readonly",
+            "https://www.googleapis.com/auth/youtube.upload",
+            "https://www.googleapis.com/auth/youtube.force-ssl",
+            "https://www.googleapis.com/auth/yt-analytics.readonly",
         ]
-        
-        if attempt >= len(scope_levels):
-            raise Exception("Failed to authenticate with all available scope combinations. Please check your Token permissions.")
-
-        current_scopes = scope_levels[attempt]
-        logger.info(f"Authenticating with Scopes Level {attempt}: {current_scopes}")
-
+        credentials = google.oauth2.credentials.Credentials(
+            None, refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=Config.YOUTUBE_CLIENT_ID,
+            client_secret=Config.YOUTUBE_CLIENT_SECRET, scopes=scopes,
+        )
+        from google.auth.transport.requests import Request
         try:
-            credentials = google.oauth2.credentials.Credentials(
-                None, # No access token initially
-                refresh_token=Config.YOUTUBE_REFRESH_TOKEN,
-                token_uri="https://oauth2.googleapis.com/token",
-                client_id=Config.YOUTUBE_CLIENT_ID,
-                client_secret=Config.YOUTUBE_CLIENT_SECRET,
-                scopes=current_scopes
-            )
-            service = build("youtube", "v3", credentials=credentials)
-            
-            # Force a token refresh to verify credentials immediately
-            from google.auth.transport.requests import Request
-            try:
-                credentials.refresh(Request())
-            except Exception as e:
-                # If scope error, try next level
-                if "invalid_scope" in str(e) or "access_denied" in str(e) or "unauthorized_client" in str(e):
-                    logger.warning(f"Auth failed at Level {attempt} ({e}). Falling back to Level {attempt+1}...")
-                    return self._get_authenticated_service(attempt=attempt+1)
-                else:
-                    raise
-            
-            return service
-        except Exception as e:
-            error_msg = str(e)
-            if "invalid_grant" in error_msg:
-                logger.error("-" * 60)
-                logger.error("CRITICAL AUTH ERROR: Your YouTube Refresh Token has expired or been revoked.")
-                logger.error("ACTION REQUIRED: Run 'python setup_youtube_auth.py' locally and update YOUTUBE_REFRESH_TOKEN in GitHub Secrets.")
-                logger.error("TIP: Ensure your Google Cloud Project OAuth Consent is set to 'Production' (Published) to avoid 7-day expiration.")
-                logger.error("-" * 60)
-                raise
-            elif "Failed to authenticate" in error_msg: # propagate up
-                raise 
-            else:
-                # If it's a scope error outside the inner try, catch it here too just in case
-                if "invalid_scope" in error_msg or "access_denied" in error_msg:
-                     logger.warning(f"Auth failed at Level {attempt} ({e}). Falling back to Level {attempt+1}...")
-                     return self._get_authenticated_service(attempt=attempt+1)
-
-                logger.error(f"Failed to authenticate with YouTube: {e}")
-                raise
+            credentials.refresh(Request())
+        except Exception as exc:
+            message = str(exc).lower()
+            if "invalid_grant" in message or "invalid refresh token" in message:
+                raise RuntimeError(
+                    "YouTube OAuth refresh token is expired or revoked. "
+                    "Re-run setup_youtube_auth.py using the Production consent screen "
+                    "and update CURIOSITY_REFRESH_TOKEN."
+                ) from exc
+            if "invalid_scope" in message or "access_denied" in message:
+                raise RuntimeError(
+                    "YouTube OAuth consent is missing a required scope. "
+                    "Re-run setup_youtube_auth.py and update CURIOSITY_REFRESH_TOKEN."
+                ) from exc
+            raise
+        self.credentials = credentials
+        # Actual permissions are verified by the channel lookup and upload request;
+        # older refresh-token responses do not always return granted_scopes.
+        return build("youtube", "v3", credentials=credentials, cache_discovery=False)
 
     def upload_video(self, video_path, title, description, tags=None, privacy_status="private", publish_at=None, category_id="27", altered_content=False):
         try:
             logger.info(f"Uploading video: {title}")
             
+            status = {
+                'privacyStatus': 'private' if publish_at else privacy_status,
+                'selfDeclaredMadeForKids': False,
+            }
+            if publish_at:
+                status['publishAt'] = publish_at  # ISO 8601 UTC timestamp
+
             body = {
                 'snippet': {
                     'title': title,
                     'description': description,
-                    'tags': tags if tags else ['Viral', 'Trending'],
+                    'tags': tags if tags else [],
                     'categoryId': category_id
                 },
-                'status': {
-                    'privacyStatus': privacy_status if not publish_at else 'private',
-                    'selfDeclaredMadeForKids': False,
-                    'publishAt': publish_at # ISO 8601 format: YYYY-MM-DDThh:mm:ss.sZ
-                }
+                'status': status,
             }
             
             # Add altered content declaration if specified
@@ -133,6 +124,63 @@ class YouTubeUploader:
         except Exception as e:
             logger.error(f"Failed to upload video: {e}")
             return None
+
+    def wait_until_processed(self, video_id, timeout_seconds=2400, poll_interval=15):
+        """Wait for YouTube processing before setting a custom thumbnail or scheduling."""
+        import time
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            try:
+                response = self.youtube.videos().list(
+                    part="processingDetails,status",
+                    id=video_id,
+                    maxResults=1,
+                ).execute()
+                items = response.get("items", [])
+                if not items:
+                    logger.error("YouTube could not find uploaded video %s.", video_id)
+                    return False
+                details = items[0].get("processingDetails", {})
+                state = details.get("processingStatus", "")
+                logger.info("YouTube processing status for %s: %s", video_id, state or "not reported")
+                if state == "succeeded":
+                    return True
+                if state in ("failed", "terminated"):
+                    logger.error("YouTube processing ended in state %s for %s", state, video_id)
+                    return False
+            except Exception as exc:
+                status_code = getattr(getattr(exc, "resp", None), "status", None)
+                if status_code in (400, 401, 403, 404):
+                    logger.error(
+                        "Non-retryable YouTube API error while checking %s (HTTP %s): %s",
+                        video_id, status_code, exc
+                    )
+                    return False
+                logger.warning("Could not check processing status for %s: %s", video_id, exc)
+            time.sleep(poll_interval)
+        logger.error("Timed out waiting for YouTube processing for %s", video_id)
+        return False
+
+    def schedule_video(self, video_id, publish_at):
+        """Schedule an already-uploaded private video only after thumbnail setup succeeds."""
+        if not video_id or not publish_at:
+            raise ValueError("A video ID and future publish time are required.")
+        try:
+            self.youtube.videos().update(
+                part="status",
+                body={
+                    "id": video_id,
+                    "status": {
+                        "privacyStatus": "private",
+                        "publishAt": publish_at,
+                    },
+                },
+            ).execute()
+            logger.info("Video %s scheduled for %s", video_id, publish_at)
+            return True
+        except Exception as exc:
+            logger.error("Could not schedule video %s; it remains private: %s", video_id, exc)
+            return False
 
     def add_comment(self, video_id, text):
         """Adds a top-level comment to a video."""
@@ -202,6 +250,29 @@ class YouTubeUploader:
         except Exception as e:
             logger.error(f"Failed to upload thumbnail: {e}")
             return False
+
+    def get_video_performance(self, video_ids):
+        """Fetch titles and public view counts for Analytics-ranked video IDs."""
+        ids = [str(video_id) for video_id in video_ids if video_id]
+        if not ids:
+            return []
+        try:
+            response = self.youtube.videos().list(
+                id=",".join(ids[:50]),
+                part="snippet,statistics",
+                maxResults=min(len(ids), 50),
+            ).execute()
+            return [
+                {
+                    "video_id": item.get("id", ""),
+                    "title": item.get("snippet", {}).get("title", ""),
+                    "views": int(item.get("statistics", {}).get("viewCount", 0)),
+                }
+                for item in response.get("items", [])
+            ]
+        except Exception as exc:
+            logger.warning("Could not resolve Analytics video titles: %s", exc)
+            return []
 
     def get_recent_performance(self, limit=5):
         """Fetches the titles and view counts of the last N uploaded videos."""
