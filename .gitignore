@@ -7,3 +7,10 @@ __pycache__/
 .env
 output/
 temp/
+
+# OAuth credentials and generated production assets
+client_secrets.json
+temp_client_secrets.json
+token.json
+assets/visuals/
+assets/thumbnails/
