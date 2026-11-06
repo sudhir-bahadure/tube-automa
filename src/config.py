@@ -18,7 +18,12 @@ class Config:
     YOUTUBE_CLIENT_SECRET_FILE = "client_secrets.json"
     YOUTUBE_API_SERVICE_NAME = "youtube"
     YOUTUBE_API_VERSION = "v3"
-    YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+    YOUTUBE_SCOPES = [
+        "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtube.force-ssl",
+        "https://www.googleapis.com/auth/yt-analytics.readonly",
+    ]
 
     # Content Settings
     NICHE = os.getenv("NICHE", "Relatable Daily Life Humour and Human Experience")
