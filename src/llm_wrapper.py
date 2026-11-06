@@ -14,16 +14,8 @@ class LLMWrapper:
             http_options={'api_version': 'v1'}
         )
         
-        # Priority list of models based on confirmed availability in logs (Jan 2026)
-        self.preferred_models = [
-            'models/gemini-1.5-flash',
-            'models/gemini-2.0-flash',
-            'models/gemini-flash-latest',
-            'models/gemini-1.5-flash-002',
-            'models/gemini-1.5-pro',
-            'models/gemini-2.0-flash-lite',
-            'models/gemini-pro'
-        ]
+        # A single current free-tier model is used by default. No paid-model fallback.
+        self.preferred_models = [Config.GEMINI_MODEL]
         self.available_gen_models = []
         self._refresh_available_models()
 
@@ -33,6 +25,12 @@ class LLMWrapper:
             print("Refreshing available generative models...")
             models = list(self.client.models.list())
             self.available_gen_models = [m.name for m in models if 'generateContent' in m.supported_actions]
+            if Config.GEMINI_FREE_TIER_ONLY:
+                if Config.GEMINI_MODEL not in self.available_gen_models:
+                    raise RuntimeError(
+                        f"Configured free-tier model {Config.GEMINI_MODEL} is unavailable to this API key."
+                    )
+                self.available_gen_models = [Config.GEMINI_MODEL]
             print(f"DEBUG: Confirmed Generative Models: {self.available_gen_models}")
         except Exception as e:
             print(f"Warning: Could not list models, will use hardcoded defaults: {e}")
@@ -41,19 +39,20 @@ class LLMWrapper:
     def _call_gemini(self, prompt, max_retries=10):
         """Ultra-robust caller that swaps models if one is rate-limited or missing."""
         
-        # Build an ordered list of models to try for THIS call
-        candidate_models = []
-        for p in self.preferred_models:
-            if p in self.available_gen_models:
-                candidate_models.append(p)
-        
-        # Add any other available models that aren't in our preference list
-        for a in self.available_gen_models:
-            if a not in candidate_models:
-                candidate_models.append(a)
-        
-        if not candidate_models:
-            candidate_models = ['models/gemini-1.5-flash'] # Final desperation
+        # Free-tier mode is deliberately fail-closed: never switch to an unapproved model.
+        if Config.GEMINI_FREE_TIER_ONLY:
+            candidate_models = [Config.GEMINI_MODEL]
+        else:
+            candidate_models = [
+                model for model in self.preferred_models
+                if model in self.available_gen_models
+            ]
+            candidate_models.extend(
+                model for model in self.available_gen_models
+                if model not in candidate_models
+            )
+            if not candidate_models:
+                candidate_models = self.preferred_models
 
         model_index = 0
         for i in range(max_retries):
@@ -83,6 +82,9 @@ class LLMWrapper:
                 
                 # If 429 or Quota, wait and then try the NEXT model to spread load
                 if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
+                    if Config.GEMINI_FREE_TIER_ONLY:
+                        print("Free-tier Gemini quota reached; stopping without paid-model fallback.")
+                        return None
                     import random
                     # Exponential backoff with jitter
                     wait_time = min(5 * (2 ** (i // 2)), 60) + random.uniform(1, 5)
