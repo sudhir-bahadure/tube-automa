@@ -134,12 +134,12 @@ Test packaging with one variable at a time. Do not change title, thumbnail and c
 
 ## Analytics feedback loop — next engineering priority
 
-The current code's performance input is only the last 10 videos' view counts. That is not enough to optimize a channel. Add YouTube Analytics API reporting (requires an OAuth token with the correct analytics scope and the API enabled) and store a daily CSV/JSON snapshot.
+The growth-engine branch now adds read-only YouTube Analytics API reporting for video-level views, watch time, average view duration, average percentage viewed and subscribers gained (requires an OAuth token with the correct analytics scope and the API enabled). Thumbnail impressions and impressions click-through rate still need to be reviewed in YouTube Studio because they are not part of this standard Analytics API video report.
 
 Track by video, format, topic cluster, publish age and geography where available:
 
 **Long-form**
-- Impressions and impressions click-through rate.
+- Impressions and impressions click-through rate (review in YouTube Studio; not part of the current Analytics API snapshot).
 - Views, watch time and average view duration.
 - Average percentage viewed.
 - First-30-second intro retention.
@@ -158,7 +158,7 @@ YouTube says audience-retention data generally takes 1–2 days to process. Comp
 
 ### Internal experiment rules (starting hypotheses, not YouTube ranking thresholds)
 - If the first 30 seconds lose viewers sharply, rewrite the opening before making more videos in that series.
-- If impressions are adequate but CTR is weak, test a clearer title/thumbnail pairing.
+- If YouTube Studio shows adequate impressions but weak CTR, test a clearer title/thumbnail pairing.
 - If CTR is healthy but average view duration is weak, the script or pacing is failing to deliver the promise.
 - If Shorts are swiped away, replace the first frame and first spoken line.
 - If a topic cluster repeatedly produces better watch time and subscribers per view, make a deeper follow-up—not ten near-duplicates.
@@ -207,7 +207,7 @@ Do not build the business around Shorts ad revenue alone. Shorts revenue is allo
 - Change Shorts cadence from daily to four days/week for the first experiment.
 
 ### P1 — growth instrumentation
-- Implemented an optional read-only YouTube Analytics API report; it saves a 28-day video-level snapshot as a private, 14-day GitHub Actions artifact when the OAuth token has the analytics.readonly scope.
+- Implemented an optional read-only YouTube Analytics API report for supported video-level view and watch-time metrics; it saves a 28-day snapshot as a private, 14-day GitHub Actions artifact when the OAuth token has the analytics.readonly scope. Thumbnail impressions and CTR remain a YouTube Studio review item.
 - Next: turn the snapshots into a weekly scorecard and topic-cluster feedback loop.
 - Save per-video metadata, research sources, script hash, visual hashes, generation settings and publish IDs.
 - Add a daily channel dashboard and weekly performance summary.
