@@ -79,3 +79,11 @@ jobs:
           git add -f output/used_topics.json || echo "No topic file found"
           git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
           git push origin "$GITHUB_REF_NAME"
+
+      - name: Upload private analytics snapshot
+        if: always() && hashFiles('output/analytics_snapshot.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: marrow-analytics-${{ github.run_id }}
+          path: output/analytics_snapshot.json
+          retention-days: 14
