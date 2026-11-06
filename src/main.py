@@ -266,8 +266,9 @@ async def main():
                         logger.info("Video is scheduled. Engagement prompt has been added to the description instead.")
                     
                     logger.info(f"Successfully uploaded: https://youtu.be/{video_id}")
-                elif video_id:
-                    logger.info(f"Successfully uploaded video: https://youtu.be/{video_id}")
+                else:
+                    logger.error("YouTube upload returned no video ID; marking this workflow run as failed.")
+                    sys.exit(1)
             except Exception as e:
                 logger.error(f"Upload process failed: {e}")
                 sys.exit(1)
