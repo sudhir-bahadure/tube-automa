@@ -1,4 +1,5 @@
 import os
+import getpass
 import google_auth_oauthlib.flow
 from dotenv import load_dotenv
 
@@ -12,7 +13,7 @@ def get_authenticated_service():
     print("-----------------------------------")
     
     client_id = input("Enter your Google OAuth Client ID: ").strip()
-    client_secret = input("Enter your Google OAuth Client Secret: ").strip()
+    client_secret = getpass.getpass("Enter your Google OAuth Client Secret (input hidden): ").strip()
         
     if not client_id or not client_secret:
         print("Error: Client ID and Client Secret are required.")
