@@ -5,6 +5,12 @@ on:
     # Weekly long-form upload; scheduled for 6 PM New York time by the Python scheduler.
     - cron: '30 16 * * 0'
   workflow_dispatch:
+    inputs:
+      private_test_upload:
+        description: 'Upload privately without scheduling public release (recommended for first test)'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -15,6 +21,7 @@ concurrency:
 
 jobs:
   generate:
+    if: github.event_name != 'schedule' || vars.YOUTUBE_AUTOPUBLISH_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -54,8 +61,13 @@ jobs:
           YOUTUBE_SYNTHETIC_DISCLOSURE: "false"
           YOUTUBE_EXPECTED_CHANNEL_TITLE: "MARROW PSYCHOLOGY"
           YOUTUBE_EXPECTED_CHANNEL_ID: ${{ secrets.YOUTUBE_EXPECTED_CHANNEL_ID }}
+          YOUTUBE_AUTOPUBLISH_ENABLED: ${{ vars.YOUTUBE_AUTOPUBLISH_ENABLED }}
         run: |
-          python -m src.main --type long --style psych_stickman --schedule-for evening
+          if [ "${{ github.event.inputs.private_test_upload }}" = "true" ]; then
+            python -m src.main --type long --style psych_stickman --schedule-for evening --private-test-upload
+          else
+            python -m src.main --type long --style psych_stickman --schedule-for evening
+          fi
 
       - name: Persist topic history on this branch
         if: success()
