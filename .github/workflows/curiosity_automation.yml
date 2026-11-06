@@ -2,9 +2,8 @@ name: Curiosity Automation
 
 on:
   schedule:
-    # Trigger 1 hour before US Peak Window (7-10 PM ET) -> 6 PM ET = 23:00 UTC
-    # Frequency: Every 3 days
-    - cron: '0 23 */3 * *'
+    # One original psychology Short per day. Publishing is scheduled for 6 PM New York time.
+    - cron: '30 15 * * *'
   workflow_dispatch:
     inputs:
       type:
@@ -36,8 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick fonts-liberation
-          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+          sudo apt-get install -y ffmpeg fonts-liberation
 
       - name: Generate and Upload Video
         env:
@@ -51,16 +49,9 @@ jobs:
           NICHE: "Deep Dark Psychology and Human Behavior"
           VOICE_NAME: "en-US-ChristopherNeural"
         run: |
-          # Fix ImageMagick security policy
-          sudo sed -i 's/policy domain="resource" name="width" value="16KP"/policy domain="resource" name="width" value="64KP"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="resource" name="height" value="16KP"/policy domain="resource" name="height" value="64KP"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="resource" name="area" value="128MP"/policy domain="resource" name="area" value="1GP"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="resource" name="memory" value="256MiB"/policy domain="resource" name="memory" value="2GiB"/g' /etc/ImageMagick-6/policy.xml
-          sudo sed -i 's/policy domain="coder" rights="none" pattern="PDF"/policy domain="coder" rights="read,write" pattern="PDF"/g' /etc/ImageMagick-6/policy.xml
- 
           TYPE="${{ github.event.inputs.type }}"
           if [ -z "$TYPE" ]; then TYPE="short"; fi
-          python -m src.main --type $TYPE --style psych_stickman --schedule-for afternoon
+          python -m src.main --type "$TYPE" --style psych_stickman --schedule-for evening
 
       - name: Persist used topics
         if: always()
@@ -69,4 +60,4 @@ jobs:
           git config --global user.email "sudhir.tbahadure@users.noreply.github.com"
           git add -f output/used_topics.json || echo "No topic file found"
           git commit -m "chore: update topic history [skip ci]" || echo "No changes to commit"
-          git push origin main || echo "Push failed"
+          git push origin "$GITHUB_REF_NAME" || echo "Push failed"
