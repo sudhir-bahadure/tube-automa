@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import os
 import sys
 import random
@@ -98,6 +99,9 @@ async def main():
     logger.info(f"Retrieving free scholarly context for: {title}")
     research_data = ResearchEngine().search(title, limit=3)
     research_context = research_data.get("notes", "")
+    with open("output/research_note.json", "w", encoding="utf-8") as handle:
+        json.dump({"topic": title, "sources": research_data.get("sources", []),
+                   "notes": research_context}, handle, ensure_ascii=False, indent=2)
 
     logger.info(f"Generating {args.type} script for Title: {title}")
     
@@ -126,10 +130,14 @@ async def main():
     if not script_data:
         logger.error(f"Failed to generate {args.type} script after 2 attempts.")
         sys.exit(1)
+    with open("output/script_data.json", "w", encoding="utf-8") as handle:
+        json.dump(script_data, handle, ensure_ascii=False, indent=2)
 
     try:
         script_check = validate_script_data(script_data, is_short=(args.type == "short"))
         logger.info(f"Script quality gate passed: {script_check}")
+        with open("output/quality_report.json", "w", encoding="utf-8") as handle:
+            json.dump({"script": script_check}, handle, ensure_ascii=False, indent=2)
     except Exception as e:
         logger.error(f"Script quality gate failed; refusing to render or upload: {e}")
         sys.exit(1)
@@ -221,6 +229,8 @@ async def main():
         try:
             validation = validate_video(output_file, is_short=is_short)
             logger.info(f"Production quality gate passed: {validation}")
+            with open("output/quality_report.json", "w", encoding="utf-8") as handle:
+                json.dump({"script": script_check, "video": validation}, handle, ensure_ascii=False, indent=2)
         except Exception as e:
             logger.error(f"Production quality gate failed; refusing upload: {e}")
             sys.exit(1)
