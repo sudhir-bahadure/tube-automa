@@ -54,7 +54,7 @@ class AnalyticsEngine:
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as handle:
             json.dump(snapshot, handle, ensure_ascii=False, indent=2)
-        logger.info("Saved read-only YouTube Analytics snapshot: %s rows", len(rows))
+        logger.info("Saved transient read-only YouTube Analytics snapshot for this workflow run.")
         return snapshot
 
     @staticmethod
