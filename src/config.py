@@ -7,7 +7,7 @@ load_dotenv()
 class Config:
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     # Use one free-tier model only; fail closed on quota exhaustion rather than switching tiers.
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "models/gemini-3.8-flash")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     GEMINI_FREE_TIER_ONLY = os.getenv("GEMINI_FREE_TIER_ONLY", "true").lower() == "true"
     PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
     YOUTUBE_REFRESH_TOKEN = os.getenv("YOUTUBE_REFRESH_TOKEN")
