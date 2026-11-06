@@ -73,16 +73,11 @@ async def main():
                 analytics = AnalyticsEngine(uploader_temp.credentials)
                 snapshot = analytics.collect_video_report(days=28)
                 summary = analytics.summarize(snapshot)
-                logger.info(f"28-day channel analytics totals: {summary['totals']}")
                 top_rows = summary["top_videos"][:10]
                 top_ids = [row.get("video") for row in top_rows if row.get("video")]
                 title_rows = uploader_temp.get_video_performance(top_ids)
-                watch_by_id = {
-                    row.get("video"): float(row.get("estimatedMinutesWatched", 0) or 0)
-                    for row in top_rows
-                }
-                for item in title_rows:
-                    item["watch_minutes"] = watch_by_id.get(item.get("video_id"), 0.0)
+                # Private watch-time values select the titles locally. Only public titles
+                # and public view counts are passed to the free-tier model.
                 perf_data = (perf_data or []) + title_rows
             except Exception as analytics_error:
                 logger.warning(
