@@ -103,6 +103,18 @@ class AssetManager:
                 "scene-specific props, varied composition and bright but controlled colour"
             )
 
+        # MARROW Psychology production visuals are rendered locally with Pillow.
+        # This avoids a third-party image endpoint that can impose credits, rate limits,
+        # change access terms, or return HTTP 402 during a scheduled run.
+        if style == "psych_stickman":
+            print(
+                "  [LOCAL VISUALS] Rendering original scene-specific Psychology artwork "
+                f"without an external image API: {prompt[:70]}"
+            )
+            return self.generate_fallback_visual(
+                prompt, output_path, orientation, style=style
+            )
+
         enhanced_prompt = (
             f"{prompt}. Art direction: {visual_style}. "
             "Make the scene visually distinct and faithful to the described action. "
