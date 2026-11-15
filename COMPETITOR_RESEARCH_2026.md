@@ -97,6 +97,49 @@ A creator's February 2026 report says two autonomous agents published 52 videos 
 
 Source: https://dev.to/wcamon/i-let-ai-agents-run-my-youtube-channel-for-6-weeks-heres-what-actually-happened-21b1/
 
+## Competitor checks added on 15 November 2026
+
+These are public-stat snapshots and format/content observations, not verified revenue or YPP status.
+
+### Psychology Simplified (@psychologyissimplified) — closest English-language benchmark
+
+- Social Blade snapshot on 15 November 2026: approximately **275K subscribers**, **23.09M views** and **160 videos**. This is a public counter snapshot, not YouTube Studio analytics.
+- Prepublish's sample of 50 recent long-form uploads reports a **6,863 median view count**, **3.2 uploads/week** and **12:44 average length**. The sampled outliers include "Why Reliable People Feel Guilty the Moment You Sit Down" (16.5K; 2.4x the sample median) and "Why Your Brain Rehearses Conversations That Never Happen" (12.8K). These figures are an external sample and will change over time.
+- A March 2026 AI Tubers dataset classifies the channel as "Full" AI after manual review. That classification is not a creator disclosure and does not independently establish which TTS system is used.
+
+**Takeaway for MARROW:** package a recognizable inner experience as a viewer question; explain several plausible mechanisms rather than claiming one behaviour reveals a hidden truth. Build a repeatable series around everyday moments. The sampled channel is a benchmark for topic/packaging, not a script to copy.
+
+Sources:
+- https://socialblade.com/youtube/channel/UCHacVMLp7bHDC7e4eoPi9Dw
+- https://prepublish.ai/youtube-channel/psychologyissimplified
+- https://github.com/openslop/aitubers-dataset
+
+### PsychToons (@psychtoonshq) — visual psychology benchmark
+
+- Social Blade snapshot on 15 November 2026: approximately **232K subscribers**, **29.58M views** and **147 videos**.
+- Its public About text positions it around making psychology visual, simple and accessible. The public page links to an e-book, showing a possible business layer beyond ads.
+- AI narration or GitHub Actions use is **not verified**.
+
+**Takeaway for MARROW:** clear visual explanation and a coherent catalogue can support a recognizable brand. Do not assume AI voice or automated production from a faceless/animated style.
+
+Source:
+- https://socialblade.com/youtube/handle/psychtoonshq
+- https://youtubesubhub.com/%40psychtoonshq
+
+### Gyaani Stick (@gyaanistick) — India-facing stick-figure learning format
+
+- Social Blade's 21 September 2026 snapshot lists approximately **117K subscribers**, **7.96M views** and **69 videos**.
+- This is a Hindi/India-facing learning-format comparison, not a direct English psychology competitor. Its AI voice and GitHub workflow use are **not verified**.
+
+**Takeaway for MARROW:** a recurring visual language helps viewers recognize a channel, but the visual character must serve a specific explanation. We should use scene-specific gestures, objects and diagrams rather than repeat one generic stick figure.
+
+Source:
+- https://socialblade.com/youtube/handle/gyaanistick
+
+### Important comparability rule
+
+Public YouTube Data API video metadata provides duration but does not reliably expose enough information to classify every video as a Short or long-form video. TubeAutoma therefore records duration bands and leaves format detection unknown. Any Shorts-versus-long-form comparison must use a trusted format source or the channel's own Studio data; it must not infer format from duration alone.
+
 ## Open-source GitHub workflow benchmark
 
 ### ModernMonk public automation repository

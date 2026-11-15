@@ -68,7 +68,10 @@ class CompetitorRadarTests(unittest.TestCase):
         self.assertEqual(len(snapshot["queries"]), 3)
         self.assertEqual(snapshot["videos"][0]["video_id"], "v1")
         self.assertGreater(snapshot["videos"][0]["views_per_day"], 0)
-        self.assertEqual(snapshot["videos"][0]["format"], "short")
+        self.assertEqual(snapshot["videos"][0]["duration_seconds"], 45)
+        self.assertEqual(snapshot["videos"][0]["duration_band"], "under_3m")
+        self.assertNotIn("format", snapshot["videos"][0])
+        self.assertEqual(snapshot["format_detection"], "unknown_from_public_metadata")
         self.assertEqual(youtube.search.return_value.list.call_count, 3)
 
     def test_requires_youtube_service(self):
