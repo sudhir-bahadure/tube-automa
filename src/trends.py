@@ -42,7 +42,7 @@ class TrendEngine:
         Interacts with LLM to fetch trending topics based on the configured niche and returns the best unused one.
         """
         niche = Config.NICHE
-        logger.info(f"Discovering viral {niche} trends...")
+        logger.info(f"Generating candidate topic ideas for {niche}...")
         
         performance_str = ""
         if performance_context:
@@ -101,5 +101,5 @@ class TrendEngine:
     def _get_fallback_topic(self, llm):
         """Force a unique topic if everything else is repeated."""
         niche = Config.NICHE
-        prompt = f"Give me one unique, viral {niche} topic that is completely different from common ones. Return only the string."
+        prompt = f"Give me one original, specific {niche} topic that differs from common topics. Return only the string."
         return llm._call_gemini(prompt).strip().replace('"', '')
