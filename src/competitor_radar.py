@@ -152,7 +152,9 @@ class CompetitorRadar:
                     round(views / subscriber_count, 4) if subscriber_count else None
                 ),
                 "duration_seconds": duration,
-                "format": "short" if duration <= 180 else "long",
+                # Duration is observable; Shorts format is not reliably inferable
+                # from public Data API metadata alone (orientation/eligibility matter).
+                "duration_band": "under_3m" if duration < 180 else "3m_or_more",
                 "search_query": discovered.get(video_id, {}).get("query", ""),
                 "url": f"https://www.youtube.com/watch?v={video_id}",
             })
@@ -174,9 +176,12 @@ class CompetitorRadar:
             "queries": list(queries_used),
             "result_count": len(rows),
             "videos": rows[:20],
+            "format_detection": "unknown_from_public_metadata",
             "note": (
                 "Public YouTube search sample only. Views/day and sample velocity are "
-                "directional signals, not search volume, causal evidence, or a forecast."
+                "directional signals, not search volume, causal evidence, or a forecast. "
+                "The API sample does not reliably identify Shorts versus long-form; "
+                "duration bands are provided without assigning a format."
             ),
         }
         self._persist(snapshot, output_path)
