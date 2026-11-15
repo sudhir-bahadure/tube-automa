@@ -106,6 +106,11 @@ class AnalyticsEngine:
         return {"top_videos": top_videos}
 
     @staticmethod
+    def safe_retention_status(snapshot):
+        """Return a non-sensitive availability label for public workflow logs."""
+        return "available" if snapshot.get("rows") else "empty"
+
+    @staticmethod
     def summarize_retention(snapshot):
         """Return compact diagnostics from the private retention curve."""
         rows = snapshot.get("rows", [])
