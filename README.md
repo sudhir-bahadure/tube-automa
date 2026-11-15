@@ -9,7 +9,7 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 - One original 8–12 minute landscape explainer each week.
 - Four distinct vertical Shorts each week.
 - English narration via Edge TTS.
-- Original scene-specific illustrations and 16:9 title-overlaid thumbnails.
+- Locally rendered, scene-specific Pillow illustrations and 16:9 title-overlaid thumbnails (no external image-generation API in the active MARROW path).
 - Europe PMC research context and source links where available.
 - Script, media and technical quality gates.
 - A bounded public YouTube competitor radar (three search queries per run) to identify recent topic-demand signals without scraping or copying.
