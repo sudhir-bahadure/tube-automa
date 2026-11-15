@@ -12,7 +12,9 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 - Original scene-specific illustrations and 16:9 title-overlaid thumbnails.
 - Europe PMC research context and source links where available.
 - Script, media and technical quality gates.
-- Optional read-only YouTube Analytics feedback to inform future topic selection.
+- A bounded public YouTube competitor radar (three search queries per run) to identify recent topic-demand signals without scraping or copying.
+- Private YouTube Analytics feedback, including per-video retention curves; private metrics stay on the ephemeral runner and are not sent to Gemini.
+- Optional daily YouTube Reporting API Reach Basic reports for thumbnail impressions and CTR (the API must be enabled in Google Cloud; daily reports may take up to 24 hours).
 
 ## Safety defaults
 
@@ -29,7 +31,7 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 
 1. Read [DEPLOY.md](DEPLOY.md) and [AUTONOMOUS_PUBLISHING.md](AUTONOMOUS_PUBLISHING.md).
 2. Create a Google AI Studio API key for the free tier. Disable billing on the associated Google Cloud project before setting the billing confirmation variable.
-3. Enable YouTube Data API v3 and YouTube Analytics API. Set the OAuth consent screen to Production (not Testing) and complete any required Google verification; Testing-mode refresh tokens expire after seven days. Run `python setup_youtube_auth.py` locally using the Google account that owns MARROW PSYCHOLOGY. Confirm the printed channel title and ID.
+3. Enable YouTube Data API v3 and YouTube Analytics API. Also enable YouTube Reporting API to collect thumbnail impressions/CTR; without it, the optional reach report is skipped. Set the OAuth consent screen to Production (not Testing) and complete any required Google verification; Testing-mode refresh tokens expire after seven days. Run `python setup_youtube_auth.py` locally using the Google account that owns MARROW PSYCHOLOGY. Confirm the printed channel title and ID.
 4. Add the required GitHub Actions secrets: `GEMINI_API_KEY`, `CURIOSITY_CLIENT_ID`, `CURIOSITY_CLIENT_SECRET`, `CURIOSITY_REFRESH_TOKEN`, and `YOUTUBE_EXPECTED_CHANNEL_ID`.
 5. Add repository variable `GEMINI_BILLING_DISABLED_CONFIRMED=true` only after confirming billing is disabled.
 6. Run the appropriate workflow manually with `private_test_upload=true`. Inspect the private video in YouTube Studio.

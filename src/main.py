@@ -14,6 +14,8 @@ from src.music_engine import MusicEngine
 from src.quality_gate import validate_script_data, validate_video
 from src.research_engine import ResearchEngine
 from src.analytics_engine import AnalyticsEngine
+from src.competitor_radar import CompetitorRadar
+from src.reporting_engine import ReportingEngine
 
 logger = setup_logging()
 
@@ -66,9 +68,22 @@ async def main():
     title = args.topic
     if not title:
         # Smart Topic Selection: Fetch view counts of last 10 videos
+        competitor_context = []
         try:
             uploader_temp = YouTubeUploader()
             perf_data = uploader_temp.get_recent_performance(limit=10)
+
+            # Small, fixed number of official public search queries. This is a sample
+            # of recent competitor videos, not keyword search volume or a causal ranking.
+            try:
+                radar_snapshot = CompetitorRadar(uploader_temp.youtube).collect()
+                competitor_context = radar_snapshot.get("videos", [])
+            except Exception as radar_error:
+                logger.warning(
+                    "Public competitor radar unavailable; continuing without it: %s",
+                    radar_error,
+                )
+
             try:
                 analytics = AnalyticsEngine(uploader_temp.credentials)
                 snapshot = analytics.collect_video_report(days=28)
@@ -76,22 +91,59 @@ async def main():
                 top_rows = summary["top_videos"][:10]
                 top_ids = [row.get("video") for row in top_rows if row.get("video")]
                 title_rows = uploader_temp.get_video_performance(top_ids)
-                # Private watch-time values select the titles locally. Only public titles
-                # and public view counts are passed to the free-tier model.
+                # Private analytics values stay local. Only public titles and public
+                # view counts are passed to the free-tier text model.
                 perf_data = (perf_data or []) + title_rows
+
+                for video_id in top_ids[:3]:
+                    try:
+                        retention = analytics.collect_retention_report(video_id, days=28)
+                        logger.info(
+                            "Private retention diagnostics: %s",
+                            analytics.summarize_retention(retention),
+                        )
+                    except Exception as retention_error:
+                        logger.warning(
+                            "Retention report unavailable for %s; continuing: %s",
+                            video_id,
+                            retention_error,
+                        )
             except Exception as analytics_error:
                 logger.warning(
                     "Read-only Analytics API unavailable; continuing without analytics snapshot: "
                     f"{analytics_error}"
                 )
+
+            try:
+                reach_snapshot = ReportingEngine(
+                    uploader_temp.credentials
+                ).collect_latest_reach_report()
+                logger.info(
+                    "Thumbnail reach report available=%s rows=%s",
+                    reach_snapshot.get("available", False),
+                    reach_snapshot.get("row_count", 0),
+                )
+            except Exception as reporting_error:
+                logger.warning(
+                    "YouTube Reporting API unavailable or not enabled; continuing without reach data: %s",
+                    reporting_error,
+                )
         except Exception as e:
             if os.getenv("YOUTUBE_EXPECTED_CHANNEL_TITLE"):
                 logger.error(f"YouTube destination/authentication check failed; stopping before production: {e}")
                 sys.exit(1)
-            logger.warning(f"Analytics unavailable; continuing without performance context: {e}")
+            logger.warning(
+                "Analytics/competitor research unavailable; continuing without performance context: %s",
+                e,
+            )
             perf_data = None
-        
-        title = trend_engine.get_viral_topic(llm, performance_context=perf_data)
+            competitor_context = []
+
+        title = trend_engine.get_viral_topic(
+            llm,
+            performance_context=perf_data,
+            competitor_context=competitor_context,
+        )
         if not title:
             logger.error("Failed to discover a viral topic")
             sys.exit(1)
