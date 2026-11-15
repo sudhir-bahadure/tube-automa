@@ -63,7 +63,7 @@ Before any Gemini call, the repository variable `GEMINI_BILLING_DISABLED_CONFIRM
 
 ## Analytics reporting
 
-The publishing engine collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed, subscribers gained, likes, comments and shares. It also requests per-video audience-retention curves for up to the top three videos. These private analytics snapshots remain on the ephemeral workflow runner and are neither uploaded as artifacts nor committed to this public repository.
+The publishing engine collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed, subscribers gained, likes, comments and shares. It also requests per-video audience-retention curves for up to the top three videos. These private analytics snapshots remain on the ephemeral workflow runner and are neither uploaded as artifacts nor committed to this public repository. Individual retention ratios and viewer-behaviour metrics are explicitly suppressed from public GitHub Actions logs; logs report only whether a curve was available.
 
 A separate optional YouTube Reporting API job collects the Reach Basic daily report (thumbnail impressions and click-through rate). It must be enabled in the same Google Cloud project and reports can take up to 24 hours to appear. If the API is disabled or a report is pending, video production continues without CTR data.
 
