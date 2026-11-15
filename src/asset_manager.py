@@ -449,7 +449,7 @@ class AssetManager:
         image.save(output_path, format="JPEG", quality=91, optimize=True)
         return os.path.isfile(output_path) and os.path.getsize(output_path) > 1000
 
-def generate_thumbnail(self, title, output_path):
+    def generate_thumbnail(self, title, output_path):
         """Create an original 16:9 visual and add a readable, restrained title overlay."""
         from PIL import Image, ImageDraw, ImageFont
         prompt = (
