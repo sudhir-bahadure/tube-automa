@@ -37,7 +37,7 @@ class TrendEngine:
         except Exception as e:
             logger.error(f"Failed to save used topic: {e}")
 
-    def get_viral_topic(self, llm, performance_context=None):
+    def get_viral_topic(self, llm, performance_context=None, competitor_context=None):
         """
         Interacts with LLM to fetch trending topics based on the configured niche and returns the best unused one.
         """
@@ -54,6 +54,25 @@ class TrendEngine:
                 "RECENT CHANNEL PERFORMANCE (prioritize topics with strong watch time and viewer interest; directional evidence only):\n"
                 + ", ".join(perf_list) + "\n"
             )
+
+        competitor_str = ""
+        if competitor_context:
+            competitor_rows = []
+            for item in competitor_context[:8]:
+                if item.get("title"):
+                    competitor_rows.append(
+                        f"- {item['title']} ({item.get('views', 0)} public views; "
+                        f"{item.get('views_per_day', 0)} views/day; "
+                        f"{item.get('channel_title', 'unknown channel')})"
+                    )
+            if competitor_rows:
+                competitor_str = (
+                    "RECENT PUBLIC COMPETITOR SEARCH SAMPLE (directional demand signals only; "
+                    "not search-volume data or proof of causal growth):\n"
+                    + "\n".join(competitor_rows)
+                    + "\nUse these only to identify viewer questions that deserve a different, "
+                    "evidence-aware angle. Never copy titles, scripts, or packaging.\n"
+                )
 
         prompt = f"""
         You are the editorial researcher for an original educational channel about
@@ -72,7 +91,9 @@ class TrendEngine:
         {json.dumps(self.used_topics[-100:] if self.used_topics else [])}
 
         {performance_str}
-        Return ONLY a JSON list of 20 short, distinct topic strings. No numbering or prose.
+        {competitor_str}
+        Rank ideas by specific audience problem, clarity, evidence availability, originality, and potential to sustain a distinct series. Prefer a fresh angle on a proven viewer question over a generic topic.
+        Return ONLY a JSON list of 20 short, distinct topic strings, best first. No numbering or prose.
         """
         try:
             response = llm._call_gemini(prompt)
