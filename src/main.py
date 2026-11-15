@@ -100,12 +100,11 @@ async def main():
                         retention = analytics.collect_retention_report(video_id, days=28)
                         # This repository is public: never write private retention
                         # ratios or watch-behaviour metrics to Actions logs.
-                        retention_status = analytics.summarize_retention(retention)
+                        retention_status = analytics.safe_retention_status(retention)
                         logger.info(
-                            "Private retention curve collected; individual metric values "
-                            "are suppressed from workflow logs."
-                            if retention_status.get("points")
-                            else "No private retention points returned; continuing."
+                            "Private retention curve status=%s; individual viewer metrics "
+                            "are suppressed from public workflow logs.",
+                            retention_status,
                         )
                     except Exception as retention_error:
                         logger.warning(
