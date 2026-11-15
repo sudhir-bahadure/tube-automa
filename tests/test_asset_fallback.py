@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from PIL import Image
 from src.asset_manager import AssetManager
 
