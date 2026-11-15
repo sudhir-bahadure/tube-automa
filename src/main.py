@@ -95,7 +95,7 @@ async def main():
         if not title:
             logger.error("Failed to discover a viral topic")
             sys.exit(1)
-        logger.info(f"Viral Topic Selected: {title}")
+        logger.info(f"Topic selected: {title}")
     
     # Override voice for stickman style if requested (Harry-like deep voice)
     # Also use for psych_stickman if that's desired, or keep Christopher?
