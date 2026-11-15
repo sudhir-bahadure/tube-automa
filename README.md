@@ -12,7 +12,9 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 - Original scene-specific illustrations and 16:9 title-overlaid thumbnails.
 - Europe PMC research context and source links where available.
 - Script, media and technical quality gates.
-- Optional read-only YouTube Analytics feedback to inform future topic selection.
+- A bounded public YouTube competitor radar (three search queries per run) to identify recent topic-demand signals without scraping or copying.
+- Private YouTube Analytics feedback, including per-video retention curves; private metrics stay on the ephemeral runner and are not sent to Gemini.
+- Optional daily YouTube Reporting API Reach Basic reports for thumbnail impressions and CTR (the API must be enabled in Google Cloud; daily reports may take up to 24 hours).
 
 ## Safety defaults
 
