@@ -18,7 +18,8 @@ class FreeTtsTests(unittest.IsolatedAsyncioTestCase):
                         "This is a free narration test.", "unused-output.mp3"
                     )
                 self.assertTrue(result)
-                engine.eleven.generate_audio.assert_not_called()
+                self.assertIsNone(engine.eleven)
+                paid_engine.assert_not_called()
 
 
 if __name__ == "__main__":
