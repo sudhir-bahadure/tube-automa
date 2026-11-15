@@ -98,9 +98,13 @@ async def main():
                 for video_id in top_ids[:3]:
                     try:
                         retention = analytics.collect_retention_report(video_id, days=28)
+                        # This repository is public: never write private retention
+                        # ratios or watch-behaviour metrics to Actions logs.
+                        retention_status = analytics.safe_retention_status(retention)
                         logger.info(
-                            "Private retention diagnostics: %s",
-                            analytics.summarize_retention(retention),
+                            "Private retention curve status=%s; individual viewer metrics "
+                            "are suppressed from public workflow logs.",
+                            retention_status,
                         )
                     except Exception as retention_error:
                         logger.warning(

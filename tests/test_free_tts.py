@@ -10,15 +10,16 @@ class FreeTtsTests(unittest.IsolatedAsyncioTestCase):
         with patch.dict(os.environ, {"FREE_TTS_ONLY": "true"}, clear=False):
             with patch("src.voice_engine.ElevenLabsEngine") as paid_engine:
                 engine = VoiceEngine()
-                engine.eleven.api_key = "configured-but-must-not-be-used"
-                engine.eleven.voice_id = "configured-but-must-not-be-used"
+                self.assertIsNone(engine.eleven)
+                paid_engine.assert_not_called()
                 with patch("src.voice_engine.edge_tts.Communicate") as communicate:
                     communicate.return_value.save = AsyncMock()
                     result = await engine.generate_audio(
                         "This is a free narration test.", "unused-output.mp3"
                     )
                 self.assertTrue(result)
-                engine.eleven.generate_audio.assert_not_called()
+                self.assertIsNone(engine.eleven)
+                paid_engine.assert_not_called()
 
 
 if __name__ == "__main__":

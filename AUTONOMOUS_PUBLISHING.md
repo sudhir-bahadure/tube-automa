@@ -16,9 +16,9 @@ The system creates original scripts, retrieves scholarly context, generates scen
 ## Zero-subscription design
 
 - Gemini API: one configured free-tier model only (`gemini-3.8-flash`). Free-tier quota exhaustion stops the run; the application does not switch to another model or a paid provider.
-- Narration: Edge TTS. ElevenLabs credentials are deliberately not passed to the publishing workflows.
-- Research: free Europe PMC scholarly abstract lookup; relevant source links are added to video descriptions when available.
-- Illustrations: Pollinations public image endpoint. Production fails closed if image generation fails; Pillow is used for test/preview fallback only.
+- Narration: Edge TTS with `FREE_TTS_ONLY=true`. In strict free mode, the ElevenLabs client is not even initialized, and no paid voice fallback is possible.
+- Research: free Europe PMC scholarly abstract lookup with PubMed E-utilities fallback; relevant source links are added to video descriptions when available.
+- Illustrations: the active MARROW `psych_stickman` path renders scene-specific compositions locally with Pillow. It does not call Pollinations or another external image-generation API. Legacy non-MARROW styles may still use the old external endpoint and are outside this production path.
 - Editing: MoviePy, FFmpeg and Pillow on GitHub-hosted runners.
 - Scheduling and source control: GitHub Actions on this public repository.
 - Background music is off by default to avoid using music with unverified licensing.
@@ -63,7 +63,7 @@ Before any Gemini call, the repository variable `GEMINI_BILLING_DISABLED_CONFIRM
 
 ## Analytics reporting
 
-The publishing engine collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed, subscribers gained, likes, comments and shares. It also requests per-video audience-retention curves for up to the top three videos. These private analytics snapshots remain on the ephemeral workflow runner and are neither uploaded as artifacts nor committed to this public repository.
+The publishing engine collects a 28-day video-level YouTube Analytics snapshot with views, watch time, average view duration, average percentage viewed, subscribers gained, likes, comments and shares. It also requests per-video audience-retention curves for up to the top three videos. These private analytics snapshots remain on the ephemeral workflow runner and are neither uploaded as artifacts nor committed to this public repository. Individual retention ratios and viewer-behaviour metrics are explicitly suppressed from public GitHub Actions logs; logs report only whether a curve was available.
 
 A separate optional YouTube Reporting API job collects the Reach Basic daily report (thumbnail impressions and click-through rate). It must be enabled in the same Google Cloud project and reports can take up to 24 hours to appear. If the API is disabled or a report is pending, video production continues without CTR data.
 

@@ -67,6 +67,24 @@ class AnalyticsEngineTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "single video ID"):
                 engine.collect_retention_report("")
 
+
+    def test_safe_retention_status_exposes_only_availability(self):
+        snapshot = {
+            "rows": [
+                {
+                    "elapsedVideoTimeRatio": 0.0,
+                    "audienceWatchRatio": 1.25,
+                    "relativeRetentionPerformance": 0.42,
+                }
+            ],
+            "row_count": 1,
+        }
+        status = AnalyticsEngine.safe_retention_status(snapshot)
+        self.assertEqual(status, "available")
+        self.assertNotIn("audienceWatchRatio", status)
+        self.assertNotIn("1.25", status)
+        self.assertEqual(AnalyticsEngine.safe_retention_status({"rows": []}), "empty")
+
     def test_requires_credentials(self):
         with self.assertRaisesRegex(ValueError, "credentials"):
             AnalyticsEngine(credentials=None)
