@@ -11,7 +11,13 @@ class LLMWrapper:
         # Explicitly use v1 API for stability
         self.client = genai.Client(
             api_key=Config.GEMINI_API_KEY,
-            http_options={'api_version': 'v1'}
+            http_options={
+                'api_version': 'v1',
+                'timeout': 30_000,
+                # Keep retry timing in _call_gemini so a transient outage
+                # cannot trigger the SDK's much longer implicit retry cycle.
+                'retry_options': {'attempts': 1},
+            },
         )
         
         # A single current free-tier model is used by default. No paid-model fallback.
@@ -36,7 +42,7 @@ class LLMWrapper:
             print(f"Warning: Could not list models, will use hardcoded defaults: {e}")
             self.available_gen_models = self.preferred_models
 
-    def _call_gemini(self, prompt, max_retries=10):
+    def _call_gemini(self, prompt, max_retries=4):
         """Ultra-robust caller that swaps models if one is rate-limited or missing."""
         
         # Free-tier mode is deliberately fail-closed: never switch to an unapproved model.
