@@ -18,6 +18,16 @@ class GeminiRetryTests(unittest.TestCase):
         )
         return wrapper
 
+    def test_sdk_retries_are_disabled_and_requests_have_a_timeout(self):
+        with patch.object(Config, "GEMINI_API_KEY", "test-key"), \
+             patch("src.llm_wrapper.genai.Client") as client, \
+             patch.object(LLMWrapper, "_refresh_available_models"):
+            LLMWrapper()
+
+        http_options = client.call_args.kwargs["http_options"]
+        self.assertEqual(http_options["timeout"], 30_000)
+        self.assertEqual(http_options["retry_options"], {"attempts": 1})
+
     def test_retries_temporary_503_on_the_same_configured_free_model(self):
         wrapper = self.make_wrapper([
             RuntimeError("503 UNAVAILABLE"),
