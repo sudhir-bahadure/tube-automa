@@ -82,7 +82,22 @@ class LLMWrapper:
                     model_index += 1
                     continue
                 
-                # If 429 or Quota, wait and then try the NEXT model to spread load
+                # A temporary service outage is different from free-tier quota
+                # exhaustion. Retry the configured model with bounded backoff;
+                # free-tier mode still never switches to another model.
+                if any(code in err_msg for code in ("500", "502", "503", "504", "unavailable", "internal server error")):
+                    if i + 1 >= max_retries:
+                        print(f"Temporary Gemini service failure persisted after {max_retries} attempts.")
+                        return None
+                    wait_time = min(2 ** i, 30)
+                    print(
+                        f"Gemini service temporarily unavailable on {current_model}. "
+                        f"Retrying in {wait_time}s (attempt {i + 1}/{max_retries})..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+                
+                # If 429 or Quota, stop rather than exceed free-tier limits.
                 if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
                     if Config.GEMINI_FREE_TIER_ONLY:
                         print("Free-tier Gemini quota reached; stopping without paid-model fallback.")
