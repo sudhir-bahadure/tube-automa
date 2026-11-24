@@ -1,9 +1,11 @@
 import os
 import json
 import logging
-from src.config import Config
+import math
+from src.topic_bank import TOPIC_BANK
 
 logger = logging.getLogger(__name__)
+
 
 class TrendEngine:
     def __init__(self, used_topics_path="output/used_topics.json"):
@@ -11,116 +13,107 @@ class TrendEngine:
         self.used_topics = self._load_used_topics()
 
     def _load_used_topics(self):
-        """Loads the list of already used topics to ensure zero repetition."""
+        """Load topics already used by a successful upload."""
         if os.path.exists(self.used_topics_path):
             try:
-                with open(self.used_topics_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to load used topics: {e}")
+                with open(self.used_topics_path, "r", encoding="utf-8") as handle:
+                    topics = json.load(handle)
+                return topics if isinstance(topics, list) else []
+            except Exception as error:
+                logger.error("Failed to load used topics: %s", error)
         return []
 
     def mark_used(self, topic):
-        """Persist a topic after its associated video uploads successfully."""
-        if not topic or topic in self.used_topics:
+        """Persist a topic only after its associated video uploads successfully."""
+        if not topic or str(topic).casefold() in {str(item).casefold() for item in self.used_topics}:
             return
-        self._save_used_topic(topic)
-
-    def _save_used_topic(self, topic):
-        """Persists a new topic to the used list."""
         self.used_topics.append(topic)
         try:
-            os.makedirs(os.path.dirname(self.used_topics_path), exist_ok=True)
-            with open(self.used_topics_path, 'w', encoding='utf-8') as f:
-                json.dump(self.used_topics, f, indent=2)
-            logger.info(f"Topic '{topic}' added to persistence.")
-        except Exception as e:
-            logger.error(f"Failed to save used topic: {e}")
+            directory = os.path.dirname(self.used_topics_path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+            with open(self.used_topics_path, "w", encoding="utf-8") as handle:
+                json.dump(self.used_topics, handle, indent=2)
+            logger.info("Topic '%s' added to history.", topic)
+        except Exception as error:
+            logger.error("Failed to save used topic: %s", error)
 
-    def get_viral_topic(self, llm, performance_context=None, competitor_context=None):
+    def get_viral_topic(self, llm=None, performance_context=None, competitor_context=None):
+        """Pick an unused, curated topic without spending an LLM request.
+
+        Recent channel and public competitor titles are weak category-level
+        signals only. They do not supply titles to copy or prove search volume.
         """
-        Interacts with LLM to fetch trending topics based on the configured niche and returns the best unused one.
-        """
-        niche = Config.NICHE
-        logger.info(f"Generating candidate topic ideas for {niche}...")
-        
-        performance_str = ""
-        if performance_context:
-            perf_list = [
-                f"'{p['title']}' ({p.get('views', 0)} public views)"
-                for p in performance_context if p.get("title")
-            ]
-            performance_str = (
-                "RECENT CHANNEL PERFORMANCE (prioritize topics with strong watch time and viewer interest; directional evidence only):\n"
-                + ", ".join(perf_list) + "\n"
+        category_terms = {
+            "attention": ("attention", "focus", "distraction", "notification", "task"),
+            "memory": ("memory", "remember", "recall", "detail"),
+            "decisions": ("decision", "choice", "estimate", "cost", "default"),
+            "social influence": ("group", "comparison", "influence", "belonging"),
+            "habits": ("habit", "routine", "cue", "repeat"),
+            "motivation": ("motivation", "progress", "reward", "effort"),
+            "emotion": ("stress", "emotion", "worry", "uncertainty", "anticipation"),
+            "communication": ("message", "conversation", "tone", "feedback", "question"),
+            "wellbeing": ("sleep", "rest", "break", "wellbeing"),
+            "beliefs": ("belief", "expectation", "impression", "evidence", "confidence"),
+            "social behaviour": ("bystander", "help", "responsibility", "notice"),
+            "relationships": ("friendship", "relationship", "intent", "perspective"),
+            "learning": ("learn", "learning", "practice", "feedback", "explain"),
+        }
+        categories = list(dict.fromkeys(category for _, category in TOPIC_BANK))
+        used = {str(topic).casefold() for topic in self.used_topics}
+        unused = [(topic, category) for topic, category in TOPIC_BANK if topic.casefold() not in used]
+        if not unused:
+            if not llm:
+                logger.error("Curated topic queue exhausted and no text provider is configured.")
+                return None
+            prompt = (
+                "Choose one original, evidence-aware everyday psychology question for an educational video. "
+                "Avoid diagnoses, pop-psychology myths, fearbait, manipulation advice, and absolute claims. "
+                "Do not repeat these used topics: "
+                + json.dumps(self.used_topics[-100:], ensure_ascii=False)
+                + "\nReturn only one concise question, without quotes or extra text."
             )
-
-        competitor_str = ""
-        if competitor_context:
-            competitor_rows = []
-            for item in competitor_context[:8]:
-                if item.get("title"):
-                    competitor_rows.append(
-                        f"- {item['title']} ({item.get('views', 0)} public views; "
-                        f"{item.get('views_per_day', 0)} views/day; "
-                        f"{item.get('channel_title', 'unknown channel')})"
-                    )
-            if competitor_rows:
-                competitor_str = (
-                    "RECENT PUBLIC COMPETITOR SEARCH SAMPLE (directional demand signals only; "
-                    "not search-volume data or proof of causal growth):\n"
-                    + "\n".join(competitor_rows)
-                    + "\nUse these only to identify viewer questions that deserve a different, "
-                    "evidence-aware angle. Never copy titles, scripts, or packaging.\n"
-                )
-
-        prompt = f"""
-        You are the editorial researcher for an original educational channel about
-        everyday psychology, human behaviour, cognitive biases and social perception.
-
-        Generate 20 DISTINCT video-topic ideas with strong curiosity but honest framing.
-        Prefer concepts that can be explained accurately using established psychology,
-        such as cognitive biases, memory, attention, social influence, habits and decision
-        making. Each idea must support a useful explanation, a concrete everyday example,
-        and a nuance or limitation.
-
-        Do not claim that a topic is currently trending unless you have verified evidence.
-        Avoid pop-psychology myths, diagnoses, "secret signs" claims, fearbait, manipulation
-        instructions, gender stereotypes and claims that one behaviour proves intent.
-        Do not repeat these previously used topics:
-        {json.dumps(self.used_topics[-100:] if self.used_topics else [])}
-
-        {performance_str}
-        {competitor_str}
-        Rank ideas by specific audience problem, clarity, evidence availability, originality, and potential to sustain a distinct series. Prefer a fresh angle on a proven viewer question over a generic topic.
-        Return ONLY a JSON list of 20 short, distinct topic strings, best first. No numbering or prose.
-        """
-        try:
-            response = llm._call_gemini(prompt)
-            if not response:
-                return None
-            
-            candidates = llm._extract_json(response)
-            if not candidates or not isinstance(candidates, list):
-                return None
-            
-            # Filter out used topics
-            unused = [c for c in candidates if c not in self.used_topics]
-            
-            if not unused:
-                logger.warning("All discovered trends were already used. Forcing a new angle...")
-                return self._get_fallback_topic(llm)
-                
-            selected = unused[0] # Pick the top one
-            # Reserve only after the video uploads successfully.
-            return selected
-            
-        except Exception as e:
-            logger.error(f"Trend Engine discovery failed: {e}")
+            try:
+                candidate = (llm._call_gemini(prompt) or "").strip().strip('"')
+                if candidate and candidate.casefold() not in used:
+                    logger.info("Curated queue exhausted; obtained one fresh topic from the free provider chain.")
+                    return candidate
+            except Exception as error:
+                logger.error("Free-provider topic request failed: %s", error)
+            logger.error("Curated topic queue exhausted; refusing to repeat or invent a topic.")
             return None
 
-    def _get_fallback_topic(self, llm):
-        """Force a unique topic if everything else is repeated."""
-        niche = Config.NICHE
-        prompt = f"Give me one original, specific {niche} topic that differs from common topics. Return only the string."
-        return llm._call_gemini(prompt).strip().replace('"', '')
+        signals = {category: 0.0 for category in categories}
+        for row in performance_context or []:
+            title = str(row.get("title", "")).casefold()
+            weight = math.log1p(max(0, int(row.get("views", 0) or 0)))
+            for category in categories:
+                if any(term in title for term in category_terms.get(category, ())):
+                    signals[category] += weight
+        for row in (competitor_context or [])[:8]:
+            title = str(row.get("title", "")).casefold()
+            weight = math.log1p(max(0, int(row.get("views_per_day", 0) or 0)))
+            for category in categories:
+                if any(term in title for term in category_terms.get(category, ())):
+                    signals[category] += weight
+
+        used_counts = {
+            category: sum(
+                1 for topic, topic_category in TOPIC_BANK
+                if topic_category == category and topic.casefold() in used
+            )
+            for category in categories
+        }
+        category = max(
+            categories,
+            key=lambda value: (
+                signals[value] - (used_counts[value] * 2.0),
+                -categories.index(value),
+            ),
+        )
+        selected = next((topic for topic, group in unused if group == category), unused[0][0])
+        logger.info(
+            "Selected an unused curated topic from the %s category; no LLM topic call was needed.",
+            category,
+        )
+        return selected

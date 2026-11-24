@@ -1,107 +1,138 @@
 import time
 import json
+import requests
 from google import genai
 from .config import Config
 
 class LLMWrapper:
     def __init__(self):
-        if not Config.GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY not found in environment variables")
-        
-        # Explicitly use v1 API for stability
-        self.client = genai.Client(
-            api_key=Config.GEMINI_API_KEY,
-            http_options={'api_version': 'v1'}
-        )
-        
-        # A single current free-tier model is used by default. No paid-model fallback.
-        self.preferred_models = [Config.GEMINI_MODEL]
-        self.available_gen_models = []
-        self._refresh_available_models()
-
-    def _refresh_available_models(self):
-        """Fetches and filters models that support content generation."""
-        try:
-            print("Refreshing available generative models...")
-            models = list(self.client.models.list())
-            self.available_gen_models = [m.name.removeprefix('models/') for m in models if 'generateContent' in m.supported_actions]
-            if Config.GEMINI_FREE_TIER_ONLY:
-                if Config.GEMINI_MODEL not in self.available_gen_models:
-                    raise RuntimeError(
-                        f"Configured free-tier model {Config.GEMINI_MODEL} is unavailable to this API key."
-                    )
-                self.available_gen_models = [Config.GEMINI_MODEL]
-            print(f"DEBUG: Confirmed Generative Models: {self.available_gen_models}")
-        except Exception as e:
-            print(f"Warning: Could not list models, will use hardcoded defaults: {e}")
-            self.available_gen_models = self.preferred_models
-
-    def _call_gemini(self, prompt, max_retries=10):
-        """Ultra-robust caller that swaps models if one is rate-limited or missing."""
-        
-        # Free-tier mode is deliberately fail-closed: never switch to an unapproved model.
-        if Config.GEMINI_FREE_TIER_ONLY:
-            candidate_models = [Config.GEMINI_MODEL]
-        else:
-            candidate_models = [
-                model for model in self.preferred_models
-                if model in self.available_gen_models
-            ]
-            candidate_models.extend(
-                model for model in self.available_gen_models
-                if model not in candidate_models
+        self.client = None
+        if Config.GEMINI_API_KEY:
+            # Explicitly use v1 API for stability. Retry policy stays in this
+            # wrapper so provider failover is bounded and observable.
+            self.client = genai.Client(
+                api_key=Config.GEMINI_API_KEY,
+                http_options={
+                    'api_version': 'v1',
+                    'timeout': 30_000,
+                    'retry_options': {'attempts': 1},
+                },
             )
-            if not candidate_models:
-                candidate_models = self.preferred_models
 
-        model_index = 0
-        for i in range(max_retries):
-            # Cycle through models if we keep hitting limits
-            current_model = candidate_models[model_index % len(candidate_models)]
-            
+        self.preferred_models = [Config.GEMINI_MODEL]
+        # Avoid an extra API request at startup. The fixed allowlist is checked
+        # by trying each model once; a retired/unavailable model is skipped.
+        self.available_gen_models = list(Config.GEMINI_FREE_MODELS)
+
+    @staticmethod
+    def _is_rate_limit(error):
+        message = str(error).lower()
+        return "429" in message or "resource_exhausted" in message or "rate limit" in message or "quota" in message
+
+    @staticmethod
+    def _is_transient(error):
+        message = str(error).lower()
+        return any(code in message for code in ("408", "500", "502", "503", "504", "timeout", "unavailable", "internal server error"))
+
+    def _call_external_free_providers(self, prompt):
+        """Try only explicitly confirmed free accounts; each provider is called once."""
+        providers = []
+        if Config.GROQ_API_KEY and Config.GROQ_FREE_TIER_CONFIRMED:
+            providers.append(("Groq", self._call_groq_free))
+        if (Config.CLOUDFLARE_ACCOUNT_ID and Config.CLOUDFLARE_API_TOKEN
+                and Config.CLOUDFLARE_WORKERS_FREE_CONFIRMED):
+            providers.append(("Cloudflare Workers AI", self._call_cloudflare_free))
+
+        for name, call in providers:
             try:
-                # Disable AFC to speed up and save tokens
-                config = {'automatic_function_calling': {'disable': True}}
-                response = self.client.models.generate_content(
-                    model=current_model,
-                    contents=prompt,
-                    config=config
-                )
-                if not response or not response.text:
-                    raise ValueError("Empty response")
-                return response.text
-                
-            except Exception as e:
-                err_msg = str(e).lower()
-                
-                # If 404, the model name is definitely wrong or retired, move to next model immediately
-                if "404" in err_msg or "not found" in err_msg:
-                    print(f"Model {current_model} NOT FOUND (404).")
-                    if Config.GEMINI_FREE_TIER_ONLY:
-                        return None
-                    model_index += 1
-                    continue
-                
-                # If 429 or Quota, wait and then try the NEXT model to spread load
-                if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
-                    if Config.GEMINI_FREE_TIER_ONLY:
-                        print("Free-tier Gemini quota reached; stopping without paid-model fallback.")
-                        return None
-                    import random
-                    # Exponential backoff with jitter
-                    wait_time = min(5 * (2 ** (i // 2)), 60) + random.uniform(1, 5)
-                    print(f"Rate Limited on {current_model}. Attempt {i+1}/{max_retries}. Swapping models and waiting {wait_time:.1f}s...")
-                    model_index += 1
-                    time.sleep(wait_time)
-                    continue
-                
-                # If it's a different error (like safety), we might need to stop
-                print(f"Gemini API Error on {current_model}: {e}")
-                if i < 3: # Try a few times even for unknown errors
-                    model_index += 1
-                    continue
-                return None
+                result = call(prompt)
+                if result and result.strip():
+                    print(f"Free text generation succeeded using {name} fallback.")
+                    return result
+                print(f"{name} free fallback returned no text; trying the next configured provider.")
+            except Exception as error:
+                # Do not retry a provider after 429: it may be a daily quota.
+                print(f"{name} free fallback failed ({type(error).__name__}): {error}")
         return None
+
+    @staticmethod
+    def _call_groq_free(prompt):
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {Config.GROQ_API_KEY}"},
+            json={
+                "model": Config.GROQ_FREE_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 4096,
+            },
+            timeout=45,
+        )
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+    @staticmethod
+    def _call_cloudflare_free(prompt):
+        url = (
+            "https://api.cloudflare.com/client/v4/accounts/"
+            f"{Config.CLOUDFLARE_ACCOUNT_ID}/ai/run/{Config.CLOUDFLARE_FREE_MODEL}"
+        )
+        response = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {Config.CLOUDFLARE_API_TOKEN}"},
+            json={"messages": [{"role": "user", "content": prompt}], "max_tokens": 4096},
+            timeout=45,
+        )
+        response.raise_for_status()
+        data = response.json()
+        result = data.get("result") or {}
+        return result.get("response") or result.get("text") or ""
+
+    def _call_gemini(self, prompt, max_retries=4):
+        """Generate through approved free models, then optional free providers."""
+        if not Config.GEMINI_FREE_TIER_ONLY:
+            raise RuntimeError("Paid Gemini model routing is disabled for this project.")
+
+        candidate_models = []
+        if Config.GEMINI_MODEL in Config.GEMINI_FREE_MODELS:
+            candidate_models.append(Config.GEMINI_MODEL)
+        candidate_models.extend(
+            model for model in self.available_gen_models
+            if model in Config.GEMINI_FREE_MODELS and model not in candidate_models
+        )
+
+        if self.client:
+            for current_model in candidate_models:
+                attempts = max_retries if current_model == candidate_models[0] else 1
+                for attempt in range(attempts):
+                    try:
+                        response = self.client.models.generate_content(
+                            model=current_model,
+                            contents=prompt,
+                            config={'automatic_function_calling': {'disable': True}},
+                        )
+                        if response and response.text:
+                            return response.text
+                        raise RuntimeError("Empty response from Gemini")
+                    except Exception as error:
+                        message = str(error).lower()
+                        if self._is_rate_limit(error):
+                            print(
+                                f"Gemini model {current_model} reached a free-tier limit; "
+                                "moving to the next approved free route without retrying it."
+                            )
+                            break
+                        if "404" in message or "not found" in message:
+                            print(f"Gemini model {current_model} is unavailable; trying the next approved free route.")
+                            break
+                        if self._is_transient(error) and attempt + 1 < attempts:
+                            wait_time = min(2 ** attempt, 8)
+                            print(f"Gemini temporary failure; retrying once after {wait_time}s.")
+                            time.sleep(wait_time)
+                            continue
+                        print(f"Gemini free route failed ({type(error).__name__}): {error}")
+                        break
+
+        return self._call_external_free_providers(prompt)
 
     def _extract_json(self, text):
         """Robustly Extracts and cleans JSON from LLM response using regex and balance checks."""

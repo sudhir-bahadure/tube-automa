@@ -15,10 +15,12 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 - A bounded public YouTube competitor radar (three search queries per run) to identify recent topic-demand signals without scraping or copying.
 - Private YouTube Analytics feedback, including per-video retention curves; private metrics stay on the ephemeral runner and are not sent to Gemini.
 - Optional daily YouTube Reporting API Reach Basic reports for thumbnail impressions and CTR (the API must be enabled in Google Cloud; daily reports may take up to 24 hours).
+- A curated, non-repeating topic queue reduces model usage to one script-generation request per video; approved free models/providers can take over after a quota or service error.
 
 ## Safety defaults
 
 - No paid model, voice, image or video API fallback.
+- Gemini is restricted to the free-model allowlist. Groq and Cloudflare fallbacks remain off until their own credentials and explicit free-tier confirmation variables are configured.
 - Gemini generation stops unless the repository variable `GEMINI_BILLING_DISABLED_CONFIRMED=true` is set after the owner has manually disabled Google Cloud billing.
 - YouTube upload requires both the exact channel title and `YOUTUBE_EXPECTED_CHANNEL_ID`.
 - Manual workflow runs default to a private test upload.
@@ -33,6 +35,7 @@ The project is focused on original, evidence-aware psychology explainers. It is 
 2. Create a Google AI Studio API key for the free tier. Disable billing on the associated Google Cloud project before setting the billing confirmation variable.
 3. Enable YouTube Data API v3 and YouTube Analytics API. Also enable YouTube Reporting API to collect thumbnail impressions/CTR; without it, the optional reach report is skipped. Set the OAuth consent screen to Production (not Testing) and complete any required Google verification; Testing-mode refresh tokens expire after seven days. Run `python setup_youtube_auth.py` locally using the Google account that owns MARROW PSYCHOLOGY. Confirm the printed channel title and ID.
 4. Add the required GitHub Actions secrets: `GEMINI_API_KEY`, `CURIOSITY_CLIENT_ID`, `CURIOSITY_CLIENT_SECRET`, `CURIOSITY_REFRESH_TOKEN`, and `YOUTUBE_EXPECTED_CHANNEL_ID`.
+   Optional free LLM failovers: follow [FREE_AI_FALLBACKS.md](docs/FREE_AI_FALLBACKS.md) before adding Groq or Cloudflare credentials and confirmation variables.
 5. Add repository variable `GEMINI_BILLING_DISABLED_CONFIRMED=true` only after confirming billing is disabled.
 6. Run the appropriate workflow manually with `private_test_upload=true`. Inspect the private video in YouTube Studio.
 7. Only after successful inspection, set repository variable `YOUTUBE_AUTOPUBLISH_ENABLED=true` to activate the scheduled publishing workflows.

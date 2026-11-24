@@ -29,7 +29,8 @@ async def main():
     parser.add_argument("--schedule-for", type=str, choices=["morning", "afternoon", "evening", "now"], default="now", help="Time slot for scheduling (US ET)")
     args = parser.parse_args()
 
-    if os.getenv("GEMINI_BILLING_DISABLED_CONFIRMED", "false").lower() != "true":
+    if (os.getenv("GEMINI_API_KEY") and
+            os.getenv("GEMINI_BILLING_DISABLED_CONFIRMED", "false").lower() != "true"):
         logger.error(
             "Zero-cost safety stop: set repository variable "
             "GEMINI_BILLING_DISABLED_CONFIRMED=true only after confirming "
@@ -172,30 +173,24 @@ async def main():
 
     logger.info(f"Generating {args.type} script for Title: {title}")
     
-    script_data = None
-    for attempt in range(2):
-        if args.style == "stickman":
-            if args.type == "short":
-                script_data = llm.generate_relatable_comedy_script(title)
-            else:
-                script_data = llm.generate_conversational_script(title, type=args.type)
-        elif args.style == "psych_stickman":
-             if args.type == "long":
-                 script_data = llm.generate_psychology_script(title, research_context=research_context)
-             else:
-                 script_data = llm.generate_psychology_stickman_script(title, research_context=research_context)
-        elif args.type == "long":
-            script_data = llm.generate_psychology_script(title)
+    if args.style == "stickman":
+        if args.type == "short":
+            script_data = llm.generate_relatable_comedy_script(title)
         else:
-            # Noir style shorts use the specific psychology-short engine
-            script_data = llm.generate_psychology_short_script(title)
-            
-        if script_data:
-            break
-        logger.warning(f"Script generation attempt {attempt+1} failed. Retrying...")
+            script_data = llm.generate_conversational_script(title, type=args.type)
+    elif args.style == "psych_stickman":
+        if args.type == "long":
+            script_data = llm.generate_psychology_script(title, research_context=research_context)
+        else:
+            script_data = llm.generate_psychology_stickman_script(title, research_context=research_context)
+    elif args.type == "long":
+        script_data = llm.generate_psychology_script(title)
+    else:
+        # Noir style shorts use the specific psychology-short engine
+        script_data = llm.generate_psychology_short_script(title)
 
     if not script_data:
-        logger.error(f"Failed to generate {args.type} script after 2 attempts.")
+        logger.error(f"Failed to generate {args.type} script with the configured free providers.")
         sys.exit(1)
     with open("output/script_data.json", "w", encoding="utf-8") as handle:
         json.dump(script_data, handle, ensure_ascii=False, indent=2)
