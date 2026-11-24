@@ -63,7 +63,7 @@ class LLMWrapper:
             json={
                 "model": Config.GROQ_FREE_MODEL,
                 "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 4096,
+                "max_completion_tokens": 4096,
             },
             timeout=45,
         )

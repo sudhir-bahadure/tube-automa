@@ -7,7 +7,7 @@ Tube Automa routes script requests through this order:
 3. Groq `openai/gpt-oss-20b`, only when `GROQ_API_KEY` and the repository variable `GROQ_FREE_TIER_CONFIRMED=true` are present.
 4. Cloudflare Workers AI `@cf/zai-org/glm-4.7-flash`, only when the account ID, API token, and `CLOUDFLARE_WORKERS_FREE_CONFIRMED=true` are present.
 
-Gemini uses one script-generation request per video. Topic selection comes from the curated queue in `src/topic_bank.py`, avoiding a separate model request. The queue uses past successful topics to prevent repeats and may use recent channel/competitor titles only as broad category signals. It does not claim that a topic is currently trending.
+Topic selection comes from the curated queue in `src/topic_bank.py`, avoiding a separate model request. The queue uses past successful topics to prevent repeats and may use recent channel/competitor titles only as broad category signals. It does not claim that a topic is currently trending. Script generation can make a bounded number of Gemini attempts after transient service failures, then tries each enabled external free provider at most once. A quota response skips further attempts on that Gemini model.
 
 ## Cost safeguards
 

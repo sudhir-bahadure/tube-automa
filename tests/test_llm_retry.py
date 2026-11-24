@@ -110,5 +110,20 @@ class GeminiRetryTests(unittest.TestCase):
         cloudflare.assert_called_once_with("prompt")
 
 
+    def test_groq_uses_current_completion_token_parameter(self):
+        response = SimpleNamespace(
+            raise_for_status=unittest.mock.Mock(),
+            json=lambda: {"choices": [{"message": {"content": "script"}}]},
+        )
+        with patch.object(Config, "GROQ_API_KEY", "test-key"), \
+             patch.object(Config, "GROQ_FREE_MODEL", "openai/gpt-oss-20b"), \
+             patch("src.llm_wrapper.requests.post", return_value=response) as post:
+            result = LLMWrapper._call_groq_free("prompt")
+
+        self.assertEqual(result, "script")
+        self.assertEqual(post.call_args.kwargs["json"]["max_completion_tokens"], 4096)
+        self.assertNotIn("max_tokens", post.call_args.kwargs["json"])
+
+
 if __name__ == "__main__":
     unittest.main()
